@@ -1,0 +1,9 @@
+ADD LEVENSHTEIN DISTANCE FOR FUZZY SEARCHING
+
+i.e. searching for 'dume' would still return Dune, because 'dume' is dumb.
+
+REMOVE OPTION YEAR / IMAGEDATA
+
+Ideally if there's no year or no poster we don't want it, and it should
+be handled very early on the initially API query instead of later during
+the search result parsing.

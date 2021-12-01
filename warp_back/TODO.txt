@@ -1,0 +1,30 @@
+NEED TO ADD CORS STUFF
+Ideally this should block everything except communication between Yew and Warp.
+Currently it's set at allow any.
+
+LOGIN/REGISTER
+
+Need to validate basically all of the incoming info.
+Currently 'date_created' and 'date_modified' are the same in the DB.
+Make passwords be a mix of numbers / letters / symbols?
+Make the username an e-mail?
+
+Split up all the stuff in warp into different files.
+
+Find a way to serve all the routes nicely... Not '.or(login_route)'...
+
+Handle all of the 'unwrap()'s
+
+Is it possible to store the Salt and stuff not as Strings in the DB?
+
+Find a way to pass a handle to the DB pool to different routes so it doesn't 
+have to reinitialize every time...
+
+Need good warp error codes and 404 rejections. Also need better 200 status code replies.
+
+Does warp have to take every reply by bytes? Where's the nice json body methods?
+
+Not sure why sqlite can't take a relative path in the .env file, and can't manually set the env variable
+with std::env::set_var...
+
+Tests don't cleanup DBs when they fail...

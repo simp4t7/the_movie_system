@@ -1,0 +1,8 @@
+ [workspace]
+
+ members = [
+ "warp_back",
+ "yew_front",
+ "shared_stuff",
+ "imdb_autocomplete",
+ ]

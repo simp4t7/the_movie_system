@@ -1,0 +1,8 @@
+DONE 
+
+Some weird error when you search and then fully delete the search...
+
+TODO 
+
+Sometimes the responses come in out of order maybe? Not sure, but worth checking on. 
+

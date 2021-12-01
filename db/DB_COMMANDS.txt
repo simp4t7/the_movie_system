@@ -1,0 +1,7 @@
+FROM PROJECT ROOT -> /movie_rating_site
+
+clear db
+sqlite3 db/movie_site.db < db/clear_table.sql
+
+setup db
+sqlite3 db/movie_site.db < db/setup_db.sql
