@@ -6,9 +6,8 @@ use warp::cors::Cors;
 use warp::reply::json;
 use warp::Filter;
 
-// domain/search -> do seach() 
+// domain/search -> do seach()
 // why bytes? some of these could def use json since requests come in as json
-
 
 // getthe search string -> bytes
 // use the bytes -> &str -> send to the autocomplete_func and get back the results
@@ -30,7 +29,6 @@ pub fn search(
         })
         .with(&cors)
 }
-
 
 pub fn register(
     cors: &Cors,
@@ -58,7 +56,7 @@ pub fn login(
         .and_then(|u: bytes::Bytes| async move {
             let db_pool = make_db_pool().await.unwrap();
             let user: UserInfo = serde_json::from_str(std::str::from_utf8(&u).unwrap()).unwrap();
-            if let Ok(user_info) = check_login(&db_pool, user.username).await {
+            if let Ok(user_info) = check_login(&db_pool, &user.username).await {
                 match verify_pass(user.password, user_info.salt, user_info.hashed_password) {
                     true => Ok(warp::reply()),
                     false => Err(warp::reject::not_found()),

@@ -4,6 +4,6 @@ CREATE TABLE users
     username TEXT NOT NULL UNIQUE,
     hashed_password TEXT not null,
     salt TEXT not null,
-    date_created DATETIME with time zone not null,
-    date_modified TIMESTAMP with time zone not null
+    date_created DATETIME DEFAULT (DATETIME('now')) NOT NULL,
+    date_modified DATETIME DEFAULT (DATETIME('now')) NOT NULL
 );

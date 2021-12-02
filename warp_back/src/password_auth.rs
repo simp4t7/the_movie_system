@@ -1,3 +1,4 @@
+use anyhow::Result;
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2,
@@ -5,7 +6,7 @@ use argon2::{
 // argon2: pw hasher crate
 
 // TAKE CARE OF THE unwraps()
-pub async fn hasher(password: &String) -> Result<(String, String), Box<dyn std::error::Error>> {
+pub async fn hasher(password: &String) -> Result<(String, String)> {
     let salt = SaltString::generate(&mut OsRng);
 
     let argon2 = Argon2::default();
