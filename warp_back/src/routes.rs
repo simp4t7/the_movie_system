@@ -5,7 +5,7 @@ use crate::State;
 use imdb_autocomplete::autocomplete_func;
 use shared_stuff::UserInfo;
 use sqlx::SqlitePool;
-use std::sync::Arc;
+
 use warp::reply::json;
 use warp::Filter;
 
@@ -18,7 +18,7 @@ use warp::Filter;
 // results bad -> 400 bad request. //TODO currently it's 404
 
 pub fn search(
-    state: &State,
+    _state: &State,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path("search")
         .and(warp::body::bytes())

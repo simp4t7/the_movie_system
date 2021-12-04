@@ -4,7 +4,6 @@ pub use serde_json::Value;
 use std::fmt;
 use validator::Validate;
 use validator::ValidationError;
-use zxcvbn::zxcvbn;
 
 //WHICH STUFF NEEDS TO BE SERIALIZE / DESERIALIZE? ¯\_(-_-)_/¯
 
@@ -30,7 +29,7 @@ pub struct LoginLookup {
     pub salt: String,
 }
 
-pub fn zxcvbn_func(password: &String) -> Result<(), ValidationError> {
+pub fn zxcvbn_func(password: &str) -> Result<(), ValidationError> {
     if password == "password123" {
         return Err(ValidationError::new("umm, bad password"));
     }

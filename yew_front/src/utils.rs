@@ -20,7 +20,7 @@ pub async fn get_search_results(
 
 pub async fn send_user_info(url: &str, body: UserInfo) -> Result<(), Box<dyn std::error::Error>> {
     let userinfo = serde_json::to_string(&body)?;
-    let resp = Request::post(url)
+    let _resp = Request::post(url)
         .header("Content-Type", "application/json")
         .mode(RequestMode::NoCors)
         .body(userinfo)

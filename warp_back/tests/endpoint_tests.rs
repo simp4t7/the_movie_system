@@ -27,8 +27,8 @@ async fn check_search() -> Result<()> {
 
 #[tokio::test]
 async fn check_login() -> Result<()> {
-    let cors = warp::cors().allow_any_origin().build();
-    let filter = login(&cors);
+    let state = State::init().await;
+    let filter = login(&state);
     let new_user_1 = UserInfo {
         username: "Indiana@Jones.ok".to_string(),
         password: "umm237@#".to_string(),

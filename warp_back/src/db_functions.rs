@@ -3,8 +3,7 @@ use anyhow::Error;
 use anyhow::Result;
 
 use crate::password_auth::verify_pass;
-use dotenv::dotenv;
-use dotenv::var;
+
 use shared_stuff::LoginLookup;
 use shared_stuff::UserInfo;
 use sqlx::types::chrono::NaiveDateTime;
@@ -43,7 +42,7 @@ pub struct User {
 
 // what we get back from after looking up the login in the db and then we verify
 
-pub fn map_sqlite_err<'a>(err: sqlx::Error) -> Error {
+pub fn map_sqlite_err(err: sqlx::Error) -> Error {
     if let Some(code) = err.into_database_error().unwrap().code() {
         match &*code {
             "2067" => anyhow!("username already taken, choose another"),
@@ -54,7 +53,7 @@ pub fn map_sqlite_err<'a>(err: sqlx::Error) -> Error {
     }
 }
 
-pub async fn select_single_user(db_pool: &SqlitePool, username: &String) -> Result<User> {
+pub async fn select_single_user(db_pool: &SqlitePool, username: &str) -> Result<User> {
     let user = query_as!(
         User,
         r#"
@@ -70,7 +69,7 @@ pub async fn select_single_user(db_pool: &SqlitePool, username: &String) -> Resu
     Ok(user)
 }
 
-pub async fn check_login(db_pool: &SqlitePool, username: &String) -> Result<LoginLookup> {
+pub async fn check_login(db_pool: &SqlitePool, username: &str) -> Result<LoginLookup> {
     let user_info = query_as!(
         LoginLookup,
         r#"
@@ -87,7 +86,7 @@ pub async fn check_login(db_pool: &SqlitePool, username: &String) -> Result<Logi
 }
 
 pub async fn select_all_users(db: &SqlitePool) -> Result<Vec<User>> {
-    let mut conn = db.acquire().await?;
+    let _conn = db.acquire().await?;
     let user = query_as!(
         User,
         r#"
@@ -106,7 +105,7 @@ pub async fn update_password(
 ) -> Result<()> {
     let mut conn = db.acquire().await?;
     let now = sqlx::types::chrono::Utc::now();
-    if let Ok(user_info) = check_login(&db, &old_user.username).await {
+    if let Ok(user_info) = check_login(db, &old_user.username).await {
         match verify_pass(
             old_user.password.clone(),
             user_info.salt,
@@ -149,7 +148,7 @@ pub async fn update_username(
 ) -> Result<()> {
     let mut conn = db.acquire().await?;
     let now = sqlx::types::chrono::Utc::now();
-    if let Ok(user_info) = check_login(&db, &old_user.username).await {
+    if let Ok(user_info) = check_login(db, &old_user.username).await {
         match verify_pass(
             old_user.password.clone(),
             user_info.salt,
@@ -203,9 +202,9 @@ pub async fn insert_user(user: &UserInfo, db: &SqlitePool) -> Result<()> {
     )
     .execute(&mut conn)
     .await
-    .map_err(|e| map_sqlite_err(e))?;
+    .map_err(map_sqlite_err)?;
 
-    let users: Vec<User> = select_all_users(db).await?;
+    let _users: Vec<User> = select_all_users(db).await?;
 
     Ok(())
 }

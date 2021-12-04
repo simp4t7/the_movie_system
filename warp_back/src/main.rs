@@ -1,8 +1,8 @@
+use anyhow::anyhow;
+use anyhow::Result;
 use shared_stuff::utils::load_logger;
-use std::sync::Arc;
-use std::sync::Mutex;
+
 use warp::Filter;
-use warp_back::make_db_pool;
 
 use warp_back::routes::login;
 use warp_back::routes::register;
@@ -14,8 +14,8 @@ extern crate pretty_env_logger;
 extern crate log;
 
 #[tokio::main]
-async fn main() {
-    load_logger();
+async fn main() -> Result<()> {
+    load_logger().map_err(|e| anyhow!("problem loading logger: {:?}", e))?;
     trace!("a trace example");
     debug!("deboogging");
     info!("such information");
@@ -27,4 +27,5 @@ async fn main() {
     let routes = search(&state).or(login(&state)).or(register(&state));
 
     warp::serve(routes).bind(([0, 0, 0, 0], 3030)).await;
+    Ok(())
 }

@@ -1,7 +1,7 @@
 use imdb_autocomplete::autocomplete_func;
 use imdb_autocomplete::test_functions::check_client_connection;
 use imdb_autocomplete::test_functions::status_and_headers;
-use serial_test::serial;
+
 use shared_stuff::utils::load_logger;
 use shared_stuff::MovieDisplay;
 use std::sync::Once;
@@ -104,7 +104,7 @@ async fn check_bad_query() -> Result<(), Box<dyn std::error::Error>> {
 #[tokio::test]
 async fn check_no_results() -> Result<(), Box<dyn std::error::Error>> {
     logger_init();
-    let res = autocomplete_func(&GIBBERISH).await;
+    let res = autocomplete_func(GIBBERISH).await;
     log::info!("{:?}", res);
     assert!(res.is_ok());
     let movies: Vec<MovieDisplay> = res.unwrap();
@@ -115,14 +115,14 @@ async fn check_no_results() -> Result<(), Box<dyn std::error::Error>> {
 #[tokio::test]
 async fn check_weird_chars() -> Result<(), Box<dyn std::error::Error>> {
     logger_init();
-    let res = autocomplete_func(&ROMEO).await;
+    let res = autocomplete_func(ROMEO).await;
     log::info!("{:?}", &res);
     assert!(res.is_ok());
     let movies = res.unwrap();
     log::info!("{:?}", &movies);
     assert!(!movies.is_empty());
 
-    let res_2 = autocomplete_func(&NUMBERS).await;
+    let res_2 = autocomplete_func(NUMBERS).await;
     assert!(res_2.is_ok());
     let movies: Vec<MovieDisplay> = res_2.unwrap();
     assert!(!movies.is_empty());
@@ -133,7 +133,7 @@ async fn check_weird_chars() -> Result<(), Box<dyn std::error::Error>> {
 #[tokio::test]
 async fn check_fail_request() {
     logger_init();
-    let res = autocomplete_func(&TERRIBLE_QUERY).await;
+    let res = autocomplete_func(TERRIBLE_QUERY).await;
     assert!(res.is_err());
 }
 

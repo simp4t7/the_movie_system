@@ -2,8 +2,8 @@ use anyhow::Result;
 use dotenv::dotenv;
 use dotenv::var;
 use sqlx::SqlitePool;
-use std::sync::Arc;
-use std::sync::Mutex;
+
+
 use warp::cors::Cors;
 
 pub mod db_functions;
@@ -33,8 +33,8 @@ impl State {
 }
 
 pub fn make_cors() -> Cors {
-    let cors = warp::cors().allow_any_origin().build();
-    cors
+    
+    warp::cors().allow_any_origin().build()
 }
 
 pub async fn make_db_pool() -> Result<SqlitePool> {

@@ -6,7 +6,7 @@ use argon2::{
 // argon2: pw hasher crate
 
 // TAKE CARE OF THE unwraps()
-pub async fn hasher(password: &String) -> Result<(String, String)> {
+pub async fn hasher(password: &str) -> Result<(String, String)> {
     let salt = SaltString::generate(&mut OsRng);
 
     let argon2 = Argon2::default();

@@ -1,7 +1,7 @@
-use crate::utils::get_search_results;
+
 use crate::utils::image_processing;
-use crate::InputData;
-use wasm_bindgen_futures::spawn_local;
+
+
 use yew::html;
 use yew::html::Html;
 
@@ -20,8 +20,7 @@ impl Login {
                 placeholder="Username"
                 maxlength=50
                 oninput={self.link.callback(
-                    |text: InputData|
-                    LoginMsg::SetUsername(text))}
+                    LoginMsg::SetUsername)}
             />
             <input
                 type="password"
@@ -29,8 +28,7 @@ impl Login {
                 placeholder="Password"
                 maxlength=50
                 oninput={self.link.callback(
-                    |text: InputData|
-                    LoginMsg::SetPassword(text))}
+                    LoginMsg::SetPassword)}
             />
             <button
                 class="login_user_name"
@@ -48,8 +46,7 @@ impl Login {
                 placeholder="Username"
                 maxlength=50
                 oninput={self.link.callback(
-                    |text: InputData|
-                    LoginMsg::SetUsername(text))}
+                    LoginMsg::SetUsername)}
             />
             <input
                 type="password"
@@ -57,8 +54,7 @@ impl Login {
                 placeholder="Password"
                 maxlength=50
                 oninput={self.link.callback(
-                    |text: InputData|
-                    LoginMsg::SetPassword(text))}
+                    LoginMsg::SetPassword)}
             />
             <button
                 class="login_user_name"
@@ -100,8 +96,7 @@ impl Home {
                         class="movie_search"
                         placeholder="movie search"
                         maxlength=50
-                        oninput={self.link.callback(|text: InputData|
-                            HomeMsg::QueryAutocomplete(text))}
+                        oninput={self.link.callback(HomeMsg::QueryAutocomplete)}
                         />
                     <div class="search_results">
                     <ul>

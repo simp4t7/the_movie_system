@@ -93,7 +93,7 @@ async fn insert_new_user() -> Result<()> {
     insert_user(&new_user, &new_db).await?;
     let user_vec = select_all_users(&new_db).await?;
     assert!(user_vec.len() == 1);
-    assert!(user_vec[0].username == "Indiana".to_string());
+    assert!(user_vec[0].username == *"Indiana");
     delete_db(db_name)?;
 
     Ok(())
@@ -180,7 +180,7 @@ async fn check_usernames_are_valid_emails() -> Result<()> {
     let db_name = "test_db_7";
     let _new_db = setup_new_db(db_name).await?;
     assert!(validate_email("Indiana@jones.ark"));
-    assert!(validate_email("Indiana") == false);
+    assert!(!validate_email("Indiana"));
     delete_db(db_name)?;
     Ok(())
 }
