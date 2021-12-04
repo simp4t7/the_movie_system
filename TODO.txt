@@ -19,3 +19,5 @@ Need to clean up all the dependencies and sort them into dev/release categories.
 Need to add TLS, and also work on the .gitignore to skip over the sensitive stuff.
 
 Add a readme, and maybe make that the landing page.
+
+Serialize the login and register requests as json before sending.

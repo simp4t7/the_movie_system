@@ -23,6 +23,13 @@ pub struct UserInfo {
     pub password: String,
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct LoginLookup {
+    pub username: String,
+    pub hashed_password: String,
+    pub salt: String,
+}
+
 pub fn zxcvbn_func(password: &String) -> Result<(), ValidationError> {
     if password == "password123" {
         return Err(ValidationError::new("umm, bad password"));

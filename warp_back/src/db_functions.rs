@@ -5,6 +5,7 @@ use anyhow::Result;
 use crate::password_auth::verify_pass;
 use dotenv::dotenv;
 use dotenv::var;
+use shared_stuff::LoginLookup;
 use shared_stuff::UserInfo;
 use sqlx::types::chrono::NaiveDateTime;
 use sqlx::SqlitePool;
@@ -41,11 +42,6 @@ pub struct User {
 }
 
 // what we get back from after looking up the login in the db and then we verify
-pub struct LoginLookup {
-    pub username: String,
-    pub hashed_password: String,
-    pub salt: String,
-}
 
 pub fn map_sqlite_err<'a>(err: sqlx::Error) -> Error {
     if let Some(code) = err.into_database_error().unwrap().code() {
@@ -56,13 +52,6 @@ pub fn map_sqlite_err<'a>(err: sqlx::Error) -> Error {
     } else {
         unreachable!();
     }
-}
-
-pub async fn make_db_pool() -> Result<SqlitePool> {
-    dotenv()?;
-
-    let pool = SqlitePool::connect(&var("DATABASE_URL")?).await.unwrap();
-    Ok(pool)
 }
 
 pub async fn select_single_user(db_pool: &SqlitePool, username: &String) -> Result<User> {
