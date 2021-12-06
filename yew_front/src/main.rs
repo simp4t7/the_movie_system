@@ -10,7 +10,7 @@ use pages::login::Login;
 
 pub const SEARCH_URL: &str = "http://192.168.137.107:3030/search";
 pub const LOGIN_URL: &str = "http://192.168.137.107:3030/login";
-pub const REGISTER_URL: &str = "http://192.168.107.13:3030/register";
+pub const REGISTER_URL: &str = "http://192.168.137.107:3030/login";
 //pub const SEARCH_URL: &str = "http://0.0.0.0:3030/search";
 //pub const LOGIN_URL: &str = "http://0.0.0.0:3030/login";
 //pub const REGISTER_URL: &str = "http://0.0.0.0:3030/register";

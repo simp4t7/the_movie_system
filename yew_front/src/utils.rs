@@ -9,7 +9,7 @@ pub async fn get_search_results(
 ) -> Result<Vec<MovieDisplay>, Box<dyn std::error::Error>> {
     let imdbquery = serde_json::to_string(&body)?;
     let resp = Request::post(url)
-        //.referrer_policy(ReferrerPolicy::NoReferrer)
+        .header("Content-Type", "application/json; charset=UTF-8")
         .mode(RequestMode::Cors)
         .body(imdbquery)
         .send()
@@ -21,12 +21,14 @@ pub async fn get_search_results(
 
 pub async fn send_user_info(url: &str, body: UserInfo) -> Result<(), Box<dyn std::error::Error>> {
     let userinfo = serde_json::to_string(&body)?;
-    let _resp = Request::post(url)
-        .header("Content-Type", "application/json")
-        .mode(RequestMode::NoCors)
+    log::info!("{:?}", &userinfo);
+    let resp = Request::post(url)
+        .header("Content-Type", "application/json; charset=UTF-8")
+        .mode(RequestMode::Cors)
         .body(userinfo)
         .send()
         .await?;
+    log::info!("{:?}", &resp);
     Ok(())
 }
 

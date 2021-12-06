@@ -10,7 +10,7 @@ pub mod password_auth;
 pub mod routes;
 pub mod test_stuff;
 
-pub const CORS_ORIGIN: &str = "http://192.168.137.107:8080";
+pub const HOME_ORIGIN: &str = "http://192.168.137.107:8080";
 
 #[derive(Clone)]
 pub struct State {
@@ -33,7 +33,15 @@ impl State {
 }
 
 pub fn make_cors() -> Cors {
-    warp::cors().allow_origin(CORS_ORIGIN).build()
+    warp::cors()
+        .allow_headers(vec!["Content-Type"])
+        .allow_methods(&[
+            warp::http::Method::GET,
+            warp::http::Method::POST,
+            warp::http::Method::OPTIONS,
+        ])
+        .allow_origin(HOME_ORIGIN)
+        .build()
 }
 
 pub async fn make_db_pool() -> Result<SqlitePool> {

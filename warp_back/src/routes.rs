@@ -5,6 +5,7 @@ use imdb_autocomplete::autocomplete_func;
 use shared_stuff::ImdbQuery;
 use shared_stuff::UserInfo;
 use sqlx::SqlitePool;
+use std::collections::HashMap;
 
 use warp::reply::json;
 use warp::Filter;
@@ -32,6 +33,8 @@ pub fn search(
         .and(warp::body::json())
         .and_then(|query: ImdbQuery| async move {
             //log::info!("{:?}", &query);
+            //let new = query.get(&String::from("query")).unwrap().clone();
+            //let umm = ImdbQuery { query: new };
             if let Ok(movie_vec) = autocomplete_func(query).await {
                 log::info!("{:?}", &movie_vec);
                 let json_res = json(&movie_vec);
@@ -48,18 +51,19 @@ pub fn register(
     state: &State,
 ) -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
     warp::path("register")
-        .and(warp::body::json::<UserInfo>())
+        .and(warp::body::json())
         .and(with_db(state.db.clone()))
         .and_then(|user: UserInfo, db: SqlitePool| async move {
-            //let user: UserInfo = serde_json::from_str(
-            //std::str::from_utf8(&u)
-            //.map_err(|e| warp::reject::custom(WarpRejections::UTF8Error))?,
-            //)
-            //.map_err(|e| warp::reject::custom(WarpRejections::SerializationError))?;
             log::info!("{:?}", &user);
             match insert_user(&user, &db).await {
-                Ok(e) => Ok(warp::reply()),
-                Err(e) => Err(warp::reject::not_found()),
+                Ok(e) => {
+                    log::info!("bad user?");
+                    Ok(warp::reply())
+                }
+                Err(e) => {
+                    log::info!("err here");
+                    Err(warp::reject::not_found())
+                }
             }
         })
         .with(&state.cors)
@@ -75,10 +79,17 @@ pub fn login(
             //let user: UserInfo = serde_json::from_str(std::str::from_utf8(&u).unwrap()).unwrap();
             if let Ok(user_info) = check_login(&db, &user.username).await {
                 match verify_pass(user.password, user_info.salt, user_info.hashed_password) {
-                    true => Ok(warp::reply()),
-                    false => Err(warp::reject::not_found()),
+                    true => {
+                        log::info!("got it");
+                        Ok(warp::reply())
+                    }
+                    false => {
+                        log::info!("bad pass");
+                        Err(warp::reject::not_found())
+                    }
                 }
             } else {
+                log::info!("bad login");
                 Err(warp::reject::not_found())
             }
         })

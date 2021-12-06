@@ -4,6 +4,7 @@ use shared_stuff::utils::load_logger;
 
 use warp::Filter;
 
+use warp_back::make_db_pool;
 use warp_back::routes::login;
 use warp_back::routes::register;
 use warp_back::routes::search;
@@ -24,7 +25,7 @@ async fn main() -> Result<()> {
 
     let state = State::init().await;
 
-    let routes = search(&state).or(login(&state)).or(register(&state));
+    let routes = search(&state).or(register(&state)).or(login(&state));
 
     warp::serve(routes).bind(([0, 0, 0, 0], 3030)).await;
     Ok(())

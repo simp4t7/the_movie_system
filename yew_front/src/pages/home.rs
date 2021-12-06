@@ -1,4 +1,5 @@
 use crate::SEARCH_URL;
+use shared_stuff::ImdbQuery;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 
@@ -36,7 +37,8 @@ impl Component for Home {
                 // Shouldn't do it if the text is empty, but handle this better probably...
                 if !text.value.is_empty() {
                     spawn_local(async move {
-                        match get_search_results(SEARCH_URL, text.value.into()).await {
+                        let query = ImdbQuery { query: text.value };
+                        match get_search_results(SEARCH_URL, query).await {
                             Ok(resp) => link_clone.send_message(HomeMsg::UpdateAutocomplete(resp)),
                             Err(err_msg) => {
                                 link_clone.send_message(HomeMsg::Error(err_msg.to_string()))
