@@ -3,14 +3,14 @@ use dotenv::dotenv;
 use dotenv::var;
 use sqlx::SqlitePool;
 
-
 use warp::cors::Cors;
 
 pub mod db_functions;
 pub mod password_auth;
 pub mod routes;
+pub mod test_stuff;
 
-//pub type ArcState = Arc<Mutex<State>>;
+pub const CORS_ORIGIN: &str = "http://192.168.137.107:8080";
 
 #[derive(Clone)]
 pub struct State {
@@ -33,8 +33,7 @@ impl State {
 }
 
 pub fn make_cors() -> Cors {
-    
-    warp::cors().allow_any_origin().build()
+    warp::cors().allow_origin(CORS_ORIGIN).build()
 }
 
 pub async fn make_db_pool() -> Result<SqlitePool> {

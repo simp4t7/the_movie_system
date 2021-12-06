@@ -1,0 +1,31 @@
+Currently 'date_created' and 'date_modified' are the same in the DB.
+-> Sort of done, or good enough for now. Basically there's an unused update function
+-> to change username or password that will utilize date_modified.
+
+Make the username an e-mail?
+-> Done, sort of. Also assigned to MP.
+
+Split up all the stuff in warp into different files.
+-> Done, good enough for now.
+
+Find a way to serve all the routes nicely... Not '.or(login_route)'...
+-> Done, still not great but as good as it gets.
+
+Not sure why sqlite can't take a relative path in the .env file, and can't manually set the env variable
+with std::env::set_var...
+-> Done, sort of. This doesn't have a good solution with github actions
+-> and local testing/running needing different paths. Good enough for now.
+
+Tests don't cleanup DBs when they fail...
+-> Sort of done, they still won't clean up without like a panic handler
+-> which I don't want to deal with, but they will cleanup next time tests
+-> are run. Good enough for now.
+
+NEED TO ADD CORS STUFF
+Ideally this should block everything except communication between Yew and Warp.
+Currently it's set at allow any.
+-> Done, but adds another annoying hardcoded URL to change, maybe...
+-> Yeah, but gonna keep it in for now because will be nice later.
+
+Does warp have to take every reply by bytes? Where's the nice json body methods?
+-> Done, pretty nice and easy.

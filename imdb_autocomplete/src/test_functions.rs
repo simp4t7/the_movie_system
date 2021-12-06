@@ -1,8 +1,9 @@
 use crate::req;
 use reqwest::header::HeaderValue;
+use shared_stuff::ImdbQuery;
 
 pub async fn check_client_connection(
-    input: &str,
+    input: ImdbQuery,
 ) -> Result<reqwest::Response, Box<dyn std::error::Error>> {
     let (search_term, url) = req::build_url(input)?;
     info!("search term is: {}", &search_term);

@@ -1,16 +1,17 @@
+use reqwasm::http::ReferrerPolicy;
 use reqwasm::http::Request;
 use reqwasm::http::RequestMode;
-use shared_stuff::ImageData;
-use shared_stuff::MovieDisplay;
-use shared_stuff::UserInfo;
+use shared_stuff::{ImageData, ImdbQuery, MovieDisplay, UserInfo};
 
 pub async fn get_search_results(
     url: &str,
-    body: String,
+    body: ImdbQuery,
 ) -> Result<Vec<MovieDisplay>, Box<dyn std::error::Error>> {
+    let imdbquery = serde_json::to_string(&body)?;
     let resp = Request::post(url)
-        //.mode(RequestMode::Cors)
-        .body(body)
+        //.referrer_policy(ReferrerPolicy::NoReferrer)
+        .mode(RequestMode::Cors)
+        .body(imdbquery)
         .send()
         .await?
         .json()

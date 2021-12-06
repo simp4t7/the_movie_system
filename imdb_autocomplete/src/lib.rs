@@ -1,3 +1,4 @@
+use shared_stuff::ImdbQuery;
 use shared_stuff::MovieDisplay;
 use std::io::ErrorKind;
 
@@ -10,17 +11,18 @@ extern crate pretty_env_logger;
 extern crate log;
 
 pub async fn autocomplete_func(
-    input: &str,
+    input: ImdbQuery,
 ) -> Result<Vec<MovieDisplay>, Box<dyn std::error::Error>> {
     let (search_term, url) = req::build_url(input)?;
     log::info!("{:?}", &url);
 
     let response = reqwest::get(url).await?;
+    log::info!("{:?}", &response);
     match response.status().is_success() {
         true => {
             let body_string = response.text().await?;
             trace!("{:?}", body_string);
-            let res = res::make_movie_display(&body_string, search_term);
+            let res = res::make_movie_display(body_string, search_term);
             info!("{:?}", &res);
             res
         }

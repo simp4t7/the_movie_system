@@ -1,8 +1,8 @@
 use crate::db_functions::{check_login, insert_user};
-use crate::make_cors;
 use crate::password_auth::verify_pass;
 use crate::State;
 use imdb_autocomplete::autocomplete_func;
+use shared_stuff::ImdbQuery;
 use shared_stuff::UserInfo;
 use sqlx::SqlitePool;
 
@@ -17,36 +17,49 @@ use warp::Filter;
 // results ok -> turn it to json and send it back to yew
 // results bad -> 400 bad request. //TODO currently it's 404
 
+#[derive(Debug)]
+enum WarpRejections {
+    SerializationError,
+    UTF8Error,
+}
+
+impl warp::reject::Reject for WarpRejections {}
+
 pub fn search(
-    _state: &State,
-) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+    state: &State,
+) -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
     warp::path("search")
-        .and(warp::body::bytes())
-        .and_then(|b: bytes::Bytes| async move {
-            if let Ok(movie_vec) = autocomplete_func(std::str::from_utf8(&b).unwrap()).await {
+        .and(warp::body::json())
+        .and_then(|query: ImdbQuery| async move {
+            //log::info!("{:?}", &query);
+            if let Ok(movie_vec) = autocomplete_func(query).await {
                 log::info!("{:?}", &movie_vec);
                 let json_res = json(&movie_vec);
                 Ok(json_res)
             } else {
+                log::info!("error in autocomplete_func?");
                 Err(warp::reject::not_found())
             }
         })
-        .with(make_cors())
+        .with(&state.cors)
 }
 
 pub fn register(
     state: &State,
-) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+) -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
     warp::path("register")
-        .and(warp::body::bytes())
+        .and(warp::body::json::<UserInfo>())
         .and(with_db(state.db.clone()))
-        .and_then(|u: bytes::Bytes, db: SqlitePool| async move {
-            let user: UserInfo = serde_json::from_str(std::str::from_utf8(&u).unwrap()).unwrap();
+        .and_then(|user: UserInfo, db: SqlitePool| async move {
+            //let user: UserInfo = serde_json::from_str(
+            //std::str::from_utf8(&u)
+            //.map_err(|e| warp::reject::custom(WarpRejections::UTF8Error))?,
+            //)
+            //.map_err(|e| warp::reject::custom(WarpRejections::SerializationError))?;
             log::info!("{:?}", &user);
-            if insert_user(&user, &db).await.is_ok() {
-                Ok(warp::reply())
-            } else {
-                Err(warp::reject::not_found())
+            match insert_user(&user, &db).await {
+                Ok(e) => Ok(warp::reply()),
+                Err(e) => Err(warp::reject::not_found()),
             }
         })
         .with(&state.cors)
@@ -54,12 +67,12 @@ pub fn register(
 
 pub fn login(
     state: &State,
-) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+) -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
     warp::path("login")
-        .and(warp::body::bytes())
+        .and(warp::body::json())
         .and(with_db(state.db.clone()))
-        .and_then(|u: bytes::Bytes, db: SqlitePool| async move {
-            let user: UserInfo = serde_json::from_str(std::str::from_utf8(&u).unwrap()).unwrap();
+        .and_then(|user: UserInfo, db: SqlitePool| async move {
+            //let user: UserInfo = serde_json::from_str(std::str::from_utf8(&u).unwrap()).unwrap();
             if let Ok(user_info) = check_login(&db, &user.username).await {
                 match verify_pass(user.password, user_info.salt, user_info.hashed_password) {
                     true => Ok(warp::reply()),

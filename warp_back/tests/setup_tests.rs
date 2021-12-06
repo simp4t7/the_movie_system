@@ -1,68 +1,14 @@
-use anyhow::anyhow;
 use anyhow::Result;
 use shared_stuff::UserInfo;
 use sqlx::migrate::MigrateDatabase;
-use sqlx::query;
 use sqlx::Sqlite;
-use sqlx::SqlitePool;
-use std::fs::remove_file;
 use validator::validate_email;
 use validator::Validate;
 use warp_back::db_functions::{
     check_login, insert_user, select_all_users, select_single_user, update_password,
     update_username,
 };
-
-fn delete_db(db_name: &str) -> Result<()> {
-    let db_str = get_db_url(db_name)?;
-    remove_file(&db_str)?;
-    remove_file(format!("{}-shm", &db_str))?;
-    remove_file(format!("{}-wal", &db_str))?;
-    Ok(())
-}
-
-async fn init_db(db: &SqlitePool) -> Result<()> {
-    let mut conn = db.acquire().await?;
-    query(
-        r#"
-            CREATE TABLE users
-        (
-            id TEXT NOT NULL,
-            username TEXT NOT NULL UNIQUE,
-            hashed_password TEXT not null,
-            salt TEXT not null,
-            date_created DATETIME with time zone not null,
-            date_modified TIMESTAMP with time zone not null
-        );
-"#,
-    )
-    .execute(&mut conn)
-    .await?;
-
-    Ok(())
-}
-
-fn get_db_url(db_name: &str) -> Result<String> {
-    let mut current_dir = std::env::current_dir()?;
-    current_dir.push(db_name);
-    let db_url = current_dir.into_os_string();
-    let db_str = db_url
-        .into_string()
-        .map_err(|e| anyhow!("problem with OsString: {:?}", e))?;
-    Ok(db_str)
-}
-
-async fn setup_new_db(db_name: &str) -> Result<SqlitePool> {
-    let db_str = get_db_url(db_name)?;
-    if Sqlite::database_exists(&db_str).await? {
-        delete_db(db_name)?;
-    }
-    let _new_db = Sqlite::create_database(&db_str).await?;
-    let pool = SqlitePool::connect(&db_str).await.unwrap();
-    init_db(&pool).await?;
-
-    Ok(pool)
-}
+use warp_back::test_stuff::{delete_db, get_db_url, setup_new_db};
 
 // Currently 2 options: each test creates and tearsdown its own DB and runs concurrently.
 // Or, create a single test DB and add to it but run tests single threaded.

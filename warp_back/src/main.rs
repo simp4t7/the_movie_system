@@ -21,7 +21,7 @@ async fn main() -> Result<()> {
     info!("such information");
     warn!("o_O");
     error!("boom");
-    //let state = Arc::new(State::init().await);
+
     let state = State::init().await;
 
     let routes = search(&state).or(login(&state)).or(register(&state));

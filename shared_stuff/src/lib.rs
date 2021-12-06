@@ -1,7 +1,10 @@
 pub mod utils;
+use serde::de::DeserializeOwned;
 pub use serde::{Deserialize, Serialize};
 pub use serde_json::Value;
 use std::fmt;
+use std::marker::PhantomData;
+use std::str::FromStr;
 use validator::Validate;
 use validator::ValidationError;
 
@@ -20,6 +23,24 @@ pub struct UserInfo {
     pub username: String,
     #[validate(custom = "zxcvbn_func")]
     pub password: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ImdbQuery {
+    pub query: String,
+}
+
+impl From<&str> for ImdbQuery {
+    fn from(s: &str) -> Self {
+        Self {
+            query: s.to_string(),
+        }
+    }
+}
+impl From<String> for ImdbQuery {
+    fn from(s: String) -> Self {
+        Self { query: s }
+    }
 }
 
 #[derive(Serialize, Deserialize)]
