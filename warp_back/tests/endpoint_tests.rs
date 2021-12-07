@@ -1,4 +1,6 @@
 use shared_stuff::{ImdbQuery, LoginLookup, UserInfo};
+use warp::Filter;
+use warp_back::error_handling::handle_rejection;
 use warp_back::error_handling::Result;
 use warp_back::error_handling::WarpRejections;
 use warp_back::routes::{login, register, search};
@@ -12,7 +14,7 @@ use warp_back::State;
 async fn check_search() -> Result<()> {
     let db_name = "search_db";
     let state = State::test_init(db_name).await?;
-    let filter = search(&state);
+    let filter = search(&state).recover(handle_rejection);
     let query: ImdbQuery = "Dune".into();
 
     let req = warp::test::request()
@@ -21,6 +23,7 @@ async fn check_search() -> Result<()> {
         .json(&query)
         .reply(&filter)
         .await;
+    println!("{:?}", &req);
     assert!(req.status().is_success());
 
     let query: ImdbQuery = "><#@".into();
@@ -30,6 +33,7 @@ async fn check_search() -> Result<()> {
         .json(&query)
         .reply(&filter)
         .await;
+    println!("{:?}", &req);
     assert!(req.status().is_client_error());
 
     delete_db(db_name)?;

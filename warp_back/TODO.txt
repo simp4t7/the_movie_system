@@ -4,11 +4,6 @@ Need to validate basically all of the incoming info.
 Make passwords be a mix of numbers / letters / symbols?
 -> Assigned to MP.
 
-Handle all of the 'unwrap()'s
--> Adding these together.
-Need good warp error codes and 404 rejections. Also need better 200 status code replies.
--> This is a much bigger issue of proper error handling
--> Currently, I've started... but there's a lot more to be done...
 
 Is it possible to store the Salt and stuff not as Strings in the DB?
 
