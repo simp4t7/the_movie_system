@@ -44,7 +44,11 @@ impl Component for Login {
                     password: self.password.clone(),
                 };
                 spawn_local(async move {
-                    send_user_info(REGISTER_URL, username).await.unwrap();
+                    let resp = send_user_info(REGISTER_URL, username).await;
+                    match resp {
+                        Ok(a) => log::info!("success!"),
+                        Err(e) => log::info!("oh no, {:?}", &e),
+                    }
                 });
             }
             VerifyLogin => {
@@ -53,7 +57,11 @@ impl Component for Login {
                     password: self.password.clone(),
                 };
                 spawn_local(async move {
-                    send_user_info(LOGIN_URL, username).await.unwrap();
+                    let resp = send_user_info(LOGIN_URL, username).await;
+                    match resp {
+                        Ok(a) => log::info!("success!"),
+                        Err(e) => log::info!("oh no, {:?}", &e),
+                    }
                 });
             }
         }

@@ -1,14 +1,17 @@
 pub mod utils;
-use serde::de::DeserializeOwned;
 pub use serde::{Deserialize, Serialize};
 pub use serde_json::Value;
 use std::fmt;
-use std::marker::PhantomData;
-use std::str::FromStr;
 use validator::Validate;
 use validator::ValidationError;
 
 //WHICH STUFF NEEDS TO BE SERIALIZE / DESERIALIZE? ¯\_(-_-)_/¯
+
+#[derive(Serialize)]
+pub struct ErrorMessage {
+    pub code: u16,
+    pub message: String,
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct MovieDisplay {
@@ -43,7 +46,7 @@ impl From<String> for ImdbQuery {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct LoginLookup {
     pub username: String,
     pub hashed_password: String,

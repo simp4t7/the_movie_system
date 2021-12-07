@@ -1,11 +1,13 @@
+use crate::error_handling::Result;
+use crate::error_handling::SqlxError;
+use crate::error_handling::WarpRejections;
 use crate::{make_cors, State};
-use anyhow::anyhow;
-use anyhow::Result;
 use sqlx::migrate::MigrateDatabase;
 use sqlx::query;
 use sqlx::Sqlite;
 use sqlx::SqlitePool;
 use std::fs::remove_file;
+use warp::reject::custom;
 
 impl State {
     pub async fn test_init(db_name: &str) -> Result<Self> {
@@ -17,14 +19,19 @@ impl State {
 
 pub fn delete_db(db_name: &str) -> Result<()> {
     let db_str = get_db_url(db_name)?;
-    remove_file(&db_str)?;
-    remove_file(format!("{}-shm", &db_str))?;
-    remove_file(format!("{}-wal", &db_str))?;
+    remove_file(&db_str).map_err(|e| custom(WarpRejections::Other(e.to_string())))?;
+    remove_file(format!("{}-shm", &db_str))
+        .map_err(|e| custom(WarpRejections::Other(e.to_string())))?;
+    remove_file(format!("{}-wal", &db_str))
+        .map_err(|e| custom(WarpRejections::Other(e.to_string())))?;
     Ok(())
 }
 
 pub async fn init_db(db: &SqlitePool) -> Result<()> {
-    let mut conn = db.acquire().await?;
+    let mut conn = db
+        .acquire()
+        .await
+        .map_err(|e| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
     query(
         r#"
             CREATE TABLE users
@@ -39,28 +46,37 @@ pub async fn init_db(db: &SqlitePool) -> Result<()> {
 "#,
     )
     .execute(&mut conn)
-    .await?;
+    .await
+    .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::CreateTableError)))?;
 
     Ok(())
 }
 
 pub fn get_db_url(db_name: &str) -> Result<String> {
-    let mut current_dir = std::env::current_dir()?;
+    let mut current_dir =
+        std::env::current_dir().map_err(|e| custom(WarpRejections::Other(e.to_string())))?;
     current_dir.push(db_name);
     let db_url = current_dir.into_os_string();
     let db_str = db_url
         .into_string()
-        .map_err(|e| anyhow!("problem with OsString: {:?}", e))?;
+        .map_err(|e| custom(WarpRejections::Other(format!("{:?}", e))))?;
     Ok(db_str)
 }
 
 pub async fn setup_new_db(db_name: &str) -> Result<SqlitePool> {
     let db_str = get_db_url(db_name)?;
-    if Sqlite::database_exists(&db_str).await? {
+    if Sqlite::database_exists(&db_str)
+        .await
+        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?
+    {
         delete_db(db_name)?;
     }
-    let _new_db = Sqlite::create_database(&db_str).await?;
-    let pool = SqlitePool::connect(&db_str).await.unwrap();
+    let _new_db = Sqlite::create_database(&db_str)
+        .await
+        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::CreateDBError)))?;
+    let pool = SqlitePool::connect(&db_str)
+        .await
+        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
     init_db(&pool).await?;
 
     Ok(pool)

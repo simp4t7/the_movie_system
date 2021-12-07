@@ -1,13 +1,16 @@
-use anyhow::Result;
 use shared_stuff::UserInfo;
 use sqlx::migrate::MigrateDatabase;
 use sqlx::Sqlite;
 use validator::validate_email;
 use validator::Validate;
+use warp::reject::custom;
 use warp_back::db_functions::{
     check_login, insert_user, select_all_users, select_single_user, update_password,
     update_username,
 };
+use warp_back::error_handling::Result;
+use warp_back::error_handling::SqlxError;
+use warp_back::error_handling::WarpRejections;
 use warp_back::test_stuff::{delete_db, get_db_url, setup_new_db};
 
 // Currently 2 options: each test creates and tearsdown its own DB and runs concurrently.
@@ -20,7 +23,9 @@ use warp_back::test_stuff::{delete_db, get_db_url, setup_new_db};
 async fn create_db() -> Result<()> {
     let db_name = "test_db_1";
     let _new_db = setup_new_db(db_name).await?;
-    assert!(Sqlite::database_exists(&get_db_url(db_name)?).await?);
+    assert!(Sqlite::database_exists(&get_db_url(db_name)?)
+        .await
+        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?);
     delete_db(db_name)?;
 
     Ok(())
@@ -31,7 +36,9 @@ async fn create_db() -> Result<()> {
 async fn insert_new_user() -> Result<()> {
     let db_name = "test_db_2";
     let new_db = setup_new_db(db_name).await?;
-    assert!(Sqlite::database_exists(&get_db_url(db_name)?).await?);
+    assert!(Sqlite::database_exists(&get_db_url(db_name)?)
+        .await
+        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?);
     let new_user = UserInfo {
         username: "Indiana".to_string(),
         password: "password123".to_string(),
@@ -56,7 +63,10 @@ async fn duplicate_new_user() -> Result<()> {
     insert_user(&new_user, &new_db).await?;
     let duplicate = insert_user(&new_user, &new_db).await;
     println!("{:?}", &duplicate);
-    assert!(duplicate.unwrap_err().to_string() == "username already taken, choose another");
+    assert!(
+        duplicate.unwrap_err().find::<WarpRejections>()
+            == Some(&WarpRejections::SqlxRejection(SqlxError::InsertUserError))
+    );
     let user_vec = select_all_users(&new_db).await?;
     assert!(user_vec.len() == 1);
     delete_db(db_name)?;
@@ -169,7 +179,7 @@ async fn check_validation_function() -> Result<()> {
 }
 #[tokio::test]
 // Check that the change username function works as expected
-async fn check_change_username() -> Result<(), Box<dyn std::error::Error>> {
+async fn check_change_username() -> Result<()> {
     let db_name = "test_db_11";
     let new_db = setup_new_db(db_name).await?;
     let new_user_1 = UserInfo {
@@ -191,7 +201,7 @@ async fn check_change_username() -> Result<(), Box<dyn std::error::Error>> {
 
 #[tokio::test]
 // Check that the change password function works as expected
-async fn check_change_password() -> Result<(), Box<dyn std::error::Error>> {
+async fn check_change_password() -> Result<()> {
     let db_name = "test_db_12";
     let new_db = setup_new_db(db_name).await?;
     let new_user_1 = UserInfo {

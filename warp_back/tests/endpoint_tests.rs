@@ -1,5 +1,6 @@
-use anyhow::Result;
-use shared_stuff::{LoginLookup, UserInfo};
+use shared_stuff::{ImdbQuery, LoginLookup, UserInfo};
+use warp_back::error_handling::Result;
+use warp_back::error_handling::WarpRejections;
 use warp_back::routes::{login, register, search};
 use warp_back::test_stuff::delete_db;
 use warp_back::State;
@@ -12,18 +13,21 @@ async fn check_search() -> Result<()> {
     let db_name = "search_db";
     let state = State::test_init(db_name).await?;
     let filter = search(&state);
-    let req = warp::test::request()
-        .method("POST")
-        .path("/search")
-        .body("Dune")
-        .reply(&filter)
-        .await;
-    //assert!(req.status().is_success());
+    let query: ImdbQuery = "Dune".into();
 
     let req = warp::test::request()
         .method("POST")
         .path("/search")
-        .body("><#@")
+        .json(&query)
+        .reply(&filter)
+        .await;
+    assert!(req.status().is_success());
+
+    let query: ImdbQuery = "><#@".into();
+    let req = warp::test::request()
+        .method("POST")
+        .path("/search")
+        .json(&query)
         .reply(&filter)
         .await;
     assert!(req.status().is_client_error());
@@ -46,7 +50,7 @@ async fn check_register() -> Result<()> {
     let req = warp::test::request()
         .method("POST")
         .path("/register")
-        .body(serde_json::to_string(&new_user_1)?)
+        .json(&new_user_1)
         .reply(&filter)
         .await;
     assert!(req.status().is_success());
@@ -59,11 +63,11 @@ async fn check_register() -> Result<()> {
     let req = warp::test::request()
         .method("POST")
         .path("/register")
-        .body(serde_json::to_string(&new_user_2)?)
+        .json(&new_user_2)
         .reply(&filter)
         .await;
-    //println!("{:?}", &req);
-    assert!(req.status().as_u16() == 400);
+    println!("{:?}", &req);
+    //assert!(req.into_body().is_err());
 
     delete_db(db_name)?;
 
@@ -82,7 +86,7 @@ async fn check_login() -> Result<()> {
     let req = warp::test::request()
         .method("POST")
         .path("/register")
-        .body(serde_json::to_string(&new_user_1)?)
+        .json(&new_user_1)
         .reply(&filter)
         .await;
     assert!(req.status().as_u16() == 200);
@@ -91,7 +95,7 @@ async fn check_login() -> Result<()> {
     let req = warp::test::request()
         .method("POST")
         .path("/login")
-        .body(serde_json::to_string(&new_user_1)?)
+        .json(&new_user_1)
         .reply(&login_filter)
         .await;
     assert!(req.status().as_u16() == 200);

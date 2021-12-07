@@ -6,6 +6,7 @@ use sqlx::SqlitePool;
 use warp::cors::Cors;
 
 pub mod db_functions;
+pub mod error_handling;
 pub mod password_auth;
 pub mod routes;
 pub mod test_stuff;
@@ -19,10 +20,10 @@ pub struct State {
 }
 
 impl State {
-    pub async fn init() -> Self {
-        let db = make_db_pool().await.unwrap();
+    pub async fn init() -> Result<Self> {
+        let db = make_db_pool().await?;
         let cors = make_cors();
-        Self { db, cors }
+        Ok(Self { db, cors })
     }
     pub fn db(&self) -> &SqlitePool {
         &self.db
@@ -47,6 +48,6 @@ pub fn make_cors() -> Cors {
 pub async fn make_db_pool() -> Result<SqlitePool> {
     dotenv()?;
 
-    let pool = SqlitePool::connect(&var("DATABASE_URL")?).await.unwrap();
+    let pool = SqlitePool::connect(&var("DATABASE_URL")?).await?;
     Ok(pool)
 }

@@ -29,3 +29,12 @@ Currently it's set at allow any.
 
 Does warp have to take every reply by bytes? Where's the nice json body methods?
 -> Done, pretty nice and easy.
+
+
+Handle all of the 'unwrap()'s
+-> Adding these together.
+Need good warp error codes and 404 rejections. Also need better 200 status code replies.
+-> This is a much bigger issue of proper error handling
+-> Currently, I've started... but there's a lot more to be done...
+
+-> Pretty much done, or at least the framework to handle it nicely.

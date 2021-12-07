@@ -1,34 +1,17 @@
-use anyhow::anyhow;
-use anyhow::Error;
-use anyhow::Result;
-
 use crate::password_auth::verify_pass;
 
+use crate::error_handling::Result;
+use crate::error_handling::SqlxError;
+use crate::error_handling::WarpRejections;
 use shared_stuff::LoginLookup;
 use shared_stuff::UserInfo;
 use sqlx::types::chrono::NaiveDateTime;
 use sqlx::SqlitePool;
 use sqlx::{query, query_as};
 use uuid::Uuid;
+use warp::reject::custom;
 
 use crate::password_auth::hasher;
-
-#[derive(Debug)]
-pub enum CustomError<'a> {
-    DBError(&'a str),
-    Other(&'a str),
-}
-
-impl<'a> std::error::Error for CustomError<'a> {}
-
-impl<'a> std::fmt::Display for CustomError<'a> {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match *self {
-            CustomError::DBError(msg) => write!(f, "{}", msg),
-            CustomError::Other(msg) => write!(f, "{}", msg),
-        }
-    }
-}
 
 #[derive(Debug)]
 pub struct User {
@@ -40,20 +23,11 @@ pub struct User {
     pub date_modified: NaiveDateTime,
 }
 
-// what we get back from after looking up the login in the db and then we verify
-
-pub fn map_sqlite_err(err: sqlx::Error) -> Error {
-    if let Some(code) = err.into_database_error().unwrap().code() {
-        match &*code {
-            "2067" => anyhow!("username already taken, choose another"),
-            _ => anyhow!("umm, another error?"),
-        }
-    } else {
-        unreachable!();
-    }
-}
-
-pub async fn select_single_user(db_pool: &SqlitePool, username: &str) -> Result<User> {
+pub async fn select_single_user(db: &SqlitePool, username: &str) -> Result<User> {
+    let mut conn = db
+        .acquire()
+        .await
+        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
     let user = query_as!(
         User,
         r#"
@@ -63,13 +37,18 @@ pub async fn select_single_user(db_pool: &SqlitePool, username: &str) -> Result<
         "#,
         username
     )
-    .fetch_one(db_pool)
-    .await?;
+    .fetch_one(&mut conn)
+    .await
+    .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::FetchUserError)))?;
 
     Ok(user)
 }
 
-pub async fn check_login(db_pool: &SqlitePool, username: &str) -> Result<LoginLookup> {
+pub async fn check_login(db: &SqlitePool, username: &str) -> Result<LoginLookup> {
+    let mut conn = db
+        .acquire()
+        .await
+        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
     let user_info = query_as!(
         LoginLookup,
         r#"
@@ -79,22 +58,32 @@ pub async fn check_login(db_pool: &SqlitePool, username: &str) -> Result<LoginLo
         "#,
         username
     )
-    .fetch_one(db_pool)
-    .await?;
+    .fetch_one(&mut conn)
+    .await
+    .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::CheckLoginError)))?;
 
     Ok(user_info)
 }
 
 pub async fn select_all_users(db: &SqlitePool) -> Result<Vec<User>> {
-    let _conn = db.acquire().await?;
+    let mut conn = db
+        .acquire()
+        .await
+        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
     let user = query_as!(
         User,
         r#"
         select * from users;
         "#
     )
-    .fetch_all(db)
-    .await?;
+    .fetch_all(&mut conn)
+    .await
+    .map_err(|_| {
+        custom(WarpRejections::SqlxRejection(
+            SqlxError::SelectAllUsersError,
+        ))
+    })?;
+
     Ok(user)
 }
 
@@ -103,16 +92,23 @@ pub async fn update_password(
     old_user: &UserInfo,
     new_user: &UserInfo,
 ) -> Result<()> {
-    let mut conn = db.acquire().await?;
+    let mut conn = db
+        .acquire()
+        .await
+        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
     let now = sqlx::types::chrono::Utc::now();
     if let Ok(user_info) = check_login(db, &old_user.username).await {
         match verify_pass(
             old_user.password.clone(),
             user_info.salt,
             user_info.hashed_password,
-        ) {
+        )
+        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::VerifyPassError)))?
+        {
             true => {
-                let (new_hashed_password, new_salt) = hasher(&new_user.password).await?;
+                let (new_hashed_password, new_salt) = hasher(&new_user.password)
+                    .await
+                    .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::HasherError)))?;
                 query!(
                     r#"
 
@@ -129,14 +125,15 @@ pub async fn update_password(
                     old_user.username,
                 )
                 .execute(&mut conn)
-                .await?;
+                .await
+                .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
             }
             false => {
-                anyhow!("incorrect password, cannot update username");
+                custom(WarpRejections::SqlxRejection(SqlxError::VerifyPassError));
             }
         }
     } else {
-        anyhow!("user is not in the database");
+        custom(WarpRejections::SqlxRejection(SqlxError::CheckLoginError));
     }
     Ok(())
 }
@@ -146,14 +143,19 @@ pub async fn update_username(
     old_user: &UserInfo,
     new_user: &UserInfo,
 ) -> Result<()> {
-    let mut conn = db.acquire().await?;
+    let mut conn = db
+        .acquire()
+        .await
+        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
     let now = sqlx::types::chrono::Utc::now();
     if let Ok(user_info) = check_login(db, &old_user.username).await {
         match verify_pass(
             old_user.password.clone(),
             user_info.salt,
             user_info.hashed_password,
-        ) {
+        )
+        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::VerifyPassError)))?
+        {
             true => {
                 query!(
                     r#"
@@ -169,23 +171,29 @@ pub async fn update_username(
                     old_user.username,
                 )
                 .execute(&mut conn)
-                .await?;
+                .await
+                .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
             }
             false => {
-                anyhow!("incorrect password, cannot update username");
+                custom(WarpRejections::SqlxRejection(SqlxError::VerifyPassError));
             }
         }
     } else {
-        anyhow!("user is not in the database");
+        custom(WarpRejections::SqlxRejection(SqlxError::CheckLoginError));
     }
     Ok(())
 }
 
 pub async fn insert_user(user: &UserInfo, db: &SqlitePool) -> Result<()> {
-    let mut conn = db.acquire().await?;
+    let mut conn = db
+        .acquire()
+        .await
+        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
     let now = sqlx::types::chrono::Utc::now();
     let uuid = Uuid::new_v4().to_string();
-    let (password_hash, salt) = hasher(&user.password).await?;
+    let (password_hash, salt) = hasher(&user.password)
+        .await
+        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::HasherError)))?;
     query!(
         r#"
 
@@ -202,9 +210,9 @@ pub async fn insert_user(user: &UserInfo, db: &SqlitePool) -> Result<()> {
     )
     .execute(&mut conn)
     .await
-    .map_err(map_sqlite_err)?;
+    .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::InsertUserError)))?;
 
-    let _users: Vec<User> = select_all_users(db).await?;
+    //let _users: Vec<User> = select_all_users(db).await?;
 
     Ok(())
 }
