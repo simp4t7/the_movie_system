@@ -1,7 +1,7 @@
 use imdb_autocomplete::autocomplete_func;
 use imdb_autocomplete::test_functions::check_client_connection;
 use imdb_autocomplete::test_functions::status_and_headers;
-use shared_stuff::ImdbQuery;
+
 
 use shared_stuff::utils::load_logger;
 use shared_stuff::MovieDisplay;

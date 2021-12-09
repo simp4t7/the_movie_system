@@ -31,7 +31,7 @@ pub async fn init_db(db: &SqlitePool) -> Result<()> {
     let mut conn = db
         .acquire()
         .await
-        .map_err(|e| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
+        .map_err(|_e| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
     query(
         r#"
             CREATE TABLE users

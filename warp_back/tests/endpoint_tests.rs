@@ -3,7 +3,7 @@ use shared_stuff::{ErrorMessage, ImdbQuery, LoginLookup, UserInfo};
 use warp::Filter;
 use warp_back::error_handling::handle_rejection;
 use warp_back::error_handling::Result;
-use warp_back::error_handling::WarpRejections;
+
 use warp_back::routes::{login, register, search};
 use warp_back::test_stuff::delete_db;
 use warp_back::State;

@@ -4,10 +4,10 @@ use shared_stuff::utils::load_logger;
 
 use warp::Filter;
 
-use dotenv::dotenv;
-use dotenv::var;
+
+
 use warp_back::error_handling::handle_rejection;
-use warp_back::make_db_pool;
+
 use warp_back::routes::login;
 use warp_back::routes::register;
 use warp_back::routes::search;

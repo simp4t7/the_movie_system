@@ -1,4 +1,4 @@
-use reqwasm::http::ReferrerPolicy;
+
 use reqwasm::http::Request;
 use reqwasm::http::RequestMode;
 use shared_stuff::{ImageData, ImdbQuery, MovieDisplay, UserInfo};

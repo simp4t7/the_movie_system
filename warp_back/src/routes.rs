@@ -8,7 +8,7 @@ use shared_stuff::UserInfo;
 use sqlx::SqlitePool;
 use warp::reject::custom;
 
-use crate::error_handling::handle_rejection;
+
 use crate::error_handling::AuthError;
 use crate::error_handling::SqlxError;
 use warp::reply::json;
@@ -49,8 +49,8 @@ pub fn register(
         .and_then(|user: UserInfo, db: SqlitePool| async move {
             log::info!("{:?}", &user);
             match insert_user(&user, &db).await {
-                Ok(e) => Ok(warp::reply()),
-                Err(e) => Err(custom(WarpRejections::SqlxRejection(
+                Ok(_e) => Ok(warp::reply()),
+                Err(_e) => Err(custom(WarpRejections::SqlxRejection(
                     SqlxError::InsertUserError,
                 ))),
             }

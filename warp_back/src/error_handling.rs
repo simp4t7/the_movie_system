@@ -1,6 +1,6 @@
 use http::status::StatusCode;
 use shared_stuff::ErrorMessage;
-use warp::filters::body::BodyDeserializeError;
+
 use warp::reject::Rejection;
 use warp::reply::Reply;
 
@@ -44,7 +44,7 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl Reply> {
     if let Some(e) = err.find::<WarpRejections>() {
         code = StatusCode::BAD_REQUEST;
         message = format!("{:?}", e);
-    } else if let Some(e) = err.find::<warp::filters::body::BodyDeserializeError>() {
+    } else if let Some(_e) = err.find::<warp::filters::body::BodyDeserializeError>() {
         code = StatusCode::BAD_REQUEST;
         message = format!("{:?}", WarpRejections::BodyDeserializeError);
     } else {

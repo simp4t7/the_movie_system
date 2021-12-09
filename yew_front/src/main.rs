@@ -1,9 +1,11 @@
+use crate::jwt::token_stuff;
 use lazy_static::lazy_static;
 use load_dotenv::load_dotenv;
 use yew::prelude::*;
 use yew_router::prelude::*;
 
 pub mod html_gen;
+pub mod jwt;
 pub mod pages;
 pub mod utils;
 
@@ -86,6 +88,8 @@ pub fn router_function() -> Html {
 }
 
 fn main() {
+    //let x = token_stuff();
+    //log::info!("{:?}", &x);
     wasm_logger::init(wasm_logger::Config::default());
     yew::start_app::<App>();
 }

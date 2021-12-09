@@ -46,7 +46,7 @@ impl Component for Login {
                 spawn_local(async move {
                     let resp = send_user_info(&REGISTER_URL, username).await;
                     match resp {
-                        Ok(a) => log::info!("success!"),
+                        Ok(_a) => log::info!("success!"),
                         Err(e) => log::info!("oh no, {:?}", &e),
                     }
                 });
@@ -59,7 +59,7 @@ impl Component for Login {
                 spawn_local(async move {
                     let resp = send_user_info(&LOGIN_URL, username).await;
                     match resp {
-                        Ok(a) => log::info!("success!"),
+                        Ok(_) => log::info!("success!"),
                         Err(e) => log::info!("oh no, {:?}", &e),
                     }
                 });
