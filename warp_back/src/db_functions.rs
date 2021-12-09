@@ -1,8 +1,6 @@
 use crate::password_auth::verify_pass;
 
-use crate::error_handling::Result;
-use crate::error_handling::SqlxError;
-use crate::error_handling::WarpRejections;
+use crate::error_handling::{AuthError, Result, SqlxError, WarpRejections};
 use shared_stuff::LoginLookup;
 use shared_stuff::UserInfo;
 use sqlx::types::chrono::NaiveDateTime;
@@ -102,13 +100,9 @@ pub async fn update_password(
             old_user.password.clone(),
             user_info.salt,
             user_info.hashed_password,
-        )
-        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::VerifyPassError)))?
-        {
+        )? {
             true => {
-                let (new_hashed_password, new_salt) = hasher(&new_user.password)
-                    .await
-                    .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::HasherError)))?;
+                let (new_hashed_password, new_salt) = hasher(&new_user.password).await?;
                 query!(
                     r#"
 
@@ -129,7 +123,7 @@ pub async fn update_password(
                 .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
             }
             false => {
-                custom(WarpRejections::SqlxRejection(SqlxError::VerifyPassError));
+                custom(WarpRejections::AuthRejection(AuthError::VerifyError));
             }
         }
     } else {
@@ -153,9 +147,7 @@ pub async fn update_username(
             old_user.password.clone(),
             user_info.salt,
             user_info.hashed_password,
-        )
-        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::VerifyPassError)))?
-        {
+        )? {
             true => {
                 query!(
                     r#"
@@ -175,7 +167,7 @@ pub async fn update_username(
                 .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
             }
             false => {
-                custom(WarpRejections::SqlxRejection(SqlxError::VerifyPassError));
+                custom(WarpRejections::AuthRejection(AuthError::VerifyError));
             }
         }
     } else {
@@ -191,9 +183,7 @@ pub async fn insert_user(user: &UserInfo, db: &SqlitePool) -> Result<()> {
         .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
     let now = sqlx::types::chrono::Utc::now();
     let uuid = Uuid::new_v4().to_string();
-    let (password_hash, salt) = hasher(&user.password)
-        .await
-        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::HasherError)))?;
+    let (password_hash, salt) = hasher(&user.password).await?;
     query!(
         r#"
 

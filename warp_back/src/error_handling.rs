@@ -1,5 +1,6 @@
 use http::status::StatusCode;
 use shared_stuff::ErrorMessage;
+use warp::filters::body::BodyDeserializeError;
 use warp::reject::Rejection;
 use warp::reply::Reply;
 
@@ -30,7 +31,6 @@ pub enum SqlxError {
     DBConnectionError,
     CheckLoginError,
     SelectAllUsersError,
-    VerifyPassError,
     HasherError,
     Other,
 }
@@ -44,6 +44,9 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl Reply> {
     if let Some(e) = err.find::<WarpRejections>() {
         code = StatusCode::BAD_REQUEST;
         message = format!("{:?}", e);
+    } else if let Some(e) = err.find::<warp::filters::body::BodyDeserializeError>() {
+        code = StatusCode::BAD_REQUEST;
+        message = format!("{:?}", WarpRejections::BodyDeserializeError);
     } else {
         code = StatusCode::INTERNAL_SERVER_ERROR;
         message = format!("unhandled error: {:?}", err);

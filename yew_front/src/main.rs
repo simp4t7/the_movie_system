@@ -1,3 +1,5 @@
+use lazy_static::lazy_static;
+use load_dotenv::load_dotenv;
 use yew::prelude::*;
 use yew_router::prelude::*;
 
@@ -8,12 +10,20 @@ pub mod utils;
 use pages::home::Home;
 use pages::login::Login;
 
-pub const SEARCH_URL: &str = "http://192.168.137.107:3030/search";
-pub const LOGIN_URL: &str = "http://192.168.137.107:3030/login";
-pub const REGISTER_URL: &str = "http://192.168.137.107:3030/register";
-//pub const SEARCH_URL: &str = "http://0.0.0.0:3030/search";
-//pub const LOGIN_URL: &str = "http://0.0.0.0:3030/login";
-//pub const REGISTER_URL: &str = "http://0.0.0.0:3030/register";
+lazy_static! {
+    pub static ref SEARCH_URL: &'static str = {
+        load_dotenv!();
+        env!("SEARCH_URL")
+    };
+    pub static ref LOGIN_URL: &'static str = {
+        load_dotenv!();
+        env!("LOGIN_URL")
+    };
+    pub static ref REGISTER_URL: &'static str = {
+        load_dotenv!();
+        env!("REGISTER_URL")
+    };
+}
 
 #[derive(Switch, Clone)]
 pub enum Route {

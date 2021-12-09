@@ -1,8 +1,7 @@
-DONE 
-
 Some weird error when you search and then fully delete the search...
-
-TODO 
+-> Done, but still some weird stuff with the search results order.
+-> Sometimes displays empty results because of the first search returning
+-> later than the others...
 
 Sometimes the responses come in out of order maybe? Not sure, but worth checking on. 
 

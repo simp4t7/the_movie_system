@@ -4,6 +4,8 @@ use shared_stuff::utils::load_logger;
 
 use warp::Filter;
 
+use dotenv::dotenv;
+use dotenv::var;
 use warp_back::error_handling::handle_rejection;
 use warp_back::make_db_pool;
 use warp_back::routes::login;
@@ -29,7 +31,8 @@ async fn main() -> Result<()> {
     let routes = search(&state)
         .or(register(&state))
         .or(login(&state))
-        .recover(handle_rejection);
+        .recover(handle_rejection)
+        .with(&state.cors);
 
     warp::serve(routes).bind(([0, 0, 0, 0], 3030)).await;
     Ok(())

@@ -25,7 +25,7 @@ async fn create_db() -> Result<()> {
     let _new_db = setup_new_db(db_name).await?;
     assert!(Sqlite::database_exists(&get_db_url(db_name)?)
         .await
-        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?);
+        .unwrap());
     delete_db(db_name)?;
 
     Ok(())
@@ -38,7 +38,7 @@ async fn insert_new_user() -> Result<()> {
     let new_db = setup_new_db(db_name).await?;
     assert!(Sqlite::database_exists(&get_db_url(db_name)?)
         .await
-        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?);
+        .unwrap());
     let new_user = UserInfo {
         username: "Indiana".to_string(),
         password: "password123".to_string(),

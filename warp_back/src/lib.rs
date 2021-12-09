@@ -1,6 +1,7 @@
 use anyhow::Result;
 use dotenv::dotenv;
 use dotenv::var;
+use lazy_static::lazy_static;
 use sqlx::SqlitePool;
 
 use warp::cors::Cors;
@@ -11,12 +12,17 @@ pub mod password_auth;
 pub mod routes;
 pub mod test_stuff;
 
-pub const HOME_ORIGIN: &str = "http://192.168.137.107:8080";
+lazy_static! {
+    static ref CORS_ORIGIN: String = {
+        dotenv();
+        dotenv::var("CORS_ORIGIN").unwrap()
+    };
+}
 
 #[derive(Clone)]
 pub struct State {
-    db: SqlitePool,
-    cors: Cors,
+    pub db: SqlitePool,
+    pub cors: Cors,
 }
 
 impl State {
@@ -41,13 +47,12 @@ pub fn make_cors() -> Cors {
             warp::http::Method::POST,
             warp::http::Method::OPTIONS,
         ])
-        .allow_origin(HOME_ORIGIN)
+        .allow_origin(CORS_ORIGIN.as_str())
         .build()
 }
 
 pub async fn make_db_pool() -> Result<SqlitePool> {
     dotenv()?;
-
     let pool = SqlitePool::connect(&var("DATABASE_URL")?).await?;
     Ok(pool)
 }

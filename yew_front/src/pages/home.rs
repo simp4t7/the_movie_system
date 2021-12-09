@@ -38,7 +38,7 @@ impl Component for Home {
                 if !text.value.is_empty() {
                     spawn_local(async move {
                         let query = ImdbQuery { query: text.value };
-                        match get_search_results(SEARCH_URL, query).await {
+                        match get_search_results(&SEARCH_URL, query).await {
                             Ok(resp) => link_clone.send_message(HomeMsg::UpdateAutocomplete(resp)),
                             Err(err_msg) => {
                                 link_clone.send_message(HomeMsg::Error(err_msg.to_string()))
