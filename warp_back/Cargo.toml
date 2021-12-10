@@ -23,6 +23,7 @@ ctor = "0.1.21"
 validator = "0.14.0"
 anyhow = "1.0.51"
 lazy_static = "1.4.0"
+jsonwebtoken = "7.2.0"
 
 [dev-dependencies]
 validator = { version = "0.14", features = ["derive"]  }

@@ -1,4 +1,4 @@
-use crate::password_auth::verify_pass;
+use crate::auth::verify_pass;
 
 use crate::error_handling::{AuthError, Result, SqlxError, WarpRejections};
 use shared_stuff::LoginLookup;
@@ -9,7 +9,7 @@ use sqlx::{query, query_as};
 use uuid::Uuid;
 use warp::reject::custom;
 
-use crate::password_auth::hasher;
+use crate::auth::hasher;
 
 #[derive(Debug)]
 pub struct User {

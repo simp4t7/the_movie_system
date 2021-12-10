@@ -1,4 +1,5 @@
-use crate::jwt::token_stuff;
+use dotenv::dotenv;
+use dotenv::var;
 use lazy_static::lazy_static;
 use load_dotenv::load_dotenv;
 use yew::prelude::*;
@@ -33,6 +34,8 @@ pub enum Route {
     Login,
     #[to = "/"]
     Home,
+    #[to = "/404"]
+    NotFound,
 }
 struct App {}
 
@@ -78,18 +81,19 @@ pub fn nav_bar() -> Html {
 }
 
 pub fn router_function() -> Html {
-    html! {                <Router<Route>
-    render = Router::render(|switch: Route| {
+    html! {
+    <Router<Route>
+        render = Router::render(|switch: Route| {
         match switch {
             Route::Home => html!{<Home/>},
             Route::Login => html!{<Login/>},
+            //TODO! something for bad urls?
+            Route::NotFound => html!{},
         }})/>
     }
 }
 
 fn main() {
-    //let x = token_stuff();
-    //log::info!("{:?}", &x);
     wasm_logger::init(wasm_logger::Config::default());
     yew::start_app::<App>();
 }

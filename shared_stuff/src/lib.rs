@@ -8,6 +8,12 @@ use validator::ValidationError;
 //WHICH STUFF NEEDS TO BE SERIALIZE / DESERIALIZE? ¯\_(-_-)_/¯
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct Claims {
+    pub username: String,
+    pub exp: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ErrorMessage {
     pub code: u16,
     pub message: String,

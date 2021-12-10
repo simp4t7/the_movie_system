@@ -6,9 +6,9 @@ use sqlx::SqlitePool;
 
 use warp::cors::Cors;
 
+pub mod auth;
 pub mod db_functions;
 pub mod error_handling;
-pub mod password_auth;
 pub mod routes;
 pub mod test_stuff;
 
@@ -41,13 +41,15 @@ impl State {
 
 pub fn make_cors() -> Cors {
     warp::cors()
-        .allow_headers(vec!["Content-Type"])
+        .allow_headers(vec!["content-type", "authorization"])
         .allow_methods(&[
             warp::http::Method::GET,
             warp::http::Method::POST,
             warp::http::Method::OPTIONS,
         ])
         .allow_origin(CORS_ORIGIN.as_str())
+        .allow_credentials(true)
+        .expose_header("authorization")
         .build()
 }
 

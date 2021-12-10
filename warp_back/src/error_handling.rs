@@ -19,6 +19,7 @@ pub enum WarpRejections {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum AuthError {
+    TokenError,
     HasherError,
     VerifyError,
 }

@@ -1,12 +1,10 @@
-
+use anyhow::anyhow;
+use anyhow::Result;
 use reqwasm::http::Request;
 use reqwasm::http::RequestMode;
 use shared_stuff::{ImageData, ImdbQuery, MovieDisplay, UserInfo};
 
-pub async fn get_search_results(
-    url: &str,
-    body: ImdbQuery,
-) -> Result<Vec<MovieDisplay>, Box<dyn std::error::Error>> {
+pub async fn get_search_results(url: &str, body: ImdbQuery) -> Result<Vec<MovieDisplay>> {
     let imdbquery = serde_json::to_string(&body)?;
     let resp = Request::post(url)
         .header("content-type", "application/json; charset=UTF-8")
@@ -19,7 +17,7 @@ pub async fn get_search_results(
     Ok(resp)
 }
 
-pub async fn send_user_info(url: &str, body: UserInfo) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn register_request(url: &str, body: UserInfo) -> Result<()> {
     let userinfo = serde_json::to_string(&body)?;
     log::info!("{:?}", &userinfo);
     let resp = Request::post(url)
@@ -32,6 +30,28 @@ pub async fn send_user_info(url: &str, body: UserInfo) -> Result<(), Box<dyn std
     //.await?;
     log::info!("{:?}", &resp);
     Ok(())
+}
+
+pub async fn login_request(url: &str, body: UserInfo) -> Result<String> {
+    let userinfo = serde_json::to_string(&body)?;
+    log::info!("{:?}", &userinfo);
+    let resp = Request::post(url)
+        .header("content-type", "application/json; charset=UTF-8")
+        .mode(RequestMode::Cors)
+        .body(userinfo)
+        .send()
+        .await?;
+
+    let auth_value = resp
+        .headers()
+        .get("authorization")
+        .map_err(|e| anyhow!("header error: {:?}", e))?;
+
+    if let Some(token) = auth_value {
+        return Ok(token);
+    } else {
+        return Err(anyhow!("token error: {:?}", auth_value));
+    }
 }
 
 //Need something if there's no picture or poster...

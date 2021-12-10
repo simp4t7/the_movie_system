@@ -1,14 +1,15 @@
+use crate::auth::verify_pass;
 use crate::db_functions::{check_login, insert_user};
 use crate::error_handling::WarpRejections;
-use crate::password_auth::verify_pass;
 use crate::State;
 use imdb_autocomplete::autocomplete_func;
 use shared_stuff::ImdbQuery;
 use shared_stuff::UserInfo;
 use sqlx::SqlitePool;
 use warp::reject::custom;
+use warp::reply::Reply;
 
-
+use crate::auth::generate_jwt;
 use crate::error_handling::AuthError;
 use crate::error_handling::SqlxError;
 use warp::reply::json;
@@ -66,15 +67,19 @@ pub fn login(
         .and(with_db(state.db.clone()))
         .and_then(|user: UserInfo, db: SqlitePool| async move {
             let user_info = check_login(&db, &user.username).await?;
+            let token = generate_jwt(user_info.username.clone())?;
             log::info!("user_info: {:?}", &user_info);
             match verify_pass(user.password, user_info.salt, user_info.hashed_password)? {
-                true => Ok(warp::reply()),
+                true => Ok(
+                    warp::reply::with_header(warp::reply(), "authorization", token).into_response(),
+                ),
                 false => Err(custom(WarpRejections::AuthRejection(
                     AuthError::VerifyError,
                 ))),
             }
         })
         .with(&state.cors)
+    //.with(warp::reply::with::header("Authorization", token))
 }
 
 fn with_db(

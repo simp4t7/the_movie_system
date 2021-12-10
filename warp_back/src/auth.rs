@@ -1,13 +1,59 @@
 use crate::error_handling::AuthError;
 use crate::error_handling::Result;
 use crate::error_handling::WarpRejections;
+
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2,
 };
-use warp::reject::custom;
-// argon2: pw hasher crate
 
+use jsonwebtoken::{
+    decode, encode, Algorithm, DecodingKey, EncodingKey, Header, TokenData, Validation,
+};
+use lazy_static::lazy_static;
+use shared_stuff::Claims;
+use std::fs::File;
+use std::io::Read;
+use warp::reject::custom;
+
+lazy_static! {
+    //#[derive(Debug)]
+    static ref JWT_SECRET: String = {
+        let mut file = File::open("./keys/jwt_secret.txt").expect("problem opening file");
+        let mut secret = String::new();
+        file.read_to_string(&mut secret)
+            .expect("problem reading file");
+        secret
+    };
+}
+
+pub fn generate_jwt(username: String) -> Result<String> {
+    let now = sqlx::types::chrono::Utc::now().timestamp();
+    let exp = now + 60;
+
+    let my_claims = Claims { username, exp };
+    log::info!("past claims inside");
+    let token = encode(
+        &Header::new(Algorithm::HS512),
+        &my_claims,
+        &EncodingKey::from_secret(JWT_SECRET.as_bytes()),
+    )
+    .map_err(|_| custom(WarpRejections::AuthRejection(AuthError::TokenError)))?;
+    log::info!("{:?}", &token);
+    Ok(token)
+}
+
+pub fn decode_token(token: String, secret: String) -> Result<TokenData<Claims>> {
+    let token = decode(
+        &token,
+        &DecodingKey::from_secret(secret.as_ref()),
+        &Validation::new(Algorithm::HS512),
+    )
+    .map_err(|_| custom(WarpRejections::AuthRejection(AuthError::TokenError)))?;
+    Ok(token)
+}
+
+// argon2: pw hasher crate
 pub async fn hasher(password: &str) -> Result<(String, String)> {
     let salt = SaltString::generate(&mut OsRng);
 

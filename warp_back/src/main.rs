@@ -4,8 +4,6 @@ use shared_stuff::utils::load_logger;
 
 use warp::Filter;
 
-
-
 use warp_back::error_handling::handle_rejection;
 
 use warp_back::routes::login;
