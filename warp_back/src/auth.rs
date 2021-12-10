@@ -17,9 +17,13 @@ use std::io::Read;
 use warp::reject::custom;
 
 lazy_static! {
-    //#[derive(Debug)]
     static ref JWT_SECRET: String = {
-        let mut file = File::open("./keys/jwt_secret.txt").expect("problem opening file");
+        let mut current_dir = std::env::current_dir().expect("problem with current_dir");
+        current_dir.pop();
+        current_dir.push("test_keys");
+        current_dir.push("jwt_secret.txt");
+        println!("{:?}", &current_dir);
+        let mut file = File::open(current_dir).expect("problem opening file");
         let mut secret = String::new();
         file.read_to_string(&mut secret)
             .expect("problem reading file");
