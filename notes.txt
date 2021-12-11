@@ -1,16 +1,5 @@
-
-command to call DB setup schema -> \i C:/RUST_PROJECTS/movie_site_folder/tide_test/db_setup/setup_db.sql;
-command to call DB erase schema -> \i C:/RUST_PROJECTS/movie_site_folder/tide_test/db_setup/clear_db.sql;
-command to enter the database -> psql -d movie_site_test -U postgres
-password for DB -> password
-command to build the web assembly -> cargo watch -s "wasm-pack build --target web --out-name wasm --out-dir ./static" 
-command to run the wasm server -> miniserve ./static --index index.html
-
-
 https://github.com/alexc-hollywood/imdb-extractors
 DO WE WANT TO SWITCH APIs? THERE ARE SOME OTHERS THAT MIGHT BE BETTER...
-
-MP LOGIN INFO
 
 CHANGED TO AN SQLITE DB
 sqlite3 should be standard on linux.
@@ -34,6 +23,12 @@ cargo install miniserve
 
 COMMAND TO SERVE THE CLIPBOARD
 miniserve clipboard.txt --port 8001
+
+SELF-SIGNED CERT AND KEY GEN
+
+openssl genrsa -out key.pem 2048
+openssl req -new -key key.pem -out certificate.csr
+openssl x509 -req -in certificate.csr -signkey key.pem -out certificate.pem
 
 
 

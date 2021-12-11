@@ -1,16 +1,20 @@
-use anyhow::Result;
+use crate::error_handling::Result;
+use crate::error_handling::SqlxError;
+use crate::error_handling::WarpRejections;
 use dotenv::dotenv;
 use dotenv::var;
 use lazy_static::lazy_static;
 use sqlx::SqlitePool;
 
 use warp::cors::Cors;
+use warp::reject::custom;
 
 pub mod auth;
 pub mod db_functions;
 pub mod error_handling;
 pub mod routes;
 pub mod test_stuff;
+pub mod utils;
 
 lazy_static! {
     static ref CORS_ORIGIN: String = {
@@ -54,7 +58,10 @@ pub fn make_cors() -> Cors {
 }
 
 pub async fn make_db_pool() -> Result<SqlitePool> {
-    dotenv()?;
-    let pool = SqlitePool::connect(&var("DATABASE_URL")?).await?;
+    dotenv().map_err(|_| custom(WarpRejections::EnvError))?;
+    let pool =
+        SqlitePool::connect(&var("DATABASE_URL").map_err(|_| custom(WarpRejections::EnvError))?)
+            .await
+            .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
     Ok(pool)
 }

@@ -8,6 +8,13 @@ use warp_back::routes::{login, register, search};
 use warp_back::test_stuff::delete_db;
 use warp_back::State;
 
+use ctor::ctor;
+#[ctor]
+fn load_logger() {
+    dotenv::dotenv().ok();
+    pretty_env_logger::init();
+}
+
 #[tokio::test]
 // Check that the search function works, and returns a 200 status code on a good
 // search, and a client error on a bad search. Ideally need better error handling

@@ -19,9 +19,9 @@ use warp::reject::custom;
 lazy_static! {
     static ref JWT_SECRET: String = {
         let mut current_dir = std::env::current_dir().expect("problem with current_dir");
-        current_dir.pop();
         current_dir.push("test_keys");
         current_dir.push("jwt_secret.txt");
+        println!("{:?}", &std::env::current_dir());
         println!("{:?}", &current_dir);
         let mut file = File::open(current_dir).expect("problem opening file");
         let mut secret = String::new();

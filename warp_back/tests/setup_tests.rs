@@ -13,6 +13,13 @@ use warp_back::error_handling::SqlxError;
 use warp_back::error_handling::WarpRejections;
 use warp_back::test_stuff::{delete_db, get_db_url, setup_new_db};
 
+use ctor::ctor;
+#[ctor]
+fn load_logger() {
+    dotenv::dotenv().ok();
+    pretty_env_logger::init();
+}
+
 // Currently 2 options: each test creates and tearsdown its own DB and runs concurrently.
 // Or, create a single test DB and add to it but run tests single threaded.
 // For now I prefer to run them concurrently becuase serial doesn't work and

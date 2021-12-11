@@ -6,9 +6,7 @@ pub mod req;
 pub mod res;
 pub mod test_functions;
 
-extern crate pretty_env_logger;
-#[macro_use]
-extern crate log;
+use log::{debug, error, info, log, trace, warn};
 
 pub async fn autocomplete_func(
     input: ImdbQuery,

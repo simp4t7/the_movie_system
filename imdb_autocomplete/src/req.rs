@@ -1,6 +1,8 @@
 use reqwest::Url;
 use shared_stuff::ImdbQuery;
 
+use log::{debug, error, info, log, trace, warn};
+
 const IMDB_URL: &str = "https://sg.media-imdb.com/suggests";
 
 // WHICH CHARACTERS ARE ACTUALLY VALID? AND WHICH ARE NOT?

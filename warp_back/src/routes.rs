@@ -23,6 +23,10 @@ use warp::Filter;
 // results ok -> turn it to json and send it back to yew
 // results bad -> 400 bad request. //TODO currently it's 404
 
+//pub fn test_route() -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
+//warp::path("test").map(|| "Hello, World!")
+//}
+
 pub fn search(
     state: &State,
 ) -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {

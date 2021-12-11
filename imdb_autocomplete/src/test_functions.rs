@@ -2,6 +2,8 @@ use crate::req;
 use reqwest::header::HeaderValue;
 use shared_stuff::ImdbQuery;
 
+use log::{debug, error, info, log, trace, warn};
+
 pub async fn check_client_connection(
     input: ImdbQuery,
 ) -> Result<reqwest::Response, Box<dyn std::error::Error>> {

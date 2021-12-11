@@ -1,23 +1,19 @@
 use anyhow::anyhow;
-use anyhow::Result;
-use shared_stuff::utils::load_logger;
 
 use warp::Filter;
 
 use warp_back::error_handling::handle_rejection;
+use warp_back::error_handling::Result;
 
-use warp_back::routes::login;
-use warp_back::routes::register;
-use warp_back::routes::search;
+use warp_back::routes::{login, register, search};
 use warp_back::State;
 
-extern crate pretty_env_logger;
-#[macro_use]
-extern crate log;
+use log::{debug, error, info, trace, warn};
+use warp_back::utils::load_logger;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    load_logger().map_err(|e| anyhow!("problem loading logger: {:?}", e))?;
+    //load_logger()?;
     trace!("a trace example");
     debug!("deboogging");
     info!("such information");

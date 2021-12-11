@@ -1,0 +1,17 @@
+Right now I have URL's and the DB path hardcoded for my system and because
+I am using a virtual machine can't use localhost stuff so maybe find a better
+way to setup dev profiles. Possibly in the .env?
+-> Sorta done, not perfect but good enough for now.
+
+Serialize the login and register requests as json before sending.
+-> Done, this should have been in one of the crates TODO.txt
+
+Add a readme, and maybe make that the landing page.
+-> Sorta done, not the landing page but needs to be updated.
+
+Need to add TLS, and also work on the .gitignore to skip over the sensitive stuff.
+-> Looked over it, and for testing need a self-signed certificate and pretty much not
+-> worth doing it now.
+
+LOOK INTO SOME OF GITHUB's FEATURES FOR AUTOMATED TESTING AND STUFF
+-> Done, could do more but good enough for now.

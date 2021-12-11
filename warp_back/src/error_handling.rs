@@ -9,6 +9,7 @@ pub type Result<T> = std::result::Result<T, warp::Rejection>;
 #[derive(Debug, PartialEq, Eq)]
 pub enum WarpRejections {
     SerializationError,
+    EnvError,
     AutocompleteError,
     UTF8Error,
     BodyDeserializeError,

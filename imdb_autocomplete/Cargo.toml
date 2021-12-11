@@ -13,6 +13,8 @@ serde_json = "1.0.69"
 pretty_env_logger = "0.4.0"
 log = "0.4.14"
 reqwest = "0.11.6"
+ctor = "0.1.21"
+dotenv = "0.15.0"
 
 [dev-dependencies]
 serial_test = "0.5.1"
