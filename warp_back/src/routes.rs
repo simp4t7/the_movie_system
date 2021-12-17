@@ -1,16 +1,21 @@
 use crate::auth::verify_pass;
+use crate::auth::verify_token;
 use crate::db_functions::{check_login, insert_user};
+use crate::error_handling::AuthError;
 use crate::error_handling::WarpRejections;
 use crate::State;
+use http::status::StatusCode;
 use imdb_autocomplete::autocomplete_func;
+use shared_stuff::DoubleTokenResponse;
+use shared_stuff::ErrorMessage;
 use shared_stuff::ImdbQuery;
 use shared_stuff::UserInfo;
 use sqlx::SqlitePool;
 use warp::reject::custom;
 use warp::reply::Reply;
 
-use crate::auth::generate_jwt;
-use crate::error_handling::AuthError;
+use crate::auth::generate_access_token;
+use crate::auth::generate_double_token;
 use crate::error_handling::SqlxError;
 use warp::reply::json;
 use warp::Filter;
@@ -26,6 +31,62 @@ use warp::Filter;
 //pub fn test_route() -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
 //warp::path("test").map(|| "Hello, World!")
 //}
+
+pub fn authorize_refresh(
+    state: &State,
+) -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
+    warp::path("refresh_auth")
+        .and(warp::filters::header::header("authorization"))
+        .map(|token: String| match verify_token(token) {
+            Ok(claims) => {
+                let username = claims.username.clone();
+                if let Ok(token_response) = generate_access_token(username) {
+                    let code = StatusCode::OK;
+                    let reply = warp::reply::json(&token_response);
+                    warp::reply::with_status(reply, code)
+                } else {
+                    let code = StatusCode::BAD_REQUEST;
+                    let reply = warp::reply::json(&ErrorMessage {
+                        code: code.into(),
+                        message: WarpRejections::AuthRejection(AuthError::AccessError).into(),
+                    });
+                    warp::reply::with_status(reply, code)
+                }
+            }
+            Err(_) => {
+                let code = StatusCode::UNAUTHORIZED;
+                let reply = warp::reply::json(&ErrorMessage {
+                    code: code.into(),
+                    message: WarpRejections::AuthRejection(AuthError::AccessError).into(),
+                });
+                warp::reply::with_status(reply, code)
+            }
+        })
+        .with(&state.cors)
+}
+
+pub fn authorize_access(
+    state: &State,
+) -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
+    warp::path("access_auth")
+        .and(warp::filters::header::header("authorization"))
+        .map(|token: String| match verify_token(token) {
+            Ok(claims) => {
+                let code = StatusCode::OK;
+                let reply = warp::reply::json(&claims);
+                warp::reply::with_status(reply, code)
+            }
+            Err(_) => {
+                let code = StatusCode::UNAUTHORIZED;
+                let reply = warp::reply::json(&ErrorMessage {
+                    code: code.into(),
+                    message: WarpRejections::AuthRejection(AuthError::AccessError).into(),
+                });
+                warp::reply::with_status(reply, code)
+            }
+        })
+        .with(&state.cors)
+}
 
 pub fn search(
     state: &State,
@@ -71,12 +132,10 @@ pub fn login(
         .and(with_db(state.db.clone()))
         .and_then(|user: UserInfo, db: SqlitePool| async move {
             let user_info = check_login(&db, &user.username).await?;
-            let token = generate_jwt(user_info.username.clone())?;
+            let token_response = generate_double_token(user_info.username.clone())?;
             log::info!("user_info: {:?}", &user_info);
             match verify_pass(user.password, user_info.salt, user_info.hashed_password)? {
-                true => Ok(
-                    warp::reply::with_header(warp::reply(), "authorization", token).into_response(),
-                ),
+                true => Ok(json(&token_response)),
                 false => Err(custom(WarpRejections::AuthRejection(
                     AuthError::VerifyError,
                 ))),

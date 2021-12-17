@@ -1,6 +1,11 @@
 use crate::error_handling::AuthError;
 use crate::error_handling::Result;
 use crate::error_handling::WarpRejections;
+use crate::ACCESS_EXP;
+use crate::REFRESH_EXP;
+use crate::TOKEN_SECRET;
+use shared_stuff::DoubleTokenResponse;
+use shared_stuff::SingleTokenResponse;
 
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
@@ -10,51 +15,74 @@ use argon2::{
 use jsonwebtoken::{
     decode, encode, Algorithm, DecodingKey, EncodingKey, Header, TokenData, Validation,
 };
-use lazy_static::lazy_static;
 use shared_stuff::Claims;
-use std::fs::File;
-use std::io::Read;
 use warp::reject::custom;
 
-lazy_static! {
-    static ref JWT_SECRET: String = {
-        let mut current_dir = std::env::current_dir().expect("problem with current_dir");
-        current_dir.push("test_keys");
-        current_dir.push("jwt_secret.txt");
-        println!("{:?}", &std::env::current_dir());
-        println!("{:?}", &current_dir);
-        let mut file = File::open(current_dir).expect("problem opening file");
-        let mut secret = String::new();
-        file.read_to_string(&mut secret)
-            .expect("problem reading file");
-        secret
-    };
-}
+//pub fn verify_jwt
 
-pub fn generate_jwt(username: String) -> Result<String> {
+pub fn generate_access_token(username: String) -> Result<SingleTokenResponse> {
     let now = sqlx::types::chrono::Utc::now().timestamp();
-    let exp = now + 60;
+    let token_exp = now + *ACCESS_EXP;
 
-    let my_claims = Claims { username, exp };
+    let token_claims = Claims {
+        username: username.clone(),
+        exp: token_exp,
+    };
     log::info!("past claims inside");
-    let token = encode(
+    let access_token = encode(
         &Header::new(Algorithm::HS512),
-        &my_claims,
-        &EncodingKey::from_secret(JWT_SECRET.as_bytes()),
+        &token_claims,
+        &EncodingKey::from_secret(TOKEN_SECRET.as_bytes()),
     )
     .map_err(|_| custom(WarpRejections::AuthRejection(AuthError::TokenError)))?;
-    log::info!("{:?}", &token);
-    Ok(token)
+
+    Ok(SingleTokenResponse { access_token })
 }
 
-pub fn decode_token(token: String, secret: String) -> Result<TokenData<Claims>> {
+pub fn generate_double_token(username: String) -> Result<DoubleTokenResponse> {
+    let now = sqlx::types::chrono::Utc::now().timestamp();
+    let token_exp = now + *ACCESS_EXP;
+
+    let token_claims = Claims {
+        username: username.clone(),
+        exp: token_exp,
+    };
+    log::info!("past claims inside");
+    let access_token = encode(
+        &Header::new(Algorithm::HS512),
+        &token_claims,
+        &EncodingKey::from_secret(TOKEN_SECRET.as_bytes()),
+    )
+    .map_err(|_| custom(WarpRejections::AuthRejection(AuthError::TokenError)))?;
+
+    let refresh_exp = now + *REFRESH_EXP;
+    let refresh_claims = Claims {
+        username,
+        exp: refresh_exp,
+    };
+    let refresh_token = encode(
+        &Header::new(Algorithm::HS512),
+        &refresh_claims,
+        &EncodingKey::from_secret(TOKEN_SECRET.as_bytes()),
+    )
+    .map_err(|_| custom(WarpRejections::AuthRejection(AuthError::TokenError)))?;
+    let token_response = DoubleTokenResponse {
+        access_token,
+        refresh_token,
+    };
+    log::info!("{:?}", &token_response);
+    Ok(token_response)
+}
+
+pub fn verify_token(token: String) -> Result<Claims> {
     let token = decode(
         &token,
-        &DecodingKey::from_secret(secret.as_ref()),
+        &DecodingKey::from_secret(TOKEN_SECRET.as_ref()),
         &Validation::new(Algorithm::HS512),
     )
     .map_err(|_| custom(WarpRejections::AuthRejection(AuthError::TokenError)))?;
-    Ok(token)
+    let claims = token.claims;
+    Ok(claims)
 }
 
 // argon2: pw hasher crate

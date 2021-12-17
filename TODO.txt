@@ -1,15 +1,11 @@
 ADD DEV DEPENDENCIES ONLY FOR TESTING -> i.e. TOKIO ON IMDB_AUTOCOMPLETE
 
-
-NEED TO FIX THE LOGGING FOR PRETTY MUCH EVERYTHING... BUT ESPECIALLY TESTING.
-
 Some weird stuff with how autocomplete gets json, turns it into a Vec<struct>, sends it to
 Warp which turns it back into json to send to Yew which probably turns it back into a Vec<struct>...
 So, should probably minimize this whole serialize/deserialize dance somewhere.
 
 Move more stuff into the shared crate when possible.
 
-Need to clean up all the dependencies and sort them into dev/release categories.
 
 
 

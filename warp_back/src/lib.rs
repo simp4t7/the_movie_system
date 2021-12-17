@@ -14,12 +14,29 @@ pub mod db_functions;
 pub mod error_handling;
 pub mod routes;
 pub mod test_stuff;
-pub mod utils;
 
 lazy_static! {
     static ref CORS_ORIGIN: String = {
-        dotenv();
+        dotenv().ok();
         dotenv::var("CORS_ORIGIN").unwrap()
+    };
+    static ref TOKEN_SECRET: String = {
+        dotenv().ok();
+        dotenv::var("DEV_SECRET").unwrap()
+    };
+    pub static ref ACCESS_EXP: i64 = {
+        dotenv().ok();
+        dotenv::var("ACCESS_TOKEN_EXP")
+            .expect("env error")
+            .parse::<i64>()
+            .expect("parse error")
+    };
+    pub static ref REFRESH_EXP: i64 = {
+        dotenv().ok();
+        dotenv::var("REFRESH_TOKEN_EXP")
+            .expect("env error")
+            .parse::<i64>()
+            .expect("parse error")
     };
 }
 

@@ -1,12 +1,17 @@
-use dotenv::dotenv;
-use dotenv::var;
+use crate::utils::auth_flow;
+use crate::utils::authorize_access;
 use lazy_static::lazy_static;
 use load_dotenv::load_dotenv;
+use shared_stuff::Claims;
+use std::rc::Rc;
+use wasm_bindgen_futures::spawn_local;
+use yew::functional::*;
 use yew::prelude::*;
 use yew_router::prelude::*;
 
+use yew::{html, Callback, Component, Context, Html};
+
 pub mod html_gen;
-pub mod jwt;
 pub mod pages;
 pub mod utils;
 
@@ -26,71 +31,142 @@ lazy_static! {
         load_dotenv!();
         env!("REGISTER_URL")
     };
+    pub static ref ACCESS_URL: &'static str = {
+        load_dotenv!();
+        env!("ACCESS_URL")
+    };
+    pub static ref REFRESH_URL: &'static str = {
+        load_dotenv!();
+        env!("REFRESH_URL")
+    };
 }
 
-#[derive(Switch, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq, Routable)]
 pub enum Route {
-    #[to = "/login"]
+    #[at("/login")]
     Login,
-    #[to = "/"]
+    #[at("/")]
     Home,
-    #[to = "/404"]
+    #[at("/404")]
     NotFound,
 }
-struct App {}
+#[function_component(Main)]
+pub fn router() -> Html {
+    html! {
+        <BrowserRouter>
+            <Switch<Route> render={Switch::render(switch)} />
+        </BrowserRouter>
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct AuthStatus {
+    pub status: bool,
+    pub username: Option<String>,
+    pub exp: Option<i64>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Properties)]
+pub struct App {
+    username: Option<String>,
+}
+
+pub enum AppMsg {
+    AuthCallback,
+    UpdateAuth(AuthStatus),
+}
 
 impl Component for App {
-    type Message = ();
+    type Message = AppMsg;
     type Properties = ();
 
-    fn create(_: Self::Properties, _link: ComponentLink<Self>) -> Self {
-        App {}
+    fn create(ctx: &Context<Self>) -> Self {
+        ctx.link().send_message(AppMsg::AuthCallback);
+        App { username: None }
     }
 
-    fn update(&mut self, _msg: Self::Message) -> ShouldRender {
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+        let link_clone = ctx.link().clone();
+        match msg {
+            AppMsg::AuthCallback => spawn_local(async move {
+                let request_claims = auth_flow().await;
+                let login_status = match request_claims {
+                    Ok(claims) => AuthStatus {
+                        status: true,
+                        username: Some(claims.username),
+                        exp: Some(claims.exp),
+                    },
+                    Err(_) => AuthStatus {
+                        status: false,
+                        username: None,
+                        exp: None,
+                    },
+                };
+                log::info!("auth callback, {:?}", &login_status);
+                link_clone.send_message(AppMsg::UpdateAuth(login_status));
+            }),
+            AppMsg::UpdateAuth(login) => {
+                self.username = login.username;
+            }
+        }
         true
     }
 
-    fn change(&mut self, _props: Self::Properties) -> ShouldRender {
+    fn changed(&mut self, ctx: &Context<Self>) -> bool {
         false
     }
-    fn view(&self) -> Html {
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        log::info!("{:?}", &self);
         html! {
-            <div>
-            {nav_bar()}
-            {router_function()}
-            </div>
+            <BrowserRouter>
+            <main>
+            <NavBar username ={self.username.clone()}/>
+            <Switch<Route> render={Switch::render(switch)} />
+            </main>
+            </BrowserRouter>
 
         }
     }
 }
 
-pub fn nav_bar() -> Html {
-    html! {
-
-        <div class="nav_bar">
-            <ul class="nav_bar">
-                <li><a href="/">{"Home"}</a></li>
-                <li><a href="/login">{"Login"}</a></li>
-                <li><a href="/contact">{"Contact"}</a></li>
-                <li style="float:right"><a href="/about">{"About"}</a></li>
-            </ul>
-        </div>
-
+#[function_component(NavBar)]
+pub fn nav_bar(app: &App) -> Html {
+    match app.username.clone() {
+        Some(user) => {
+            html! {
+                <div class="nav_bar">
+                    <ul class="nav_bar">
+                        <li><a href="/">{"Home"}</a></li>
+                        <li><a href="/contact">{"Contact"}</a></li>
+                        <li style="float:right"><a href="/about">{"About"}</a></li>
+                        <li style="float:right"><a href="/login">{user}</a></li>
+                    </ul>
+                </div>
+            }
+        }
+        None => {
+            html! {
+                <div class="nav_bar">
+                    <ul class="nav_bar">
+                        <li><a href="/">{"Home"}</a></li>
+                        <li><a href="/contact">{"Contact"}</a></li>
+                        <li style="float:right"><a href="/about">{"About"}</a></li>
+                        <li style="float:right"><a href="/login">{"Login"}</a></li>
+                    </ul>
+                </div>
+            }
+        }
     }
 }
 
-pub fn router_function() -> Html {
+fn switch(routes: &Route) -> Html {
     html! {
-    <Router<Route>
-        render = Router::render(|switch: Route| {
-        match switch {
-            Route::Home => html!{<Home/>},
-            Route::Login => html!{<Login/>},
-            //TODO! something for bad urls?
-            Route::NotFound => html!{},
-        }})/>
-    }
+    match routes {
+        Route::Home => html!{<Home />},
+        Route::Login => html!{<Login />},
+        //TODO! something for bad urls?
+        Route::NotFound => html!{},
+    }}
 }
 
 fn main() {

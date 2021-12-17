@@ -18,12 +18,20 @@ pub enum WarpRejections {
     Other(String),
 }
 
+impl Into<String> for WarpRejections {
+    fn into(self) -> String {
+        format!("{:?}", self)
+    }
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum AuthError {
+    AccessError,
     TokenError,
     HasherError,
     VerifyError,
 }
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum SqlxError {
     InsertUserError,

@@ -14,6 +14,17 @@ pub struct Claims {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct DoubleTokenResponse {
+    pub access_token: String,
+    pub refresh_token: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SingleTokenResponse {
+    pub access_token: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ErrorMessage {
     pub code: u16,
     pub message: String,

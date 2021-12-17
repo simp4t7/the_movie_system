@@ -1,47 +1,50 @@
 use crate::SEARCH_URL;
 use shared_stuff::ImdbQuery;
 use wasm_bindgen_futures::spawn_local;
+use web_sys::HtmlInputElement;
 use yew::prelude::*;
+use yew::TargetCast;
 
 use crate::utils::get_search_results;
 use shared_stuff::MovieDisplay;
 
-//mod html_gen;
-//mod utils;
-
 #[derive(Debug)]
 pub enum HomeMsg {
-    QueryAutocomplete(InputData),
+    QueryAutocomplete(InputEvent),
     UpdateAutocomplete(Vec<MovieDisplay>),
     Error(String),
 }
 pub struct Home {
-    pub link: ComponentLink<Self>,
     pub movies: Vec<MovieDisplay>,
 }
 
 impl Component for Home {
     type Message = HomeMsg;
     type Properties = ();
-    fn create(_props: Self::Properties, link: ComponentLink<Self>) -> Self {
-        Self {
-            link,
-            movies: vec![],
-        }
+    fn create(ctx: &Context<Self>) -> Self {
+        log::info!("creating search page");
+        Self { movies: vec![] }
     }
-    fn update(&mut self, msg: Self::Message) -> ShouldRender {
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         use HomeMsg::QueryAutocomplete;
-        let link_clone = self.link.clone();
+        let link_clone = ctx.link().clone();
         match msg {
             QueryAutocomplete(text) => {
                 // Shouldn't do it if the text is empty, but handle this better probably...
-                if !text.value.is_empty() {
+                if !text.current_target().is_none() {
                     spawn_local(async move {
-                        let query = ImdbQuery { query: text.value };
-                        match get_search_results(&SEARCH_URL, query).await {
-                            Ok(resp) => link_clone.send_message(HomeMsg::UpdateAutocomplete(resp)),
-                            Err(err_msg) => {
-                                link_clone.send_message(HomeMsg::Error(err_msg.to_string()))
+                        if let Some(elem) = text.target_dyn_into::<HtmlInputElement>() {
+                            let query = ImdbQuery {
+                                query: elem.value(),
+                            };
+
+                            match get_search_results(&SEARCH_URL, query).await {
+                                Ok(resp) => {
+                                    link_clone.send_message(HomeMsg::UpdateAutocomplete(resp))
+                                }
+                                Err(err_msg) => {
+                                    link_clone.send_message(HomeMsg::Error(err_msg.to_string()))
+                                }
                             }
                         }
                     });
@@ -58,13 +61,13 @@ impl Component for Home {
         };
         true
     }
-    fn change(&mut self, _props: Self::Properties) -> ShouldRender {
+    fn changed(&mut self, ctx: &Context<Self>) -> bool {
         false
     }
-    fn view(&self) -> Html {
+    fn view(&self, ctx: &Context<Self>) -> Html {
         html! {
         <div>
-            {self.search_bar()}
+            {self.search_bar(ctx)}
         </div>}
     }
 }

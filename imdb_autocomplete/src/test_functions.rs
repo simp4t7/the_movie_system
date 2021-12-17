@@ -2,7 +2,7 @@ use crate::req;
 use reqwest::header::HeaderValue;
 use shared_stuff::ImdbQuery;
 
-use log::{debug, error, info, log, trace, warn};
+use log::info;
 
 pub async fn check_client_connection(
     input: ImdbQuery,

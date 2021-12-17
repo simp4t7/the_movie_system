@@ -1,6 +1,6 @@
 use shared_stuff::{JsonQuery, MediaType, MovieDisplay, MovieInfo};
 
-use log::{debug, error, info, log, trace, warn};
+use log::trace;
 
 // MAYBE MAKE THE FALLIBLE WITH RESULT TYPE, MIGHT BE NICE.
 fn trim_body_string(body_string: String, query: String) -> String {

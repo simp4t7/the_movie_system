@@ -15,3 +15,11 @@ Need to add TLS, and also work on the .gitignore to skip over the sensitive stuf
 
 LOOK INTO SOME OF GITHUB's FEATURES FOR AUTOMATED TESTING AND STUFF
 -> Done, could do more but good enough for now.
+
+NEED TO FIX THE LOGGING FOR PRETTY MUCH EVERYTHING... BUT ESPECIALLY TESTING.
+-> Done, pretty cool solution. Uses ctor to initialize logging for everything except
+-> for the wasm stuff. Then, gotta do the same in each test file because compiled separately
+-> but at least only have to do it once...
+
+Need to clean up all the dependencies and sort them into dev/release categories.
+-> Sorta done, but will need to do it later too probably.

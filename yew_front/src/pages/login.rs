@@ -1,50 +1,69 @@
-use crate::utils::{login_request, register_request};
+use crate::utils::auth_flow;
+use crate::utils::{authorize_access, login_request, register_request};
+use crate::ACCESS_URL;
 use crate::LOGIN_URL;
 use crate::REGISTER_URL;
-use serde_json::json;
+use gloo_storage::LocalStorage;
+use gloo_storage::Storage;
+use shared_stuff::DoubleTokenResponse;
 use shared_stuff::UserInfo;
 use wasm_bindgen_futures::spawn_local;
-use yew::format::Json;
-use yew::format::Text;
+use web_sys::HtmlInputElement;
 use yew::prelude::*;
-use yew::services::storage::Area;
-use yew::services::storage::StorageService;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Login {
-    pub link: ComponentLink<Self>,
     username: String,
     password: String,
 }
 pub enum LoginMsg {
-    SetUsername(InputData),
-    SetPassword(InputData),
+    SetUsername(InputEvent),
+    SetPassword(InputEvent),
     VerifyLogin,
     RegisterUser,
-    SetToken(String),
+    SetToken(DoubleTokenResponse),
+    AuthorizeCheck,
+    Logout,
     Noop,
 }
 
 impl Component for Login {
     type Message = LoginMsg;
     type Properties = ();
-    fn create(_props: Self::Properties, link: ComponentLink<Self>) -> Self {
+    fn create(ctx: &Context<Self>) -> Self {
+        log::info!("creating login page");
         Self {
-            link,
             username: String::new(),
             password: String::new(),
         }
     }
 
-    fn update(&mut self, msg: Self::Message) -> ShouldRender {
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         use LoginMsg::*;
         match msg {
+            Logout => {
+                let storage = LocalStorage::raw();
+                storage
+                    .delete("access_token")
+                    .expect("problem deleting access token");
+                storage
+                    .delete("refresh_token")
+                    .expect("problem deleting refresh token");
+                log::info!("stored some data");
+            }
             Noop => {}
+            AuthorizeCheck => spawn_local(async move {
+                let x = auth_flow().await;
+            }),
             SetUsername(text) => {
-                self.username = text.value;
+                if let Some(elem) = text.target_dyn_into::<HtmlInputElement>() {
+                    self.username = elem.value();
+                }
             }
             SetPassword(text) => {
-                self.password = text.value;
+                if let Some(elem) = text.target_dyn_into::<HtmlInputElement>() {
+                    self.password = elem.value();
+                }
             }
             RegisterUser => {
                 let username = UserInfo {
@@ -65,7 +84,7 @@ impl Component for Login {
                     password: self.password.clone(),
                 };
 
-                let link_clone = self.link.clone();
+                let link_clone = ctx.link().clone();
                 spawn_local(async move {
                     let token = login_request(&LOGIN_URL, username).await;
                     match token {
@@ -76,10 +95,13 @@ impl Component for Login {
             }
 
             SetToken(token) => {
-                let mut storage =
-                    StorageService::new(Area::Local).expect("problem with local storage");
-                let token_text: Text = Json(&token).into();
-                storage.store("jwt", token_text);
+                let storage = LocalStorage::raw();
+                storage
+                    .set("access_token", &token.access_token)
+                    .expect("problem setting token");
+                storage
+                    .set("refresh_token", &token.refresh_token)
+                    .expect("problem setting token");
                 log::info!("stored some data");
             }
         }
@@ -87,13 +109,17 @@ impl Component for Login {
         true
     }
 
-    fn change(&mut self, _props: Self::Properties) -> ShouldRender {
+    fn changed(&mut self, ctx: &Context<Self>) -> bool {
         false
     }
-    fn view(&self) -> Html {
-        html! {        <div>
-        { self.register_html() }
-        { self.login_html() }
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        html! {
+        <div>
+        { self.register_html(ctx) }
+        { self.login_html(ctx) }
+        { self.authorize_html(ctx) }
+        { self.logout_button(ctx) }
+
         </div> }
     }
 }

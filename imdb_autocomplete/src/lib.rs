@@ -6,7 +6,7 @@ pub mod req;
 pub mod res;
 pub mod test_functions;
 
-use log::{debug, error, info, log, trace, warn};
+use log::{info, trace};
 
 pub async fn autocomplete_func(
     input: ImdbQuery,

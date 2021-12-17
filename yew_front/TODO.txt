@@ -1,9 +1,4 @@
-Some weird error when you search and then fully delete the search...
--> Done, but still some weird stuff with the search results order.
--> Sometimes displays empty results because of the first search returning
--> later than the others...
-
-Sometimes the responses come in out of order maybe? Not sure, but worth checking on. 
-
 Find some way to test Yew stuff...? Not sure if it's possible.
+
+Add a catch-all 404 route for bad paths.
 

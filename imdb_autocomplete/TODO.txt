@@ -1,9 +1,8 @@
-ADD LEVENSHTEIN DISTANCE FOR FUZZY SEARCHING
-
-i.e. searching for 'dume' would still return Dune, because 'dume' is dumb.
-
 REMOVE OPTION YEAR / IMAGEDATA
+This would handle the issue of movies without posters or years, which we don't want.
+-> The issue is handled, but not convinced it has been done properly. Leaving this open for now.
 
-Ideally if there's no year or no poster we don't want it, and it should
-be handled very early on the initially API query instead of later during
-the search result parsing.
+Sometimes the responses come in out of order maybe? Not sure, but worth checking on. 
+Displays empty results because of the first search returning later than the others...
+-> This is a pretty big issue, but also a way to optimize the search by canceling previous
+-> requests, or cacheing them temporarily. Needs to be done eventually.
