@@ -1,15 +1,15 @@
 use crate::utils::auth_flow;
-use crate::utils::authorize_access;
+
 use lazy_static::lazy_static;
 use load_dotenv::load_dotenv;
-use shared_stuff::Claims;
-use std::rc::Rc;
+
+
 use wasm_bindgen_futures::spawn_local;
 use yew::functional::*;
 use yew::prelude::*;
 use yew_router::prelude::*;
 
-use yew::{html, Callback, Component, Context, Html};
+use yew::{html, Component, Context, Html};
 
 pub mod html_gen;
 pub mod pages;
@@ -112,10 +112,10 @@ impl Component for App {
         true
     }
 
-    fn changed(&mut self, ctx: &Context<Self>) -> bool {
+    fn changed(&mut self, _ctx: &Context<Self>) -> bool {
         false
     }
-    fn view(&self, ctx: &Context<Self>) -> Html {
+    fn view(&self, _ctx: &Context<Self>) -> Html {
         log::info!("{:?}", &self);
         html! {
             <BrowserRouter>

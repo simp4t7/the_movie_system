@@ -6,13 +6,12 @@ use crate::error_handling::WarpRejections;
 use crate::State;
 use http::status::StatusCode;
 use imdb_autocomplete::autocomplete_func;
-use shared_stuff::DoubleTokenResponse;
+
 use shared_stuff::ErrorMessage;
 use shared_stuff::ImdbQuery;
 use shared_stuff::UserInfo;
 use sqlx::SqlitePool;
 use warp::reject::custom;
-use warp::reply::Reply;
 
 use crate::auth::generate_access_token;
 use crate::auth::generate_double_token;
@@ -34,12 +33,12 @@ use warp::Filter;
 
 pub fn authorize_refresh(
     state: &State,
-) -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
+) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path("refresh_auth")
         .and(warp::filters::header::header("authorization"))
         .map(|token: String| match verify_token(token) {
             Ok(claims) => {
-                let username = claims.username.clone();
+                let username = claims.username;
                 if let Ok(token_response) = generate_access_token(username) {
                     let code = StatusCode::OK;
                     let reply = warp::reply::json(&token_response);
@@ -67,7 +66,7 @@ pub fn authorize_refresh(
 
 pub fn authorize_access(
     state: &State,
-) -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
+) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path("access_auth")
         .and(warp::filters::header::header("authorization"))
         .map(|token: String| match verify_token(token) {
@@ -90,7 +89,7 @@ pub fn authorize_access(
 
 pub fn search(
     state: &State,
-) -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
+) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path("search")
         .and(warp::body::json())
         .and_then(|query: ImdbQuery| async move {
@@ -108,7 +107,7 @@ pub fn search(
 
 pub fn register(
     state: &State,
-) -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
+) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path("register")
         .and(warp::body::json())
         .and(with_db(state.db.clone()))
@@ -126,7 +125,7 @@ pub fn register(
 
 pub fn login(
     state: &State,
-) -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
+) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path("login")
         .and(warp::body::json())
         .and(with_db(state.db.clone()))

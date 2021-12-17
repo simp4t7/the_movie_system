@@ -55,13 +55,13 @@ pub async fn auth_flow() -> Result<Claims> {
             200 => {
                 let claims: Claims = resp.json().await?;
                 log::info!("{:?}", &claims);
-                return Ok(claims);
+                Ok(claims)
             }
             401 => {
                 authorize_refresh(refresh_token.unwrap()).await?;
                 let new_token = storage.get("access_token").expect("umm storage??").unwrap();
                 let claims = authorize_access(new_token).await?;
-                return Ok(claims);
+                Ok(claims)
             }
             e => Err(anyhow!("weird status code: {:?}", e)),
         }
@@ -69,7 +69,7 @@ pub async fn auth_flow() -> Result<Claims> {
         authorize_refresh(token).await?;
         let new_token = storage.get("access_token").expect("umm storage??").unwrap();
         let claims = authorize_access(new_token).await?;
-        return Ok(claims);
+        Ok(claims)
     } else {
         Err(anyhow!("bad error uh oh"))
     }

@@ -1,10 +1,11 @@
-ADD DEV DEPENDENCIES ONLY FOR TESTING -> i.e. TOKIO ON IMDB_AUTOCOMPLETE
-
-Some weird stuff with how autocomplete gets json, turns it into a Vec<struct>, sends it to
-Warp which turns it back into json to send to Yew which probably turns it back into a Vec<struct>...
-So, should probably minimize this whole serialize/deserialize dance somewhere.
-
 Move more stuff into the shared crate when possible.
+Also think some stuff could be combined. For example, there are two
+token responses and could make an enum or something better.
+-> Gonna do this on a big refactor soon.
+
+Generally getting a little slow with all the dependencies. Need to trim the fat soon maybe
+
+Should look into visibility modifiers, not super important but nice to do.
 
 
 

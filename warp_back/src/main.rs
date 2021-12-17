@@ -3,7 +3,6 @@ use warp::Filter;
 use warp_back::error_handling::handle_rejection;
 use warp_back::error_handling::Result;
 
-use lazy_static::lazy_static;
 use warp_back::routes::{authorize_access, authorize_refresh, login, register, search};
 use warp_back::State;
 

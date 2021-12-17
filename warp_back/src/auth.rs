@@ -8,13 +8,13 @@ use shared_stuff::DoubleTokenResponse;
 use shared_stuff::SingleTokenResponse;
 
 use argon2::{
-    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
+    password_hash::{
+        rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString,
+    },
     Argon2,
 };
 
-use jsonwebtoken::{
-    decode, encode, Algorithm, DecodingKey, EncodingKey, Header, TokenData, Validation,
-};
+use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use shared_stuff::Claims;
 use warp::reject::custom;
 
@@ -25,7 +25,7 @@ pub fn generate_access_token(username: String) -> Result<SingleTokenResponse> {
     let token_exp = now + *ACCESS_EXP;
 
     let token_claims = Claims {
-        username: username.clone(),
+        username,
         exp: token_exp,
     };
     log::info!("past claims inside");
@@ -99,7 +99,10 @@ pub async fn hasher(password: &str) -> Result<(String, String)> {
     assert!(argon2
         .verify_password(password.as_bytes(), &parsed_hash)
         .is_ok());
-    Ok((password_hash, salt.as_str().to_string()))
+
+    // It's pretty weird turning this SaltString to a String like this... Not too hard
+    // to fix, but this is simplest for now...
+    Ok((password_hash, salt.as_salt().to_string()))
 }
 
 // take the input password string, compute a hashed password with the salt (mapped with the

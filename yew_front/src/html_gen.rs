@@ -1,5 +1,4 @@
 use crate::utils::image_processing;
-use yew::InputEvent;
 
 use yew::html;
 use yew::html::Html;
@@ -31,16 +30,14 @@ impl Login {
                 class="login_user_name"
                 placeholder="Username"
                 maxlength=50
-                oninput={ctx.link().callback(|input:InputEvent|
-                    LoginMsg::SetUsername(input))}
+                oninput={ctx.link().callback(LoginMsg::SetUsername)}
             />
             <input
                 type="password"
                 class="login_user_name"
                 placeholder="Password"
                 maxlength=50
-                oninput={ctx.link().callback(|input: InputEvent|
-                    LoginMsg::SetPassword(input))}
+                oninput={ctx.link().callback(LoginMsg::SetPassword)}
             />
             <button
                 class="login_user_name"
@@ -57,16 +54,14 @@ impl Login {
                 class="login_user_name"
                 placeholder="Username"
                 maxlength=50
-                oninput={ctx.link().callback(|input:InputEvent|
-                    LoginMsg::SetUsername(input))}
+                oninput={ctx.link().callback(LoginMsg::SetUsername)}
             />
             <input
                 type="password"
                 class="login_user_name"
                 placeholder="Password"
                 maxlength=50
-                oninput={ctx.link().callback(|input: InputEvent|
-                    LoginMsg::SetPassword(input))}
+                oninput={ctx.link().callback(LoginMsg::SetPassword)}
             />
             <button
                 class="login_user_name"
@@ -85,7 +80,7 @@ impl Login {
 }
 
 impl Home {
-    pub fn search_results(&self, ctx: &Context<Self>) -> Html {
+    pub fn search_results(&self, _ctx: &Context<Self>) -> Html {
         {
             self.movies
                 .iter()
@@ -116,7 +111,7 @@ impl Home {
                         class="movie_search"
                         placeholder="movie search"
                         maxlength=50
-                        oninput={ctx.link().callback(|input: InputEvent| HomeMsg::QueryAutocomplete(input))}
+                        oninput={ctx.link().callback(HomeMsg::QueryAutocomplete)}
                         />
                     <div class="search_results">
                     <ul>

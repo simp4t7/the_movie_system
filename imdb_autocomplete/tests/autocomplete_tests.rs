@@ -3,11 +3,11 @@ use imdb_autocomplete::autocomplete_func;
 use imdb_autocomplete::test_functions::check_client_connection;
 use imdb_autocomplete::test_functions::status_and_headers;
 
-use log::{debug, error, info, log, trace, warn};
+
 
 //use shared_stuff::utils::load_logger;
 use shared_stuff::MovieDisplay;
-use std::sync::Once;
+
 
 #[ctor]
 fn load_logger() {

@@ -21,7 +21,7 @@ pub struct Home {
 impl Component for Home {
     type Message = HomeMsg;
     type Properties = ();
-    fn create(ctx: &Context<Self>) -> Self {
+    fn create(_ctx: &Context<Self>) -> Self {
         log::info!("creating search page");
         Self { movies: vec![] }
     }
@@ -31,7 +31,7 @@ impl Component for Home {
         match msg {
             QueryAutocomplete(text) => {
                 // Shouldn't do it if the text is empty, but handle this better probably...
-                if !text.current_target().is_none() {
+                if text.current_target().is_some() {
                     spawn_local(async move {
                         if let Some(elem) = text.target_dyn_into::<HtmlInputElement>() {
                             let query = ImdbQuery {
@@ -61,7 +61,7 @@ impl Component for Home {
         };
         true
     }
-    fn changed(&mut self, ctx: &Context<Self>) -> bool {
+    fn changed(&mut self, _ctx: &Context<Self>) -> bool {
         false
     }
     fn view(&self, ctx: &Context<Self>) -> Html {

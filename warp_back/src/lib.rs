@@ -18,11 +18,11 @@ pub mod test_stuff;
 lazy_static! {
     static ref CORS_ORIGIN: String = {
         dotenv().ok();
-        dotenv::var("CORS_ORIGIN").unwrap()
+        dotenv::var("CORS_ORIGIN").expect("env error")
     };
     static ref TOKEN_SECRET: String = {
         dotenv().ok();
-        dotenv::var("DEV_SECRET").unwrap()
+        dotenv::var("DEV_SECRET").expect("env error")
     };
     pub static ref ACCESS_EXP: i64 = {
         dotenv().ok();
@@ -51,12 +51,6 @@ impl State {
         let db = make_db_pool().await?;
         let cors = make_cors();
         Ok(Self { db, cors })
-    }
-    pub fn db(&self) -> &SqlitePool {
-        &self.db
-    }
-    pub fn cors(&self) -> &Cors {
-        &self.cors
     }
 }
 

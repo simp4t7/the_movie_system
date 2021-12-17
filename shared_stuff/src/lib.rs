@@ -50,16 +50,11 @@ pub struct ImdbQuery {
     pub query: String,
 }
 
-impl From<&str> for ImdbQuery {
-    fn from(s: &str) -> Self {
+impl<T: ToString> From<T> for ImdbQuery {
+    fn from(s: T) -> Self {
         Self {
             query: s.to_string(),
         }
-    }
-}
-impl From<String> for ImdbQuery {
-    fn from(s: String) -> Self {
-        Self { query: s }
     }
 }
 

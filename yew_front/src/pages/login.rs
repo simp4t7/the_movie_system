@@ -1,6 +1,6 @@
 use crate::utils::auth_flow;
-use crate::utils::{authorize_access, login_request, register_request};
-use crate::ACCESS_URL;
+use crate::utils::{login_request, register_request};
+
 use crate::LOGIN_URL;
 use crate::REGISTER_URL;
 use gloo_storage::LocalStorage;
@@ -30,7 +30,7 @@ pub enum LoginMsg {
 impl Component for Login {
     type Message = LoginMsg;
     type Properties = ();
-    fn create(ctx: &Context<Self>) -> Self {
+    fn create(_ctx: &Context<Self>) -> Self {
         log::info!("creating login page");
         Self {
             username: String::new(),
@@ -53,7 +53,7 @@ impl Component for Login {
             }
             Noop => {}
             AuthorizeCheck => spawn_local(async move {
-                let x = auth_flow().await;
+                let _x = auth_flow().await;
             }),
             SetUsername(text) => {
                 if let Some(elem) = text.target_dyn_into::<HtmlInputElement>() {
@@ -109,7 +109,7 @@ impl Component for Login {
         true
     }
 
-    fn changed(&mut self, ctx: &Context<Self>) -> bool {
+    fn changed(&mut self, _ctx: &Context<Self>) -> bool {
         false
     }
     fn view(&self, ctx: &Context<Self>) -> Html {

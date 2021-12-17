@@ -3,7 +3,7 @@ use sqlx::migrate::MigrateDatabase;
 use sqlx::Sqlite;
 use validator::validate_email;
 use validator::Validate;
-use warp::reject::custom;
+
 use warp_back::db_functions::{
     check_login, insert_user, select_all_users, select_single_user, update_password,
     update_username,

@@ -38,3 +38,9 @@ Need good warp error codes and 404 rejections. Also need better 200 status code 
 -> Currently, I've started... but there's a lot more to be done...
 
 -> Pretty much done, or at least the framework to handle it nicely.
+
+Is it possible to store the Salt and stuff not as Strings in the DB?
+-> Probably not, and doesn't matter too much. SQlite is probably too basic for weird types...
+
+Next big step is login logic with persistent sessions. Probably a job for the captain.
+-> Done, pretty rough but functional and good enough for now.
