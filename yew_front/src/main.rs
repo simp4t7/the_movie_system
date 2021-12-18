@@ -19,26 +19,20 @@ use pages::home::Home;
 use pages::login::Login;
 
 lazy_static! {
-    pub static ref SEARCH_URL: &'static str = {
+    pub static ref ROOT_URL: &'static str = {
         load_dotenv!();
-        env!("SEARCH_URL")
+        env!("ROOT_URL")
     };
-    pub static ref LOGIN_URL: &'static str = {
-        load_dotenv!();
-        env!("LOGIN_URL")
-    };
-    pub static ref REGISTER_URL: &'static str = {
-        load_dotenv!();
-        env!("REGISTER_URL")
-    };
-    pub static ref ACCESS_URL: &'static str = {
-        load_dotenv!();
-        env!("ACCESS_URL")
-    };
-    pub static ref REFRESH_URL: &'static str = {
-        load_dotenv!();
-        env!("REFRESH_URL")
-    };
+
+    pub static ref SEARCH_URL: &'static str = stringify!("{}/search", ROOT_URL);
+
+    pub static ref LOGIN_URL: &'static str = stringify!("{}/login", ROOT_URL);
+
+    pub static ref REGISTER_URL: &'static str = stringify!("{}/register", ROOT_URL);
+
+    pub static ref ACCESS_URL: &'static str = stringify!("{}/access_auth", ROOT_URL);
+
+    pub static ref REFRESH_URL: &'static str = stringify!("{}/refresh_auth", ROOT_URL);
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Routable)]
