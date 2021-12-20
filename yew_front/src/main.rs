@@ -3,7 +3,6 @@ use crate::utils::auth_flow;
 use lazy_static::lazy_static;
 use load_dotenv::load_dotenv;
 
-
 use wasm_bindgen_futures::spawn_local;
 use yew::functional::*;
 use yew::prelude::*;
@@ -23,16 +22,11 @@ lazy_static! {
         load_dotenv!();
         env!("ROOT_URL")
     };
-
-    pub static ref SEARCH_URL: &'static str = stringify!("{}/search", ROOT_URL);
-
-    pub static ref LOGIN_URL: &'static str = stringify!("{}/login", ROOT_URL);
-
-    pub static ref REGISTER_URL: &'static str = stringify!("{}/register", ROOT_URL);
-
-    pub static ref ACCESS_URL: &'static str = stringify!("{}/access_auth", ROOT_URL);
-
-    pub static ref REFRESH_URL: &'static str = stringify!("{}/refresh_auth", ROOT_URL);
+    pub static ref SEARCH_URL: String = format!("{}/search", *ROOT_URL);
+    pub static ref LOGIN_URL: String = format!("{}/login", *ROOT_URL);
+    pub static ref REGISTER_URL: String = format!("{}/register", *ROOT_URL);
+    pub static ref ACCESS_URL: String = format!("{}/access_auth", *ROOT_URL);
+    pub static ref REFRESH_URL: String = format!("{}/refresh_auth", *ROOT_URL);
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Routable)]

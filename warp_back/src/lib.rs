@@ -55,6 +55,7 @@ impl State {
 }
 
 pub fn make_cors() -> Cors {
+    log::info!("CORS_ORIGIN: {:?}", &*CORS_ORIGIN);
     warp::cors()
         .allow_headers(vec!["content-type", "authorization"])
         .allow_methods(&[
