@@ -10,6 +10,25 @@ use crate::pages::login::Login;
 use crate::pages::login::LoginMsg;
 
 impl Login {
+
+    fn get_estimate(&self) -> Option<u8> {
+        zxcvbn(&self.password, &[])
+            .ok()
+            .map(|estimate| estimate.score())
+    }
+    fn redout_top_row_text(&self) -> String {
+        if self.password.is_empty() {
+            return "Provide a password".to_string();
+        }
+        let estimate_text = match self.get_estimate().unwrap_or(0) {
+            0 => "That's a password?",
+            1 => "You can do a lot better.",
+            2 => "Meh",
+            3 => "Good",
+            _ => "Great!",
+        };
+        format!("Complexity = {}", estimate_text)
+    }
     pub fn authorize_html(&self, ctx: &Context<Self>) -> Html {
         html! {
         <div>
@@ -47,6 +66,7 @@ impl Login {
         </div>}
     }
     pub fn register_html(&self, ctx: &Context<Self>) -> Html {
+        let on_change = ctx.link().callback(LoginMsg::SetPassword);
         html! {
         <div>
             <h1> {"REGISTER"} </h1>
@@ -63,6 +83,7 @@ impl Login {
                 maxlength=50
                 oninput={ctx.link().callback(LoginMsg::SetPassword)}
             />
+            <TextInput {on_change} value={self.password.clone()} />
             <button
                 class="login_user_name"
                 onclick={ctx.link().callback(|_| LoginMsg::RegisterUser)}>

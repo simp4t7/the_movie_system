@@ -1,3 +1,4 @@
+extern crate zxcvbn;
 use crate::utils::auth_flow;
 use crate::utils::{login_request, register_request};
 
@@ -10,11 +11,12 @@ use shared_stuff::UserInfo;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
+use zxcvbn::zxcvbn;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Login {
     username: String,
-    password: String,
+    pub password: String,
 }
 pub enum LoginMsg {
     SetUsername(InputEvent),
