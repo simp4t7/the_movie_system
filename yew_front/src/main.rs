@@ -16,6 +16,7 @@ pub mod utils;
 
 use pages::home::Home;
 use pages::login::Login;
+use pages::register::Register;
 
 lazy_static! {
     pub static ref ROOT_URL: &'static str = {
@@ -35,6 +36,8 @@ pub enum Route {
     Login,
     #[at("/")]
     Home,
+    #[at("register")]
+    Register,
     #[at("/404")]
     NotFound,
 }
@@ -152,6 +155,7 @@ fn switch(routes: &Route) -> Html {
     match routes {
         Route::Home => html!{<Home />},
         Route::Login => html!{<Login />},
+        Route::Register => html!{<Register />},
         //TODO! something for bad urls?
         Route::NotFound => html!{},
     }}

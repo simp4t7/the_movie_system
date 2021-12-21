@@ -10,8 +10,10 @@ use crate::pages::home::Home;
 use crate::pages::home::HomeMsg;
 use crate::pages::login::Login;
 use crate::pages::login::LoginMsg;
+use crate::pages::register::Register;
+use crate::pages::register::RegisterMsg;
 
-impl Login {
+impl Register {
     fn get_password_strength_estimate(&self) -> Option<u8> {
         zxcvbn(&self.password, &[])
             .ok()
@@ -21,7 +23,6 @@ impl Login {
         if self.password.is_empty() {
             return "Provide a password".to_string();
         }
-        log::info!("password is: {:?}", &self.password);
         let estimate_text = match self.get_password_strength_estimate().unwrap_or(0) {
             0 => "That's a password?",
             1 => "You can do a lot better.",
@@ -29,8 +30,52 @@ impl Login {
             3 => "Good",
             _ => "Great!",
         };
-        format!("Complexity = {}", estimate_text)
+        format!("Password Strength = {}", estimate_text)
     }
+    pub fn register_html(&self, ctx: &Context<Self>) -> Html {
+        html! {
+        <div>
+            <div>
+                <h1> {"REGISTER"} </h1>
+                <input
+                    class="login_user_name"
+                    placeholder="Username"
+                    maxlength=50
+                    oninput={ctx.link().callback(RegisterMsg::SetUsername)}
+                />
+            </div>
+            <div>
+                <input
+                    type="password"
+                    class="login_user_name"
+                    placeholder="Password"
+                    maxlength=50
+                    oninput={ctx.link().callback(RegisterMsg::SetPassword)}
+                />
+                <p> {self.get_password_strength_text()} </p>
+            </div>
+            <div>
+                <input
+                    type="password"
+                    class="login_user_name"
+                    placeholder="Repeat password"
+                    maxlength=50
+                    oninput={ctx.link().callback(RegisterMsg::ConfirmPassword)}
+                />
+            </div>
+            <div>
+            <button
+                class="register_password_strength"
+                onclick={ctx.link().callback(|_| RegisterMsg::RegisterUser)}>
+                { "Login" }
+            </button>
+            </div>
+        </div>
+        }
+    }
+}
+
+impl Login {
     pub fn authorize_html(&self, ctx: &Context<Self>) -> Html {
         html! {
         <div>
@@ -66,47 +111,6 @@ impl Login {
                 { "Login" }
             </button>
         </div>}
-    }
-    pub fn register_html(&self, ctx: &Context<Self>) -> Html {
-        html! {
-        <div>
-            <div>
-                <h1> {"REGISTER"} </h1>
-                <input
-                    class="login_user_name"
-                    placeholder="Username"
-                    maxlength=50
-                    oninput={ctx.link().callback(LoginMsg::SetUsername)}
-                />
-            </div>
-            <div>
-                <input
-                    type="password"
-                    class="login_user_name"
-                    placeholder="Password"
-                    maxlength=50
-                    oninput={ctx.link().callback(LoginMsg::SetPassword)}
-                />
-                <p> {self.get_password_strength_text()} </p>
-            </div>
-            <div>
-                <input
-                    type="password"
-                    class="login_user_name"
-                    placeholder="Repeat password"
-                    maxlength=50
-                    oninput={ctx.link().callback(LoginMsg::ConfirmPassword)}
-                />
-            </div>
-            <div>
-            <button
-                class="register_password_strength"
-                onclick={ctx.link().callback(|_| LoginMsg::RegisterUser)}>
-                { "Login" }
-            </button>
-            </div>
-        </div>
-        }
     }
     pub fn logout_button(&self, ctx: &Context<Self>) -> Html {
         html! {            <button

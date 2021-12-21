@@ -1,8 +1,7 @@
 use crate::utils::auth_flow;
-use crate::utils::{login_request, register_request};
+use crate::utils::login_request;
 
 use crate::LOGIN_URL;
-use crate::REGISTER_URL;
 use gloo_storage::LocalStorage;
 use gloo_storage::Storage;
 use shared_stuff::DoubleTokenResponse;
@@ -14,14 +13,12 @@ use yew::prelude::*;
 #[derive(Debug, PartialEq, Clone)]
 pub struct Login {
     username: String,
-    pub password: String,
+    password: String,
 }
 pub enum LoginMsg {
     SetUsername(InputEvent),
     SetPassword(InputEvent),
-    ConfirmPassword(InputEvent),
     VerifyLogin,
-    RegisterUser,
     SetToken(DoubleTokenResponse),
     AuthorizeCheck,
     Logout,
@@ -42,6 +39,16 @@ impl Component for Login {
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         use LoginMsg::*;
         match msg {
+            SetUsername(text) => {
+                if let Some(elem) = text.target_dyn_into::<HtmlInputElement>() {
+                    self.username = elem.value();
+                }
+            }
+            SetPassword(text) => {
+                if let Some(elem) = text.target_dyn_into::<HtmlInputElement>() {
+                    self.password = elem.value();
+                }
+            }
             Logout => {
                 let storage = LocalStorage::raw();
                 storage
@@ -56,34 +63,6 @@ impl Component for Login {
             AuthorizeCheck => spawn_local(async move {
                 let _x = auth_flow().await;
             }),
-            SetUsername(text) => {
-                if let Some(elem) = text.target_dyn_into::<HtmlInputElement>() {
-                    self.username = elem.value();
-                }
-            }
-            SetPassword(text) => {
-                if let Some(elem) = text.target_dyn_into::<HtmlInputElement>() {
-                    self.password = elem.value();
-                }
-            }
-            ConfirmPassword(text) => {
-                if let Some(elem) = text.target_dyn_into::<HtmlInputElement>() {
-                    self.password = elem.value();
-                }
-            }
-            RegisterUser => {
-                let username = UserInfo {
-                    username: self.username.clone(),
-                    password: self.password.clone(),
-                };
-                spawn_local(async move {
-                    let resp = register_request(&REGISTER_URL, username).await;
-                    match resp {
-                        Ok(_a) => log::info!("success!"),
-                        Err(e) => log::info!("oh no, {:?}", &e),
-                    }
-                });
-            }
             VerifyLogin => {
                 let username = UserInfo {
                     username: self.username.clone(),
@@ -121,7 +100,6 @@ impl Component for Login {
     fn view(&self, ctx: &Context<Self>) -> Html {
         html! {
         <div>
-        { self.register_html(ctx) }
         { self.login_html(ctx) }
         { self.authorize_html(ctx) }
         { self.logout_button(ctx) }
