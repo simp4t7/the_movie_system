@@ -5,7 +5,11 @@ Add a catch-all 404 route for bad paths.
 Still not super satisfied with the login sessions structure. It would be
 a lot cleaner if there was a real shared state between components with user info.
 
+Need to handle for logged out users trying to authorize, currently doesn't do anything
+but it should redirect to login or register and give an error message.
+
 Need to add groups, fairly simple so might as well now.
+-> Update, not simple...
 
 Add the ability to add movies from the autocomplete and display them based on groups.
 

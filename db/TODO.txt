@@ -1,1 +1,2 @@
 Should fill in a text file with commands and DB setup and stuff like that.
+-> Done, not too necessary because using SQLite but a few commands in DB_COMMANDS.txt

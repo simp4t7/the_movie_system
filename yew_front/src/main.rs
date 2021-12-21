@@ -125,7 +125,7 @@ pub fn nav_bar(app: &App) -> Html {
                 <div class="nav_bar">
                     <ul class="nav_bar">
                         <li><a href="/">{"Home"}</a></li>
-                        <li><a href="/contact">{"Contact"}</a></li>
+                        <li><a href="/group">{"Group"}</a></li>
                         <li style="float:right"><a href="/about">{"About"}</a></li>
                         <li style="float:right"><a href="/login">{user}</a></li>
                     </ul>
@@ -137,7 +137,7 @@ pub fn nav_bar(app: &App) -> Html {
                 <div class="nav_bar">
                     <ul class="nav_bar">
                         <li><a href="/">{"Home"}</a></li>
-                        <li><a href="/contact">{"Contact"}</a></li>
+                        <li><a href="/group">{"Groups"}</a></li>
                         <li style="float:right"><a href="/about">{"About"}</a></li>
                         <li style="float:right"><a href="/login">{"Login"}</a></li>
                     </ul>

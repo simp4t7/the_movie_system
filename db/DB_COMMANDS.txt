@@ -5,3 +5,15 @@ sqlite3 db/movie_site.db < db/clear_table.sql
 
 setup db
 sqlite3 db/movie_site.db < db/setup_db.sql
+
+select all from db
+sqlite3 db/movie_site.db
+select * from users;
+
+view all tables
+sqlite3 db/movie_site.db
+.tables
+
+quit DB mode
+.quit
+
