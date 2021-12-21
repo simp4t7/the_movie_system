@@ -1,3 +1,5 @@
+extern crate zxcvbn;
+use zxcvbn::zxcvbn;
 use crate::utils::image_processing;
 
 use yew::html;
@@ -10,17 +12,17 @@ use crate::pages::login::Login;
 use crate::pages::login::LoginMsg;
 
 impl Login {
-
-    fn get_estimate(&self) -> Option<u8> {
+    fn get_password_strength_estimate(&self) -> Option<u8> {
         zxcvbn(&self.password, &[])
             .ok()
             .map(|estimate| estimate.score())
     }
-    fn redout_top_row_text(&self) -> String {
+    fn get_password_strength_text(&self) -> String {
         if self.password.is_empty() {
             return "Provide a password".to_string();
         }
-        let estimate_text = match self.get_estimate().unwrap_or(0) {
+        log::info!("password is: {:?}", &self.password);
+        let estimate_text = match self.get_password_strength_estimate().unwrap_or(0) {
             0 => "That's a password?",
             1 => "You can do a lot better.",
             2 => "Meh",
@@ -66,30 +68,45 @@ impl Login {
         </div>}
     }
     pub fn register_html(&self, ctx: &Context<Self>) -> Html {
-        let on_change = ctx.link().callback(LoginMsg::SetPassword);
         html! {
         <div>
-            <h1> {"REGISTER"} </h1>
-            <input
-                class="login_user_name"
-                placeholder="Username"
-                maxlength=50
-                oninput={ctx.link().callback(LoginMsg::SetUsername)}
-            />
-            <input
-                type="password"
-                class="login_user_name"
-                placeholder="Password"
-                maxlength=50
-                oninput={ctx.link().callback(LoginMsg::SetPassword)}
-            />
-            <TextInput {on_change} value={self.password.clone()} />
+            <div>
+                <h1> {"REGISTER"} </h1>
+                <input
+                    class="login_user_name"
+                    placeholder="Username"
+                    maxlength=50
+                    oninput={ctx.link().callback(LoginMsg::SetUsername)}
+                />
+            </div>
+            <div>
+                <input
+                    type="password"
+                    class="login_user_name"
+                    placeholder="Password"
+                    maxlength=50
+                    oninput={ctx.link().callback(LoginMsg::SetPassword)}
+                />
+                <p> {self.get_password_strength_text()} </p>
+            </div>
+            <div>
+                <input
+                    type="password"
+                    class="login_user_name"
+                    placeholder="Repeat password"
+                    maxlength=50
+                    oninput={ctx.link().callback(LoginMsg::ConfirmPassword)}
+                />
+            </div>
+            <div>
             <button
-                class="login_user_name"
+                class="register_password_strength"
                 onclick={ctx.link().callback(|_| LoginMsg::RegisterUser)}>
                 { "Login" }
             </button>
-        </div>}
+            </div>
+        </div>
+        }
     }
     pub fn logout_button(&self, ctx: &Context<Self>) -> Html {
         html! {            <button

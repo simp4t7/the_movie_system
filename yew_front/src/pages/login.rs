@@ -1,4 +1,3 @@
-extern crate zxcvbn;
 use crate::utils::auth_flow;
 use crate::utils::{login_request, register_request};
 
@@ -11,7 +10,6 @@ use shared_stuff::UserInfo;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
-use zxcvbn::zxcvbn;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Login {
@@ -21,6 +19,7 @@ pub struct Login {
 pub enum LoginMsg {
     SetUsername(InputEvent),
     SetPassword(InputEvent),
+    ConfirmPassword(InputEvent),
     VerifyLogin,
     RegisterUser,
     SetToken(DoubleTokenResponse),
@@ -63,6 +62,11 @@ impl Component for Login {
                 }
             }
             SetPassword(text) => {
+                if let Some(elem) = text.target_dyn_into::<HtmlInputElement>() {
+                    self.password = elem.value();
+                }
+            }
+            ConfirmPassword(text) => {
                 if let Some(elem) = text.target_dyn_into::<HtmlInputElement>() {
                     self.password = elem.value();
                 }
