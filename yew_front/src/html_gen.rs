@@ -1,3 +1,5 @@
+extern crate zxcvbn;
+use zxcvbn::zxcvbn;
 use crate::utils::image_processing;
 
 use yew::html;
@@ -8,6 +10,70 @@ use crate::pages::home::Home;
 use crate::pages::home::HomeMsg;
 use crate::pages::login::Login;
 use crate::pages::login::LoginMsg;
+use crate::pages::register::Register;
+use crate::pages::register::RegisterMsg;
+
+impl Register {
+    fn get_password_strength_estimate(&self) -> Option<u8> {
+        zxcvbn(&self.password, &[])
+            .ok()
+            .map(|estimate| estimate.score())
+    }
+    fn get_password_strength_text(&self) -> String {
+        if self.password.is_empty() {
+            return "Provide a password".to_string();
+        }
+        let estimate_text = match self.get_password_strength_estimate().unwrap_or(0) {
+            0 => "That's a password?",
+            1 => "You can do a lot better.",
+            2 => "Meh",
+            3 => "Good",
+            _ => "Great!",
+        };
+        format!("Password Strength = {}", estimate_text)
+    }
+    pub fn register_html(&self, ctx: &Context<Self>) -> Html {
+        html! {
+        <div>
+            <div>
+                <h1> {"REGISTER"} </h1>
+                <input
+                    class="login_user_name"
+                    placeholder="Username"
+                    maxlength=50
+                    oninput={ctx.link().callback(RegisterMsg::SetUsername)}
+                />
+            </div>
+            <div>
+                <input
+                    type="password"
+                    class="login_user_name"
+                    placeholder="Password"
+                    maxlength=50
+                    oninput={ctx.link().callback(RegisterMsg::SetPassword)}
+                />
+                <p> {self.get_password_strength_text()} </p>
+            </div>
+            <div>
+                <input
+                    type="password"
+                    class="login_user_name"
+                    placeholder="Repeat password"
+                    maxlength=50
+                    oninput={ctx.link().callback(RegisterMsg::ConfirmPassword)}
+                />
+            </div>
+            <div>
+            <button
+                class="register_password_strength"
+                onclick={ctx.link().callback(|_| RegisterMsg::RegisterUser)}>
+                { "Login" }
+            </button>
+            </div>
+        </div>
+        }
+    }
+}
 
 impl Login {
     pub fn authorize_html(&self, ctx: &Context<Self>) -> Html {
@@ -42,30 +108,6 @@ impl Login {
             <button
                 class="login_user_name"
                 onclick={ctx.link().callback(|_| LoginMsg::VerifyLogin)}>
-                { "Login" }
-            </button>
-        </div>}
-    }
-    pub fn register_html(&self, ctx: &Context<Self>) -> Html {
-        html! {
-        <div>
-            <h1> {"REGISTER"} </h1>
-            <input
-                class="login_user_name"
-                placeholder="Username"
-                maxlength=50
-                oninput={ctx.link().callback(LoginMsg::SetUsername)}
-            />
-            <input
-                type="password"
-                class="login_user_name"
-                placeholder="Password"
-                maxlength=50
-                oninput={ctx.link().callback(LoginMsg::SetPassword)}
-            />
-            <button
-                class="login_user_name"
-                onclick={ctx.link().callback(|_| LoginMsg::RegisterUser)}>
                 { "Login" }
             </button>
         </div>}
