@@ -3,6 +3,7 @@ use warp::Filter;
 use warp_back::error_handling::handle_rejection;
 use warp_back::error_handling::Result;
 
+use warp_back::routes::create_group;
 use warp_back::routes::{authorize_access, authorize_refresh, login, register, search};
 use warp_back::State;
 
@@ -23,6 +24,7 @@ async fn main() -> Result<()> {
         .or(login(&state))
         .or(authorize_access(&state))
         .or(authorize_refresh(&state))
+        .or(create_group(&state))
         .recover(handle_rejection)
         .with(&state.cors);
 

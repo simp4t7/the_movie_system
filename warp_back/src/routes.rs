@@ -1,5 +1,7 @@
 use crate::auth::verify_pass;
 use crate::auth::verify_token;
+use crate::db_functions::create_new_group;
+use crate::db_functions::update_user_group;
 use crate::db_functions::{check_login, insert_user};
 use crate::error_handling::AuthError;
 use crate::error_handling::WarpRejections;
@@ -7,6 +9,8 @@ use crate::State;
 use http::status::StatusCode;
 use imdb_autocomplete::autocomplete_func;
 
+use shared_stuff::groups_stuff::BasicUsername;
+use shared_stuff::groups_stuff::GroupStruct;
 use shared_stuff::ErrorMessage;
 use shared_stuff::ImdbQuery;
 use shared_stuff::UserInfo;
@@ -16,6 +20,7 @@ use warp::reject::custom;
 use crate::auth::generate_access_token;
 use crate::auth::generate_double_token;
 use crate::error_handling::SqlxError;
+
 use warp::reply::json;
 use warp::Filter;
 
@@ -31,6 +36,24 @@ use warp::Filter;
 //warp::path("test").map(|| "Hello, World!")
 //}
 
+pub fn create_group(
+    state: &State,
+) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+    warp::path("create_group")
+        .and(warp::body::json())
+        .and(with_db(state.db.clone()))
+        .and_then(|user: BasicUsername, db: SqlitePool| async move {
+            match create_new_group(&db, &user.username).await {
+                Ok(uuid) => {
+                    update_user_group(&db, &user.username, uuid).await?;
+                    Ok(warp::reply())
+                }
+                Err(_e) => Err(custom(WarpRejections::SqlxRejection(
+                    SqlxError::CreateGroupError,
+                ))),
+            }
+        })
+}
 pub fn authorize_refresh(
     state: &State,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {

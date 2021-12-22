@@ -1,7 +1,9 @@
 use crate::auth::verify_pass;
+use shared_stuff::groups_stuff::GroupsId;
 
 use crate::error_handling::{AuthError, Result, SqlxError, WarpRejections};
 use serde_json::Value;
+use shared_stuff::groups_stuff::BasicUsername;
 use shared_stuff::LoginLookup;
 use shared_stuff::UserInfo;
 use sqlx::types::chrono::NaiveDateTime;
@@ -23,7 +25,35 @@ pub struct User {
     pub date_modified: NaiveDateTime,
 }
 
-pub async fn make_new_group(db: &SqlitePool, username: &str) -> Result<()> {
+pub async fn update_user_group(db: &SqlitePool, username: &str, group_id: String) -> Result<()> {
+    let mut conn = db
+        .acquire()
+        .await
+        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
+    let groups = GroupsId {
+        groups: vec![group_id],
+    };
+    let serialized_groups =
+        serde_json::to_string(&groups).map_err(|_| custom(WarpRejections::SerializationError))?;
+
+    query!(
+        r#"
+
+                    UPDATE users 
+                    set groups=$1
+                    WHERE username=$2
+                    "#,
+        serialized_groups,
+        username
+    )
+    .execute(&mut conn)
+    .await
+    .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::CreateGroupError)))?;
+
+    Ok(())
+}
+
+pub async fn create_new_group(db: &SqlitePool, username: &str) -> Result<String> {
     let mut conn = db
         .acquire()
         .await
@@ -31,6 +61,10 @@ pub async fn make_new_group(db: &SqlitePool, username: &str) -> Result<()> {
 
     let now = sqlx::types::chrono::Utc::now();
     let uuid = Uuid::new_v4().to_string();
+    let serialized_users = serde_json::to_string(&vec![BasicUsername {
+        username: username.to_string(),
+    }])
+    .map_err(|_| custom(WarpRejections::SerializationError))?;
 
     query!(
         r#"
@@ -40,7 +74,7 @@ pub async fn make_new_group(db: &SqlitePool, username: &str) -> Result<()> {
 
         "#,
         uuid,
-        username,
+        serialized_users,
         None::<Option<String>>,
         None::<Option<String>>,
         None::<Option<String>>,
@@ -49,9 +83,9 @@ pub async fn make_new_group(db: &SqlitePool, username: &str) -> Result<()> {
     )
     .execute(&mut conn)
     .await
-    .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::InsertUserError)))?;
+    .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::CreateGroupError)))?;
 
-    Ok(())
+    Ok(uuid)
 }
 
 pub async fn select_single_user(db: &SqlitePool, username: &str) -> Result<User> {

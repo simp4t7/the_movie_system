@@ -6,11 +6,11 @@ impl Groups {
     pub fn create_group(&self, ctx: &Context<Self>) -> Html {
         html! {
         <div>
-            <h1> {"Authorize"} </h1>
+            <h1> {"Create Group"} </h1>
             <button
-                class="authorize_button"
+                class="create_group_button"
                 onclick={ctx.link().callback(|_| GroupsMsg::CreateGroup)}>
-                { "Authorize" }
+                { "Create Group" }
             </button>
         </div>
         }
