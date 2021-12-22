@@ -1,6 +1,7 @@
 use crate::auth::verify_pass;
 
 use crate::error_handling::{AuthError, Result, SqlxError, WarpRejections};
+use serde_json::Value;
 use shared_stuff::LoginLookup;
 use shared_stuff::UserInfo;
 use sqlx::types::chrono::NaiveDateTime;
@@ -17,8 +18,40 @@ pub struct User {
     pub username: String,
     pub hashed_password: String,
     pub salt: String, // hash helper
+    pub groups: Option<String>,
     pub date_created: NaiveDateTime,
     pub date_modified: NaiveDateTime,
+}
+
+pub async fn make_new_group(db: &SqlitePool, username: &str) -> Result<()> {
+    let mut conn = db
+        .acquire()
+        .await
+        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
+
+    let now = sqlx::types::chrono::Utc::now();
+    let uuid = Uuid::new_v4().to_string();
+
+    query!(
+        r#"
+
+        INSERT INTO groups ( id, members, movies_watched, current_movies, turn, date_created, date_modified  )
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+
+        "#,
+        uuid,
+        username,
+        None::<Option<String>>,
+        None::<Option<String>>,
+        None::<Option<String>>,
+        now,
+        now
+    )
+    .execute(&mut conn)
+    .await
+    .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::InsertUserError)))?;
+
+    Ok(())
 }
 
 pub async fn select_single_user(db: &SqlitePool, username: &str) -> Result<User> {
@@ -187,14 +220,15 @@ pub async fn insert_user(user: &UserInfo, db: &SqlitePool) -> Result<()> {
     query!(
         r#"
 
-        INSERT INTO users ( id, username, hashed_password, salt, date_created, date_modified  )
-        VALUES ($1, $2, $3, $4, $5, $6)
+        INSERT INTO users ( id, username, hashed_password, salt, groups, date_created, date_modified  )
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
 
         "#,
         uuid,
         user.username,
         password_hash,
         salt,
+        None::<Option<String>>,
         now,
         now
     )

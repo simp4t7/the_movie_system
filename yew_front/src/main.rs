@@ -14,6 +14,7 @@ pub mod html_gen;
 pub mod pages;
 pub mod utils;
 
+use pages::groups::Groups;
 use pages::home::Home;
 use pages::login::Login;
 use pages::register::Register;
@@ -38,6 +39,8 @@ pub enum Route {
     Home,
     #[at("register")]
     Register,
+    #[at("groups")]
+    Groups,
     #[at("/404")]
     NotFound,
 }
@@ -128,7 +131,7 @@ pub fn nav_bar(app: &App) -> Html {
                 <div class="nav_bar">
                     <ul class="nav_bar">
                         <li><a href="/">{"Home"}</a></li>
-                        <li><a href="/group">{"Group"}</a></li>
+                        <li><a href="/groups">{"Group"}</a></li>
                         <li style="float:right"><a href="/about">{"About"}</a></li>
                         <li style="float:right"><a href="/login">{user}</a></li>
                     </ul>
@@ -140,7 +143,7 @@ pub fn nav_bar(app: &App) -> Html {
                 <div class="nav_bar">
                     <ul class="nav_bar">
                         <li><a href="/">{"Home"}</a></li>
-                        <li><a href="/group">{"Groups"}</a></li>
+                        <li><a href="/groups">{"Groups"}</a></li>
                         <li style="float:right"><a href="/about">{"About"}</a></li>
                         <li style="float:right"><a href="/login">{"Login"}</a></li>
                     </ul>
@@ -155,6 +158,7 @@ fn switch(routes: &Route) -> Html {
     match routes {
         Route::Home => html!{<Home />},
         Route::Login => html!{<Login />},
+        Route::Groups => html!{<Groups />},
         Route::Register => html!{<Register />},
         //TODO! something for bad urls?
         Route::NotFound => html!{},

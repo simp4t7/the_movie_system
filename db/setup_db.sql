@@ -4,7 +4,7 @@ CREATE TABLE users
     username TEXT NOT NULL UNIQUE,
     hashed_password TEXT not null,
     salt TEXT not null,
-    groups BLOB,
+    groups TEXT,
     date_created DATETIME DEFAULT (DATETIME('now')) NOT NULL,
     date_modified DATETIME DEFAULT (DATETIME('now')) NOT NULL
 );
@@ -12,10 +12,10 @@ CREATE TABLE users
 CREATE TABLE groups
 (
     id TEXT NOT NULL UNIQUE,
-    members BLOB NOT NULL,
-    movies_watched BLOB,
+    members TEXT NOT NULL,
+    movies_watched TEXT,
+    current_movies TEXT,
+    turn TEXT,
     date_created DATETIME DEFAULT (DATETIME('now')) NOT NULL,
-    date_modified DATETIME DEFAULT (DATETIME('now')) NOT NULL,
-    current_movies BLOB,
-    turn TEXT
+    date_modified DATETIME DEFAULT (DATETIME('now')) NOT NULL
 );
