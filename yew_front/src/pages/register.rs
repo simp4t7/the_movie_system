@@ -3,8 +3,8 @@ use crate::utils::register_request;
 extern crate zxcvbn;
 use zxcvbn::zxcvbn;
 
-use crate::REGISTER_URL;
 use crate::error::Error;
+use crate::REGISTER_URL;
 use shared_stuff::UserInfo;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlInputElement;
@@ -25,7 +25,6 @@ pub enum RegisterMsg {
     RegisterUser,
     Noop,
 }
-
 
 impl Component for Register {
     type Message = RegisterMsg;
@@ -59,9 +58,8 @@ impl Component for Register {
                 if let Some(elem) = text.target_dyn_into::<HtmlInputElement>() {
                     self.confirmed_password = elem.value();
                     self.password_strength = zxcvbn(&self.password, &[])
-                                            .ok()
-                                            .map(|estimate| estimate.score());
-
+                        .ok()
+                        .map(|estimate| estimate.score());
                 }
             }
             RegisterUser => {
@@ -69,20 +67,20 @@ impl Component for Register {
                     username: self.username.clone(),
                     password: self.password.clone(),
                 };
-                if !self.repeated_password_matching() {
-                    self.error = Some(Error::PasswordNotMatchError);
-                } else if self.password_strength < Some(3) {
-                    self.error = Some(Error::PasswordWeakError);
-                } else {
-                    self.error = None;
-                    spawn_local(async move {
-                        let resp = register_request(&REGISTER_URL, username).await;
-                        match resp {
-                            Ok(_a) => log::info!("success!"),
-                            Err(e) => log::info!("oh no, {:?}", &e),
-                        }
-                    });
-                }
+                //if !self.repeated_password_matching() {
+                //self.error = Some(Error::PasswordNotMatchError);
+                //} else if self.password_strength < Some(3) {
+                //self.error = Some(Error::PasswordWeakError);
+                //} else {
+                //self.error = None;
+                spawn_local(async move {
+                    let resp = register_request(&REGISTER_URL, username).await;
+                    match resp {
+                        Ok(_a) => log::info!("success!"),
+                        Err(e) => log::info!("oh no, {:?}", &e),
+                    }
+                });
+                //}
             }
         }
         log::info!("{:?}", self);
@@ -110,13 +108,19 @@ impl Register {
         if self.password.is_empty() {
             return "Provide a password".to_string();
         }
-        format!("Password Strength = {:?}", self.get_password_strength_estimate().unwrap())
+        format!(
+            "Password Strength = {:?}",
+            self.get_password_strength_estimate().unwrap()
+        )
     }
     pub fn repeated_password_matching(&self) -> bool {
         self.password.eq(&self.confirmed_password)
     }
     pub fn repeated_password_matching_text(&self) -> String {
-        format!("Repeat password correct: {:?}", self.repeated_password_matching())
+        format!(
+            "Repeat password correct: {:?}",
+            self.repeated_password_matching()
+        )
     }
     pub fn register_html(&self, ctx: &Context<Self>) -> Html {
         html! {
@@ -162,5 +166,3 @@ impl Register {
         }
     }
 }
-
-

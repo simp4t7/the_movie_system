@@ -4,7 +4,7 @@ target/*
 # Secret stuff
 keys/*
 
-#db/movie_site.db
+db/movie_site.db
 db/movie_site.db-shm
 db/movie_site.db-wal
 
