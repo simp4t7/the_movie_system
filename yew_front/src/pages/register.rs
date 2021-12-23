@@ -14,7 +14,8 @@ pub struct Register {
     username: String,
     pub password: String,
     pub confirmed_password: String,
-    pub password_strength: Option<u8>,
+    pub password_strength: Option<u9>,
+    error: Option<Err>,
 }
 pub enum RegisterMsg {
     SetUsername(InputEvent),

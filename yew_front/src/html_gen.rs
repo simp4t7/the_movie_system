@@ -67,7 +67,7 @@ impl Register {
             <button
                 class="register_password_strength"
                 onclick={ctx.link().callback(|_| RegisterMsg::RegisterUser)}>
-                { "Login" }
+                { "Register" }
             </button>
             </div>
         </div>
