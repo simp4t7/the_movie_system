@@ -23,14 +23,13 @@ impl Register {
         if self.password.is_empty() {
             return "Provide a password".to_string();
         }
-        let estimate_text = match self.get_password_strength_estimate().unwrap_or(0) {
-            0 => "That's a password?",
-            1 => "You can do a lot better.",
-            2 => "Meh",
-            3 => "Good",
-            _ => "Great!",
-        };
-        format!("Password Strength = {}", estimate_text)
+        format!("Password Strength = {:?}", self.get_password_strength_estimate().unwrap())
+    }
+    pub fn repeated_password_matching(&self) -> bool {
+        self.password.eq(&self.confirmed_password)
+    }
+    pub fn repeated_password_matching_text(&self) -> String {
+        format!("Repeat password correct: {:?}", self.repeated_password_matching())
     }
     pub fn register_html(&self, ctx: &Context<Self>) -> Html {
         html! {
@@ -62,6 +61,7 @@ impl Register {
                     maxlength=50
                     oninput={ctx.link().callback(RegisterMsg::ConfirmPassword)}
                 />
+                <p> {self.repeated_password_matching_text()} </p>
             </div>
             <div>
             <button
@@ -69,6 +69,7 @@ impl Register {
                 onclick={ctx.link().callback(|_| RegisterMsg::RegisterUser)}>
                 { "Register" }
             </button>
+            <p> {format!("Register error: {:?}", self.error.clone())} </p>
             </div>
         </div>
         }

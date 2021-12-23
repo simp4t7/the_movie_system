@@ -4,6 +4,7 @@ extern crate zxcvbn;
 use zxcvbn::zxcvbn;
 
 use crate::REGISTER_URL;
+use crate::error::Error;
 use shared_stuff::UserInfo;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlInputElement;
@@ -14,8 +15,8 @@ pub struct Register {
     username: String,
     pub password: String,
     pub confirmed_password: String,
-    pub password_strength: Option<u9>,
-    error: Option<Err>,
+    pub password_strength: Option<u8>,
+    pub error: Option<Error>,
 }
 pub enum RegisterMsg {
     SetUsername(InputEvent),
@@ -35,6 +36,7 @@ impl Component for Register {
             password: String::new(),
             confirmed_password: String::new(),
             password_strength: None,
+            error: None,
         }
     }
 
@@ -54,7 +56,7 @@ impl Component for Register {
             }
             ConfirmPassword(text) => {
                 if let Some(elem) = text.target_dyn_into::<HtmlInputElement>() {
-                    self.password = elem.value();
+                    self.confirmed_password = elem.value();
                     self.password_strength = zxcvbn(&self.password, &[])
                                             .ok()
                                             .map(|estimate| estimate.score());
@@ -66,13 +68,20 @@ impl Component for Register {
                     username: self.username.clone(),
                     password: self.password.clone(),
                 };
-                spawn_local(async move {
-                    let resp = register_request(&REGISTER_URL, username).await;
-                    match resp {
-                        Ok(_a) => log::info!("success!"),
-                        Err(e) => log::info!("oh no, {:?}", &e),
-                    }
-                });
+                if !self.repeated_password_matching() {
+                    self.error = Some(Error::PasswordNotMatchError);
+                } else if self.password_strength < Some(3) {
+                    self.error = Some(Error::PasswordWeakError);
+                } else {
+                    self.error = None;
+                    spawn_local(async move {
+                        let resp = register_request(&REGISTER_URL, username).await;
+                        match resp {
+                            Ok(_a) => log::info!("success!"),
+                            Err(e) => log::info!("oh no, {:?}", &e),
+                        }
+                    });
+                }
             }
         }
         log::info!("{:?}", self);

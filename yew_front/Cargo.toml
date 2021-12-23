@@ -21,3 +21,4 @@ anyhow = "1.0.51"
 gloo-storage = "0.2.0"
 zxcvbn = {version = "2.1.2", features =["wasmbind"]}
 web-sys = "0.3.55"
+thiserror = "1"
