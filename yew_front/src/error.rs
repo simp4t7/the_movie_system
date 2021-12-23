@@ -36,5 +36,8 @@ pub enum Error {
 
     #[error("Stupid password")]
     PasswordWeakError,
+
+    #[error("Login Error")]
+    LogInError,
 }
 
