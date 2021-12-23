@@ -2,6 +2,12 @@ use crate::MovieDisplay;
 use crate::{Deserialize, Serialize};
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct GroupForm {
+    pub username: String,
+    pub group_name: String,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct GroupsId {
     pub groups: Vec<String>,
 }
@@ -36,4 +42,9 @@ pub struct CurrentMovies {
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct BasicUsername {
     pub username: String,
+}
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct AddUser {
+    pub username: String,
+    pub add_user: String,
 }

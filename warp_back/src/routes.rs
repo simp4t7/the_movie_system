@@ -1,6 +1,7 @@
 use crate::auth::verify_pass;
 use crate::auth::verify_token;
 use crate::db_functions::create_new_group;
+use crate::db_functions::select_single_user;
 use crate::db_functions::update_user_group;
 use crate::db_functions::{check_login, insert_user};
 use crate::error_handling::AuthError;
@@ -9,8 +10,9 @@ use crate::State;
 use http::status::StatusCode;
 use imdb_autocomplete::autocomplete_func;
 
+use shared_stuff::groups_stuff::AddUser;
 use shared_stuff::groups_stuff::BasicUsername;
-use shared_stuff::groups_stuff::GroupStruct;
+use shared_stuff::groups_stuff::GroupForm;
 use shared_stuff::ErrorMessage;
 use shared_stuff::ImdbQuery;
 use shared_stuff::UserInfo;
@@ -36,16 +38,35 @@ use warp::Filter;
 //warp::path("test").map(|| "Hello, World!")
 //}
 
+//pub fn add_user_to_group(
+//state: &State,
+//) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+//warp::path("add_user")
+//.and(warp::body::json())
+//.and(with_db(state.db.clone()))
+//.and_then(|user: AddUser, db: SqlitePool| async move {
+//match select_single_user(&db, &user.add_user).await {
+//Ok(_) => {
+//update_user_group(&db, &user.username, uuid).await?;
+//Ok(warp::reply())
+//}
+//Err(_e) => Err(custom(WarpRejections::SqlxRejection(
+//SqlxError::CreateGroupError,
+//))),
+//}
+//})
+//}
+
 pub fn create_group(
     state: &State,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path("create_group")
         .and(warp::body::json())
         .and(with_db(state.db.clone()))
-        .and_then(|user: BasicUsername, db: SqlitePool| async move {
-            match create_new_group(&db, &user.username).await {
+        .and_then(|group_form: GroupForm, db: SqlitePool| async move {
+            match create_new_group(&db, &group_form).await {
                 Ok(uuid) => {
-                    update_user_group(&db, &user.username, uuid).await?;
+                    update_user_group(&db, &group_form.username, uuid).await?;
                     Ok(warp::reply())
                 }
                 Err(_e) => Err(custom(WarpRejections::SqlxRejection(

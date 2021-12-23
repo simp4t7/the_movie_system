@@ -12,6 +12,7 @@ CREATE TABLE users
 CREATE TABLE groups
 (
     id TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
     members TEXT NOT NULL,
     movies_watched TEXT,
     current_movies TEXT,

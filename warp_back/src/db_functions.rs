@@ -4,6 +4,7 @@ use shared_stuff::groups_stuff::GroupsId;
 use crate::error_handling::{AuthError, Result, SqlxError, WarpRejections};
 use serde_json::Value;
 use shared_stuff::groups_stuff::BasicUsername;
+use shared_stuff::groups_stuff::GroupForm;
 use shared_stuff::LoginLookup;
 use shared_stuff::UserInfo;
 use sqlx::types::chrono::NaiveDateTime;
@@ -53,7 +54,7 @@ pub async fn update_user_group(db: &SqlitePool, username: &str, group_id: String
     Ok(())
 }
 
-pub async fn create_new_group(db: &SqlitePool, username: &str) -> Result<String> {
+pub async fn create_new_group(db: &SqlitePool, group_form: &GroupForm) -> Result<String> {
     let mut conn = db
         .acquire()
         .await
@@ -62,18 +63,19 @@ pub async fn create_new_group(db: &SqlitePool, username: &str) -> Result<String>
     let now = sqlx::types::chrono::Utc::now();
     let uuid = Uuid::new_v4().to_string();
     let serialized_users = serde_json::to_string(&vec![BasicUsername {
-        username: username.to_string(),
+        username: group_form.username.to_string(),
     }])
     .map_err(|_| custom(WarpRejections::SerializationError))?;
 
     query!(
         r#"
 
-        INSERT INTO groups ( id, members, movies_watched, current_movies, turn, date_created, date_modified  )
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        INSERT INTO groups ( id, name, members, movies_watched, current_movies, turn, date_created, date_modified  )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 
         "#,
         uuid,
+        group_form.group_name,
         serialized_users,
         None::<Option<String>>,
         None::<Option<String>>,
