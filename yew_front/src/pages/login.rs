@@ -1,5 +1,6 @@
 use crate::utils::auth_flow;
 use crate::utils::login_request;
+use crate::error::Error;
 
 use crate::LOGIN_URL;
 use gloo_storage::LocalStorage;
@@ -14,6 +15,7 @@ use yew::prelude::*;
 pub struct Login {
     username: String,
     password: String,
+    pub error: Option<Error>,
 }
 pub enum LoginMsg {
     SetUsername(InputEvent),
@@ -23,6 +25,7 @@ pub enum LoginMsg {
     AuthorizeCheck,
     Logout,
     Noop,
+    SetError(Option<Error>),
 }
 
 impl Component for Login {
@@ -33,6 +36,7 @@ impl Component for Login {
         Self {
             username: String::new(),
             password: String::new(),
+            error: None,
         }
     }
 
@@ -48,6 +52,9 @@ impl Component for Login {
                 if let Some(elem) = text.target_dyn_into::<HtmlInputElement>() {
                     self.password = elem.value();
                 }
+            }
+            SetError(errorOption) => {
+                self.error = errorOption;
             }
             Logout => {
                 let storage = LocalStorage::raw();
@@ -70,11 +77,18 @@ impl Component for Login {
                 };
 
                 let link_clone = ctx.link().clone();
+                let link_clone_for_error = ctx.link().clone();
                 spawn_local(async move {
                     let token = login_request(&LOGIN_URL, username).await;
                     match token {
-                        Ok(tok) => link_clone.send_message(LoginMsg::SetToken(tok)),
-                        Err(_) => link_clone.send_message(LoginMsg::Noop),
+                        Ok(tok) => {
+                            link_clone.send_message(LoginMsg::SetToken(tok));
+                            link_clone_for_error.send_message(SetError(None));
+                        }
+                        Err(_) => {
+                            link_clone.send_message(LoginMsg::Noop); 
+                            link_clone_for_error.send_message(SetError(Some(Error::LogInError)));
+                        }
                     }
                 });
             }
@@ -105,5 +119,52 @@ impl Component for Login {
         { self.logout_button(ctx) }
 
         </div> }
+    }
+}
+
+impl Login {
+    pub fn authorize_html(&self, ctx: &Context<Self>) -> Html {
+        html! {
+        <div>
+            <h1> {"Authorize"} </h1>
+            <button
+                class="authorize_button"
+                onclick={ctx.link().callback(|_| LoginMsg::AuthorizeCheck)}>
+                { "Authorize" }
+            </button>
+        </div>
+        }
+    }
+    pub fn login_html(&self, ctx: &Context<Self>) -> Html {
+        html! {
+        <div>
+            <h1> {"LOGIN"} </h1>
+            <input
+                class="login_user_name"
+                placeholder="Username"
+                maxlength=50
+                oninput={ctx.link().callback(LoginMsg::SetUsername)}
+            />
+            <input
+                type="password"
+                class="login_user_name"
+                placeholder="Password"
+                maxlength=50
+                oninput={ctx.link().callback(LoginMsg::SetPassword)}
+            />
+            <button
+                class="login_user_name"
+                onclick={ctx.link().callback(|_| LoginMsg::VerifyLogin)}>
+                { "Login" }
+            </button>
+            <p> {format!("Login error: {:?}", self.error.clone())} </p>
+        </div>}
+    }
+    pub fn logout_button(&self, ctx: &Context<Self>) -> Html {
+        html! {            <button
+            class="logout_button"
+            onclick={ctx.link().callback(|_| LoginMsg::Logout)}>
+            { "Logout" }
+        </button> }
     }
 }

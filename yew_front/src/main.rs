@@ -10,9 +10,9 @@ use yew_router::prelude::*;
 
 use yew::{html, Component, Context, Html};
 
-pub mod html_gen;
 pub mod pages;
 pub mod utils;
+pub mod error;
 
 use pages::groups::Groups;
 use pages::home::Home;
