@@ -19,3 +19,10 @@ route register
 route login
 	similar to register
 	except: not trying to insert, but verify
+
+mp's
+12/22
+	Implemented error for Register and Login.
+		Register has its own error (password strength, matching repeated password).
+		However, Login only uses a general login error now. Should front and back share errors?
+	I just add the html_gen part of each page to the end of the file, much less files
