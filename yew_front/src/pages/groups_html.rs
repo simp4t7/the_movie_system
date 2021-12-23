@@ -11,12 +11,30 @@ impl Groups {
                 class="add_group"
                 placeholder="group name"
                 maxlength=50
-                oninput={ctx.link().callback(|input| GroupsMsg::GroupName(input))}
+                oninput={ctx.link().callback(|input| GroupsMsg::CreateGroupName(input))}
             />
             <button
                 class="create_group_button"
                 onclick={ctx.link().callback(|_| GroupsMsg::CreateGroup)}>
                 { "Create Group" }
+            </button>
+        </div>
+        }
+    }
+    pub fn leave_group(&self, ctx: &Context<Self>) -> Html {
+        html! {
+        <div>
+            <h1> {"Leave Group"} </h1>
+            <input
+                class="leave_group"
+                placeholder="group name"
+                maxlength=50
+                oninput={ctx.link().callback(|input| GroupsMsg::LeaveGroupName(input))}
+            />
+            <button
+                class="create_group_button"
+                onclick={ctx.link().callback(|_| GroupsMsg::LeaveGroup)}>
+                { "Leave Group" }
             </button>
         </div>
         }

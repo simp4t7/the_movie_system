@@ -1,5 +1,6 @@
 use crate::MovieDisplay;
 use crate::{Deserialize, Serialize};
+use std::collections::HashSet;
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct GroupForm {
@@ -7,9 +8,14 @@ pub struct GroupForm {
     pub group_name: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GroupNames {
+    pub groups: Option<String>,
+}
+
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct GroupsId {
-    pub groups: Vec<String>,
+    pub groups: HashSet<String>,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]

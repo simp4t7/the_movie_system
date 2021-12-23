@@ -1,4 +1,5 @@
 use crate::auth::verify_pass;
+use shared_stuff::groups_stuff::GroupNames;
 use shared_stuff::groups_stuff::GroupsId;
 
 use crate::error_handling::{AuthError, Result, SqlxError, WarpRejections};
@@ -26,16 +27,82 @@ pub struct User {
     pub date_modified: NaiveDateTime,
 }
 
+#[derive(Debug)]
+pub struct TempStruct {
+    groups: Option<String>,
+}
+
+fn string_to_vec(input: String) -> Vec<String> {
+    assert!(input.contains(","));
+    let res_vec = input
+        .split(",")
+        .map(|item| item.trim().to_string())
+        .collect::<Vec<String>>();
+    res_vec
+}
+
+fn vec_to_string(mut input: Vec<String>) -> String {
+    assert!(!input.is_empty());
+    let start = input.remove(0);
+    input
+        .iter()
+        .fold(start, |acc, item| format!("{} , {}", acc, item))
+}
+
+pub async fn delete_user_group(db: &SqlitePool, username: &str, group_id: String) -> Result<()> {
+    let mut conn = db
+        .acquire()
+        .await
+        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
+    let query = query_as!(
+        TempStruct,
+        r#"
+                    select groups from users 
+                    WHERE username=$1
+                    "#,
+        username
+    )
+    .fetch_one(&mut conn)
+    .await
+    .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::CreateGroupError)))?;
+
+    log::info!("{:?}", &query);
+    let query_vec = string_to_vec(query.groups.unwrap());
+    log::info!("{:?}", &query_vec);
+    let query_string = vec_to_string(query_vec);
+    log::info!("{:?}", &query_string);
+
+    Ok(())
+}
+
 pub async fn update_user_group(db: &SqlitePool, username: &str, group_id: String) -> Result<()> {
     let mut conn = db
         .acquire()
         .await
         .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
-    let groups = GroupsId {
-        groups: vec![group_id],
-    };
-    let serialized_groups =
-        serde_json::to_string(&groups).map_err(|_| custom(WarpRejections::SerializationError))?;
+    let query = query_as!(
+        TempStruct,
+        r#"
+                    select groups from users 
+                    WHERE username=$1
+                    "#,
+        username
+    )
+    .fetch_one(&mut conn)
+    .await
+    .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::CreateGroupError)))?;
+
+    log::info!("{:?}", &query);
+
+    let mut new_entry = String::from("");
+    match query.groups {
+        Some(entry) => {
+            new_entry = format!("{} , {}", &entry, &group_id);
+        }
+        None => {
+            new_entry = group_id;
+        }
+    }
 
     query!(
         r#"
@@ -44,7 +111,7 @@ pub async fn update_user_group(db: &SqlitePool, username: &str, group_id: String
                     set groups=$1
                     WHERE username=$2
                     "#,
-        serialized_groups,
+        new_entry,
         username
     )
     .execute(&mut conn)

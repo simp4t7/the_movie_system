@@ -15,12 +15,15 @@ use yew::prelude::*;
 pub struct Groups {
     username: String,
     add_user: String,
-    group_name: String,
+    create_group_name: String,
+    leave_group_name: String,
 }
 pub enum GroupsMsg {
     CreateGroup,
+    LeaveGroup,
     UpdateUsername,
-    GroupName(InputEvent),
+    CreateGroupName(InputEvent),
+    LeaveGroupName(InputEvent),
     SetUsername(String),
     AddUser(InputEvent),
     AddNewUser,
@@ -32,6 +35,7 @@ lazy_static! {
         env!("ROOT_URL")
     };
     pub static ref CREATE_GROUP_URL: String = format!("{}/create_group", *ROOT_URL);
+    pub static ref LEAVE_GROUP_URL: String = format!("{}/leave_group", *ROOT_URL);
 }
 
 pub async fn new_group_request(username: String, group_name: String) -> Result<()> {
@@ -40,6 +44,20 @@ pub async fn new_group_request(username: String, group_name: String) -> Result<(
         group_name,
     })?;
     let resp = Request::post(&CREATE_GROUP_URL)
+        .header("content-type", "application/json; charset=UTF-8")
+        .mode(RequestMode::Cors)
+        .body(json_body)
+        .send()
+        .await?;
+    log::info!("{:?}", &resp);
+    Ok(())
+}
+pub async fn leave_group_request(username: String, group_name: String) -> Result<()> {
+    let json_body = serde_json::to_string(&GroupForm {
+        username,
+        group_name,
+    })?;
+    let resp = Request::post(&LEAVE_GROUP_URL)
         .header("content-type", "application/json; charset=UTF-8")
         .mode(RequestMode::Cors)
         .body(json_body)
@@ -68,11 +86,13 @@ impl Component for Groups {
         ctx.link().send_message(GroupsMsg::UpdateUsername);
         let username = String::from("");
         let add_user = String::from("");
-        let group_name = String::from("");
+        let create_group_name = String::from("");
+        let leave_group_name = String::from("");
         Self {
             username,
             add_user,
-            group_name,
+            create_group_name,
+            leave_group_name,
         }
     }
 
@@ -81,10 +101,17 @@ impl Component for Groups {
         log::info!("groups stuff: {:?}", self);
         let link_clone = ctx.link().clone();
         match msg {
-            GroupName(text) => {
+            LeaveGroup => {}
+            CreateGroupName(text) => {
                 if let Some(elem) = text.target_dyn_into::<HtmlInputElement>() {
                     log::info!("group_name value: {:?}", &elem.value());
-                    self.group_name = elem.value();
+                    self.create_group_name = elem.value();
+                }
+            }
+            LeaveGroupName(text) => {
+                if let Some(elem) = text.target_dyn_into::<HtmlInputElement>() {
+                    log::info!("group_name value: {:?}", &elem.value());
+                    self.leave_group_name = elem.value();
                 }
             }
             AddNewUser => {}
@@ -98,7 +125,7 @@ impl Component for Groups {
                 link_clone.send_message(GroupsMsg::UpdateUsername);
                 log::info!("making a group, username is: {:?}", &self.username);
                 let username = self.username.clone();
-                let group_name = self.group_name.clone();
+                let group_name = self.create_group_name.clone();
                 spawn_local(async move {
                     let resp = new_group_request(username, group_name).await;
                     log::info!("{:?}", &resp);
@@ -122,6 +149,7 @@ impl Component for Groups {
         html! {
         <div>
         { self.create_group(ctx) }
+        { self.leave_group(ctx) }
         { self.add_user_to_group(ctx) }
         </div> }
     }
