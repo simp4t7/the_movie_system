@@ -1,6 +1,7 @@
 use crate::auth::verify_pass;
 use crate::auth::verify_token;
 use crate::db_functions::create_new_group;
+use crate::db_functions::db_add_user;
 use crate::db_functions::leave_user_group;
 use crate::db_functions::select_single_user;
 use crate::db_functions::update_user_group;
@@ -39,24 +40,21 @@ use warp::Filter;
 //warp::path("test").map(|| "Hello, World!")
 //}
 
-//pub fn add_user_to_group(
-//state: &State,
-//) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
-//warp::path("add_user")
-//.and(warp::body::json())
-//.and(with_db(state.db.clone()))
-//.and_then(|user: AddUser, db: SqlitePool| async move {
-//match select_single_user(&db, &user.add_user).await {
-//Ok(_) => {
-//update_user_group(&db, &user.username, uuid).await?;
-//Ok(warp::reply())
-//}
-//Err(_e) => Err(custom(WarpRejections::SqlxRejection(
-//SqlxError::CreateGroupError,
-//))),
-//}
-//})
-//}
+pub fn add_user_to_group(
+    state: &State,
+) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+    warp::path("add_user")
+        .and(warp::body::json())
+        .and(with_db(state.db.clone()))
+        .and_then(|user: AddUser, db: SqlitePool| async move {
+            match db_add_user(&db, &user).await {
+                Ok(_) => Ok(warp::reply()),
+                Err(_e) => Err(custom(WarpRejections::SqlxRejection(
+                    SqlxError::AddUserError,
+                ))),
+            }
+        })
+}
 
 pub fn leave_group(
     state: &State,

@@ -17,8 +17,10 @@ pub struct Groups {
     add_user: String,
     create_group_name: String,
     leave_group_name: String,
+    group_add: String,
 }
 pub enum GroupsMsg {
+    GroupAdd(InputEvent),
     CreateGroup,
     LeaveGroup,
     UpdateUsername,
@@ -36,6 +38,7 @@ lazy_static! {
     };
     pub static ref CREATE_GROUP_URL: String = format!("{}/create_group", *ROOT_URL);
     pub static ref LEAVE_GROUP_URL: String = format!("{}/leave_group", *ROOT_URL);
+    pub static ref ADD_USER_URL: String = format!("{}/add_user", *ROOT_URL);
 }
 
 pub async fn new_group_request(username: String, group_name: String) -> Result<()> {
@@ -67,9 +70,17 @@ pub async fn leave_group_request(username: String, group_name: String) -> Result
     Ok(())
 }
 
-pub async fn add_user_request(username: String, add_user: String) -> Result<()> {
-    let json_body = serde_json::to_string(&AddUser { username, add_user })?;
-    let resp = Request::post(&CREATE_GROUP_URL)
+pub async fn add_user_request(
+    username: String,
+    add_user: String,
+    group_name: String,
+) -> Result<()> {
+    let json_body = serde_json::to_string(&AddUser {
+        username,
+        add_user,
+        group_name,
+    })?;
+    let resp = Request::post(&ADD_USER_URL)
         .header("content-type", "application/json; charset=UTF-8")
         .mode(RequestMode::Cors)
         .body(json_body)
@@ -88,11 +99,13 @@ impl Component for Groups {
         let add_user = String::from("");
         let create_group_name = String::from("");
         let leave_group_name = String::from("");
+        let group_add = String::from("");
         Self {
             username,
             add_user,
             create_group_name,
             leave_group_name,
+            group_add,
         }
     }
 
@@ -101,6 +114,11 @@ impl Component for Groups {
         log::info!("groups stuff: {:?}", self);
         let link_clone = ctx.link().clone();
         match msg {
+            GroupAdd(text) => {
+                if let Some(elem) = text.target_dyn_into::<HtmlInputElement>() {
+                    self.group_add = elem.value();
+                }
+            }
             LeaveGroup => {
                 let username = self.username.clone();
                 let group_name = self.leave_group_name.clone();
@@ -122,7 +140,15 @@ impl Component for Groups {
                     self.leave_group_name = elem.value();
                 }
             }
-            AddNewUser => {}
+            AddNewUser => {
+                let username = self.username.clone();
+                let add_user = self.add_user.clone();
+                let group_add = self.group_add.clone();
+                spawn_local(async move {
+                    let resp = add_user_request(username, add_user, group_add).await;
+                    log::info!("{:?}", &resp);
+                })
+            }
             AddUser(text) => {
                 if let Some(elem) = text.target_dyn_into::<HtmlInputElement>() {
                     log::info!("add_user value: {:?}", &elem.value());

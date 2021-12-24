@@ -4,6 +4,7 @@ use shared_stuff::groups_stuff::GroupsId;
 
 use crate::error_handling::{AuthError, Result, SqlxError, WarpRejections};
 use serde_json::Value;
+use shared_stuff::groups_stuff::AddUser;
 use shared_stuff::groups_stuff::BasicUsername;
 use shared_stuff::groups_stuff::GroupForm;
 use shared_stuff::LoginLookup;
@@ -32,10 +33,161 @@ pub struct UpdateUserStruct {
     groups: Option<String>,
 }
 #[derive(Debug)]
-pub struct LeaveGroupStruct {
+pub struct GroupIdStruct {
     id: String,
 }
+#[derive(Debug)]
+pub struct QueryGroupMembers {
+    members: String,
+}
 
+pub async fn get_group_members(db: &SqlitePool, group_id: &str) -> Result<String> {
+    let mut conn = db
+        .acquire()
+        .await
+        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
+
+    let members_struct = query_as!(
+        QueryGroupMembers,
+        r#"
+                    select members from groups
+                    WHERE id = $1;
+                    "#,
+        group_id,
+    )
+    .fetch_one(&mut conn)
+    .await
+    .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DeleteGroupError)))?;
+
+    Ok(members_struct.members)
+}
+
+pub async fn get_user_groups(db: &SqlitePool, user: &str) -> Result<String> {
+    let mut conn = db
+        .acquire()
+        .await
+        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
+
+    let groups = query_as!(
+        UpdateUserStruct,
+        r#"
+                    select groups from users
+                    WHERE username = $1;
+                    "#,
+        user,
+    )
+    .fetch_one(&mut conn)
+    .await
+    .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DeleteGroupError)))?;
+
+    if let Some(user_groups) = groups.groups {
+        Ok(user_groups)
+    } else {
+        Ok(String::from(""))
+    }
+}
+
+pub async fn get_group_id(db: &SqlitePool, group_name: &str, username: &str) -> Result<String> {
+    let mut conn = db
+        .acquire()
+        .await
+        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
+    let group_id = query_as!(
+        GroupIdStruct,
+        r#"
+                    select id from groups 
+                    WHERE name=$1 AND members LIKE $2
+                    "#,
+        group_name,
+        username
+    )
+    .fetch_one(&mut conn)
+    .await
+    .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DeleteGroupError)))?;
+    Ok(group_id.id)
+}
+
+pub async fn update_group_members(db: &SqlitePool, group_id: &str, members: &str) -> Result<()> {
+    let mut conn = db
+        .acquire()
+        .await
+        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
+    let updated_memebers = query!(
+        r#"
+                    update groups
+                    set members = $1
+                    WHERE id = $2;
+                    "#,
+        members,
+        group_id
+    )
+    .execute(&mut conn)
+    .await
+    .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DeleteGroupError)))?;
+    Ok(())
+}
+
+pub async fn update_user_groups(db: &SqlitePool, user: &str, groups: &str) -> Result<()> {
+    let mut conn = db
+        .acquire()
+        .await
+        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
+    let updated_groups = query!(
+        r#"
+                    update users
+                    set groups = $1
+                    WHERE username = $2;
+                    "#,
+        groups,
+        user
+    )
+    .execute(&mut conn)
+    .await
+    .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DeleteGroupError)))?;
+    Ok(())
+}
+
+pub async fn select_single_user(db: &SqlitePool, username: &str) -> Result<User> {
+    let mut conn = db
+        .acquire()
+        .await
+        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
+    let user = query_as!(
+        User,
+        r#"
+            select *
+            from users
+            where username = $1
+        "#,
+        username
+    )
+    .fetch_one(&mut conn)
+    .await
+    .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::FetchUserError)))?;
+
+    Ok(user)
+}
+
+fn remove_one_from_list(list: String, remove: String) -> Result<String> {
+    let mut list_vec = string_to_vec(list);
+    let filtered = list_vec
+        .iter()
+        .filter(|item| **item != remove)
+        .map(|x| x.to_string())
+        .collect::<Vec<String>>();
+
+    let result_string = vec_to_string(filtered);
+    Ok(result_string)
+}
+
+fn add_one_to_list(list: String, add: String) -> Result<String> {
+    let mut list_vec = string_to_vec(list);
+    list_vec.push(add);
+    let result_string = vec_to_string(list_vec);
+    Ok(result_string)
+}
+
+//Change to a match
 fn string_to_vec(input: String) -> Vec<String> {
     log::info!("input is: {:?}", &input);
     if input.contains(",") {
@@ -44,6 +196,9 @@ fn string_to_vec(input: String) -> Vec<String> {
             .map(|item| item.trim().to_string())
             .collect::<Vec<String>>();
         res_vec
+    } else if input == String::from("") {
+        let res_vec = vec![];
+        res_vec
     } else {
         let res_vec = vec![input];
         res_vec
@@ -51,13 +206,61 @@ fn string_to_vec(input: String) -> Vec<String> {
 }
 
 fn vec_to_string(mut input: Vec<String>) -> String {
-    assert!(!input.is_empty());
-    let start = input.remove(0);
-    input
-        .iter()
-        .fold(start, |acc, item| format!("{} , {}", acc, item))
+    if input.len() > 1 {
+        let start = input.remove(0);
+        input
+            .iter()
+            .fold(start, |acc, item| format!("{} , {}", acc, item))
+    } else if input.len() == 1 {
+        let start = input.remove(0);
+        start
+    } else {
+        String::from("")
+    }
 }
 
+pub async fn db_add_user(db: &SqlitePool, user_struct: &AddUser) -> Result<()> {
+    let mut conn = db
+        .acquire()
+        .await
+        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
+
+    let username = user_struct.username.clone();
+    let add_user = user_struct.add_user.clone();
+    let group_name = user_struct.group_name.clone();
+
+    let group_id = get_group_id(db, &group_name, &username).await?;
+
+    let group_members = get_group_members(db, &group_id).await?;
+
+    log::info!("group members: {:?}", &group_members);
+    let added = add_one_to_list(group_members.clone(), add_user.clone())?;
+    log::info!("added: {:?}", &added);
+
+    if select_single_user(db, &add_user).await.is_ok() {
+        log::info!("in here");
+        update_group_members(db, &group_id, &added).await?;
+        let groups = get_user_groups(db, &add_user).await?;
+        let added_groups = add_one_to_list(groups, group_id.clone())?;
+        update_user_groups(db, &add_user, &added_groups).await?;
+    }
+
+    //let members = query_as!(
+    //QueryGroupMembers,
+    //r#"
+    //select members from groups
+    //WHERE id = $1;
+    //"#,
+    //group_id.id,
+    //)
+    //.fetch_one(&mut conn)
+    //.await
+    //.map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DeleteGroupError)))?;
+
+    Ok(())
+}
+
+// NOTHING WRONG WITH 200 LINE FUNCTIONS...
 pub async fn leave_user_group(db: &SqlitePool, username: &str, group_name: String) -> Result<()> {
     log::info!(
         "username is: {:?}, group_id is: {:?}",
@@ -81,34 +284,13 @@ pub async fn leave_user_group(db: &SqlitePool, username: &str, group_name: Strin
     .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DeleteGroupError)))?;
     log::info!("{:?}", &query);
 
-    let group_id = query_as!(
-        LeaveGroupStruct,
-        r#"
-                    select id from groups 
-                    WHERE name=$1 AND members LIKE $2
-                    "#,
-        group_name,
-        username
-    )
-    .fetch_one(&mut conn)
-    .await
-    .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DeleteGroupError)))?;
+    let group_id = get_group_id(db, &group_name, &username).await?;
 
-    log::info!("{:?}", &group_id);
-    let groups = query.groups.unwrap();
-    let mut query_vec = string_to_vec(groups);
-    log::info!("{:?}", &query_vec);
-    let filtered = query_vec
-        .iter()
-        .filter(|item| **item != group_id.id)
-        .map(|x| x.to_string())
-        .collect::<Vec<String>>();
+    let query_string = remove_one_from_list(query.groups.unwrap(), group_id.clone())?;
 
-    log::info!("{:?}", &filtered);
-    let query_string = vec_to_string(filtered);
-    log::info!("{:?}", &query_string);
+    log::info!("query_string is: {:?}", &query_string);
 
-    let update_groups = query!(
+    let update_users = query!(
         r#"
                     update users
                     set groups = $1
@@ -120,6 +302,28 @@ pub async fn leave_user_group(db: &SqlitePool, username: &str, group_name: Strin
     .execute(&mut conn)
     .await
     .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DeleteGroupError)))?;
+
+    log::info!("made it to the end...?");
+
+    let members = get_group_members(db, &group_id).await?;
+
+    let members_string = remove_one_from_list(members, username.to_string())?;
+
+    if members_string == String::from("") {
+        let delete_groups = query!(
+            r#"
+                    delete from groups
+                    WHERE id = $1;
+                    "#,
+            group_id
+        )
+        .execute(&mut conn)
+        .await
+        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DeleteGroupError)))?;
+    } else {
+        update_group_members(db, &group_id, &members_string).await?;
+    }
+
     log::info!("made it to the end...?");
 
     Ok(())
@@ -146,10 +350,10 @@ pub async fn update_user_group(db: &SqlitePool, username: &str, group_id: String
 
     let mut new_entry = String::from("");
     match query.groups {
-        Some(entry) => {
+        Some(entry) if entry != new_entry => {
             new_entry = format!("{} , {}", &entry, &group_id);
         }
-        None => {
+        _ => {
             new_entry = group_id;
         }
     }
@@ -179,10 +383,6 @@ pub async fn create_new_group(db: &SqlitePool, group_form: &GroupForm) -> Result
 
     let now = sqlx::types::chrono::Utc::now();
     let uuid = Uuid::new_v4().to_string();
-    //let serialized_users = serde_json::to_string(&vec![BasicUsername {
-    //username: group_form.username.to_string(),
-    //}])
-    //.map_err(|_| custom(WarpRejections::SerializationError))?;
 
     query!(
         r#"
@@ -205,27 +405,6 @@ pub async fn create_new_group(db: &SqlitePool, group_form: &GroupForm) -> Result
     .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::CreateGroupError)))?;
 
     Ok(uuid)
-}
-
-pub async fn select_single_user(db: &SqlitePool, username: &str) -> Result<User> {
-    let mut conn = db
-        .acquire()
-        .await
-        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
-    let user = query_as!(
-        User,
-        r#"
-            select *
-            from users
-            where username = $1
-        "#,
-        username
-    )
-    .fetch_one(&mut conn)
-    .await
-    .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::FetchUserError)))?;
-
-    Ok(user)
 }
 
 pub async fn check_login(db: &SqlitePool, username: &str) -> Result<LoginLookup> {

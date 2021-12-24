@@ -53,4 +53,5 @@ pub struct BasicUsername {
 pub struct AddUser {
     pub username: String,
     pub add_user: String,
+    pub group_name: String,
 }

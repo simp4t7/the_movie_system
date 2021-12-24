@@ -3,8 +3,8 @@ use warp::Filter;
 use warp_back::error_handling::handle_rejection;
 use warp_back::error_handling::Result;
 
+use warp_back::routes::{add_user_to_group, create_group, leave_group};
 use warp_back::routes::{authorize_access, authorize_refresh, login, register, search};
-use warp_back::routes::{create_group, leave_group};
 use warp_back::State;
 
 use log::{debug, error, info, trace, warn};
@@ -26,6 +26,7 @@ async fn main() -> Result<()> {
         .or(authorize_refresh(&state))
         .or(create_group(&state))
         .or(leave_group(&state))
+        .or(add_user_to_group(&state))
         .recover(handle_rejection)
         .with(&state.cors);
 
