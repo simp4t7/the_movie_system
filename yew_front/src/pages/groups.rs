@@ -101,7 +101,15 @@ impl Component for Groups {
         log::info!("groups stuff: {:?}", self);
         let link_clone = ctx.link().clone();
         match msg {
-            LeaveGroup => {}
+            LeaveGroup => {
+                let username = self.username.clone();
+                let group_name = self.leave_group_name.clone();
+                log::info!("username: {:?}, group_name: {:?}", &username, &group_name);
+                spawn_local(async move {
+                    let resp = leave_group_request(username, group_name).await;
+                    log::info!("{:?}", &resp);
+                })
+            }
             CreateGroupName(text) => {
                 if let Some(elem) = text.target_dyn_into::<HtmlInputElement>() {
                     log::info!("group_name value: {:?}", &elem.value());

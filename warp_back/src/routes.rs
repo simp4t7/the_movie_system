@@ -1,6 +1,7 @@
 use crate::auth::verify_pass;
 use crate::auth::verify_token;
 use crate::db_functions::create_new_group;
+use crate::db_functions::leave_user_group;
 use crate::db_functions::select_single_user;
 use crate::db_functions::update_user_group;
 use crate::db_functions::{check_login, insert_user};
@@ -56,6 +57,22 @@ use warp::Filter;
 //}
 //})
 //}
+
+pub fn leave_group(
+    state: &State,
+) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+    warp::path("leave_group")
+        .and(warp::body::json())
+        .and(with_db(state.db.clone()))
+        .and_then(|group_form: GroupForm, db: SqlitePool| async move {
+            match leave_user_group(&db, &group_form.username, group_form.group_name).await {
+                Ok(_) => Ok(warp::reply()),
+                Err(_) => Err(custom(WarpRejections::SqlxRejection(
+                    SqlxError::DeleteGroupError,
+                ))),
+            }
+        })
+}
 
 pub fn create_group(
     state: &State,

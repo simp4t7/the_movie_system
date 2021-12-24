@@ -34,6 +34,7 @@ pub enum AuthError {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum SqlxError {
+    DeleteGroupError,
     CreateGroupError,
     InsertUserError,
     CreateDBError,

@@ -28,17 +28,26 @@ pub struct User {
 }
 
 #[derive(Debug)]
-pub struct TempStruct {
+pub struct UpdateUserStruct {
     groups: Option<String>,
+}
+#[derive(Debug)]
+pub struct LeaveGroupStruct {
+    id: String,
 }
 
 fn string_to_vec(input: String) -> Vec<String> {
-    assert!(input.contains(","));
-    let res_vec = input
-        .split(",")
-        .map(|item| item.trim().to_string())
-        .collect::<Vec<String>>();
-    res_vec
+    log::info!("input is: {:?}", &input);
+    if input.contains(",") {
+        let res_vec = input
+            .split(",")
+            .map(|item| item.trim().to_string())
+            .collect::<Vec<String>>();
+        res_vec
+    } else {
+        let res_vec = vec![input];
+        res_vec
+    }
 }
 
 fn vec_to_string(mut input: Vec<String>) -> String {
@@ -49,13 +58,18 @@ fn vec_to_string(mut input: Vec<String>) -> String {
         .fold(start, |acc, item| format!("{} , {}", acc, item))
 }
 
-pub async fn delete_user_group(db: &SqlitePool, username: &str, group_id: String) -> Result<()> {
+pub async fn leave_user_group(db: &SqlitePool, username: &str, group_name: String) -> Result<()> {
+    log::info!(
+        "username is: {:?}, group_id is: {:?}",
+        &username,
+        &group_name
+    );
     let mut conn = db
         .acquire()
         .await
         .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
     let query = query_as!(
-        TempStruct,
+        UpdateUserStruct,
         r#"
                     select groups from users 
                     WHERE username=$1
@@ -64,13 +78,49 @@ pub async fn delete_user_group(db: &SqlitePool, username: &str, group_id: String
     )
     .fetch_one(&mut conn)
     .await
-    .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::CreateGroupError)))?;
-
+    .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DeleteGroupError)))?;
     log::info!("{:?}", &query);
-    let query_vec = string_to_vec(query.groups.unwrap());
+
+    let group_id = query_as!(
+        LeaveGroupStruct,
+        r#"
+                    select id from groups 
+                    WHERE name=$1 AND members LIKE $2
+                    "#,
+        group_name,
+        username
+    )
+    .fetch_one(&mut conn)
+    .await
+    .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DeleteGroupError)))?;
+
+    log::info!("{:?}", &group_id);
+    let groups = query.groups.unwrap();
+    let mut query_vec = string_to_vec(groups);
     log::info!("{:?}", &query_vec);
-    let query_string = vec_to_string(query_vec);
+    let filtered = query_vec
+        .iter()
+        .filter(|item| **item != group_id.id)
+        .map(|x| x.to_string())
+        .collect::<Vec<String>>();
+
+    log::info!("{:?}", &filtered);
+    let query_string = vec_to_string(filtered);
     log::info!("{:?}", &query_string);
+
+    let update_groups = query!(
+        r#"
+                    update users
+                    set groups = $1
+                    WHERE username = $2;
+                    "#,
+        query_string,
+        username
+    )
+    .execute(&mut conn)
+    .await
+    .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DeleteGroupError)))?;
+    log::info!("made it to the end...?");
 
     Ok(())
 }
@@ -81,7 +131,7 @@ pub async fn update_user_group(db: &SqlitePool, username: &str, group_id: String
         .await
         .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
     let query = query_as!(
-        TempStruct,
+        UpdateUserStruct,
         r#"
                     select groups from users 
                     WHERE username=$1
@@ -129,10 +179,10 @@ pub async fn create_new_group(db: &SqlitePool, group_form: &GroupForm) -> Result
 
     let now = sqlx::types::chrono::Utc::now();
     let uuid = Uuid::new_v4().to_string();
-    let serialized_users = serde_json::to_string(&vec![BasicUsername {
-        username: group_form.username.to_string(),
-    }])
-    .map_err(|_| custom(WarpRejections::SerializationError))?;
+    //let serialized_users = serde_json::to_string(&vec![BasicUsername {
+    //username: group_form.username.to_string(),
+    //}])
+    //.map_err(|_| custom(WarpRejections::SerializationError))?;
 
     query!(
         r#"
@@ -143,7 +193,7 @@ pub async fn create_new_group(db: &SqlitePool, group_form: &GroupForm) -> Result
         "#,
         uuid,
         group_form.group_name,
-        serialized_users,
+        group_form.username,
         None::<Option<String>>,
         None::<Option<String>>,
         None::<Option<String>>,
