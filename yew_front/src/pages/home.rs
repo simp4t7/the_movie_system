@@ -5,61 +5,21 @@ use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew::TargetCast;
 
-use crate::utils::image_processing;
 use crate::utils::get_search_results;
+use crate::utils::image_processing;
 use shared_stuff::MovieDisplay;
 
 #[derive(Debug)]
-pub enum HomeMsg {
-    QueryAutocomplete(InputEvent),
-    UpdateAutocomplete(Vec<MovieDisplay>),
-    Error(String),
-}
-pub struct Home {
-    pub movies: Vec<MovieDisplay>,
-}
+pub enum HomeMsg {}
+pub struct Home {}
 
 impl Component for Home {
     type Message = HomeMsg;
     type Properties = ();
     fn create(_ctx: &Context<Self>) -> Self {
-        log::info!("creating search page");
-        Self { movies: vec![] }
+        Self {}
     }
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
-        use HomeMsg::QueryAutocomplete;
-        let link_clone = ctx.link().clone();
-        match msg {
-            QueryAutocomplete(text) => {
-                // Shouldn't do it if the text is empty, but handle this better probably...
-                if text.current_target().is_some() {
-                    spawn_local(async move {
-                        if let Some(elem) = text.target_dyn_into::<HtmlInputElement>() {
-                            let query = ImdbQuery {
-                                query: elem.value(),
-                            };
-
-                            match get_search_results(&SEARCH_URL, query).await {
-                                Ok(resp) => {
-                                    link_clone.send_message(HomeMsg::UpdateAutocomplete(resp))
-                                }
-                                Err(err_msg) => {
-                                    link_clone.send_message(HomeMsg::Error(err_msg.to_string()))
-                                }
-                            }
-                        }
-                    });
-                }
-            }
-
-            HomeMsg::UpdateAutocomplete(movies) => {
-                log::info!("{:?}", &movies);
-                self.movies = movies;
-            }
-            HomeMsg::Error(err_msg) => {
-                log::info!("{:?}", &err_msg);
-            }
-        };
         true
     }
     fn changed(&mut self, _ctx: &Context<Self>) -> bool {
@@ -68,51 +28,7 @@ impl Component for Home {
     fn view(&self, ctx: &Context<Self>) -> Html {
         html! {
         <div>
-            {self.search_bar(ctx)}
+            <p> {"new home page, who dis?"} </p>
         </div>}
-    }
-}
-
-impl Home {
-    pub fn search_results(&self, _ctx: &Context<Self>) -> Html {
-        {
-            self.movies
-                .iter()
-                // Still not handling the no images nicely?
-                .map(|movie| {
-                    if movie.movie_images.is_some() {
-                        html! {
-                        <li class="search_results_li">
-                            {&movie.movie_title}
-                            {&movie.movie_year.unwrap()}
-                            <img src={image_processing(movie.movie_images.as_ref())}/>
-                        </li>}
-                    } else {
-                        html! {
-                        <li>
-                            {&movie.movie_title}
-                            {&movie.movie_year.unwrap()}
-                        </li>}
-                    }
-                })
-                .collect::<Html>()
-        }
-    }
-    pub fn search_bar(&self, ctx: &Context<Self>) -> Html {
-        html! {
-                    <div class="movie_search_div">
-                        <input
-                        class="movie_search"
-                        placeholder="movie search"
-                        maxlength=50
-                        oninput={ctx.link().callback(HomeMsg::QueryAutocomplete)}
-                        />
-                    <div class="search_results">
-                    <ul>
-                    {self.search_results(ctx)}
-                    </ul>
-                    </div>
-                    </div>
-        }
     }
 }

@@ -3,7 +3,7 @@ use crate::auth::verify_token;
 use crate::db_functions::create_new_group;
 use crate::db_functions::db_add_user;
 use crate::db_functions::leave_user_group;
-use crate::db_functions::select_single_user;
+
 use crate::db_functions::update_user_group;
 use crate::db_functions::{check_login, insert_user};
 use crate::error_handling::AuthError;
@@ -13,7 +13,7 @@ use http::status::StatusCode;
 use imdb_autocomplete::autocomplete_func;
 
 use shared_stuff::groups_stuff::AddUser;
-use shared_stuff::groups_stuff::BasicUsername;
+
 use shared_stuff::groups_stuff::GroupForm;
 use shared_stuff::ErrorMessage;
 use shared_stuff::ImdbQuery;

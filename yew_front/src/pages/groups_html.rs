@@ -11,7 +11,7 @@ impl Groups {
                 class="add_group"
                 placeholder="group name"
                 maxlength=50
-                oninput={ctx.link().callback(|input| GroupsMsg::CreateGroupName(input))}
+                oninput={ctx.link().callback(GroupsMsg::CreateGroupName)}
             />
             <button
                 class="create_group_button"
@@ -29,7 +29,7 @@ impl Groups {
                 class="leave_group"
                 placeholder="group name"
                 maxlength=50
-                oninput={ctx.link().callback(|input| GroupsMsg::LeaveGroupName(input))}
+                oninput={ctx.link().callback(GroupsMsg::LeaveGroupName)}
             />
             <button
                 class="create_group_button"
@@ -47,7 +47,7 @@ impl Groups {
                 class="add_user"
                 placeholder="e-mail"
                 maxlength=50
-                oninput={ctx.link().callback(|input| GroupsMsg::AddUser(input))}
+                oninput={ctx.link().callback(GroupsMsg::AddUser)}
             />
             //<select id="user_groups" name="groups">
                 //<option>{"group 1"}</option>
@@ -58,7 +58,7 @@ impl Groups {
                 class="add_user"
                 placeholder="group name"
                 maxlength=50
-                oninput={ctx.link().callback(|input| GroupsMsg::GroupAdd(input))}
+                oninput={ctx.link().callback(GroupsMsg::GroupAdd)}
             />
             <button
                 class="create_group_button"

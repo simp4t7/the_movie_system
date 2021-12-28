@@ -10,10 +10,11 @@ use yew_router::prelude::*;
 
 use yew::{html, Component, Context, Html};
 
+pub mod error;
 pub mod pages;
 pub mod utils;
-pub mod error;
 
+use pages::add_movies::AddMovies;
 use pages::groups::Groups;
 use pages::home::Home;
 use pages::login::Login;
@@ -39,6 +40,8 @@ pub enum Route {
     Home,
     #[at("register")]
     Register,
+    #[at("add_movies")]
+    AddMovies,
     #[at("groups")]
     Groups,
     #[at("/404")]
@@ -160,6 +163,7 @@ fn switch(routes: &Route) -> Html {
         Route::Login => html!{<Login />},
         Route::Groups => html!{<Groups />},
         Route::Register => html!{<Register />},
+        Route::AddMovies => html!{<AddMovies />},
         //TODO! something for bad urls?
         Route::NotFound => html!{},
     }}

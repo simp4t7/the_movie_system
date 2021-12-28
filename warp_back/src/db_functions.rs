@@ -1,11 +1,11 @@
 use crate::auth::verify_pass;
-use shared_stuff::groups_stuff::GroupNames;
-use shared_stuff::groups_stuff::GroupsId;
+
+
 
 use crate::error_handling::{AuthError, Result, SqlxError, WarpRejections};
-use serde_json::Value;
+
 use shared_stuff::groups_stuff::AddUser;
-use shared_stuff::groups_stuff::BasicUsername;
+
 use shared_stuff::groups_stuff::GroupForm;
 use shared_stuff::LoginLookup;
 use shared_stuff::UserInfo;
@@ -113,7 +113,7 @@ pub async fn update_group_members(db: &SqlitePool, group_id: &str, members: &str
         .acquire()
         .await
         .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
-    let updated_memebers = query!(
+    let _updated_memebers = query!(
         r#"
                     update groups
                     set members = $1
@@ -133,7 +133,7 @@ pub async fn update_user_groups(db: &SqlitePool, user: &str, groups: &str) -> Re
         .acquire()
         .await
         .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
-    let updated_groups = query!(
+    let _updated_groups = query!(
         r#"
                     update users
                     set groups = $1
@@ -188,7 +188,7 @@ pub async fn delete_group(db: &SqlitePool, group_id: &str) -> Result<()> {
 }
 
 fn remove_one_from_list(list: String, remove: String) -> Result<String> {
-    let mut list_vec = string_to_vec(list);
+    let list_vec = string_to_vec(list);
     let filtered = list_vec
         .iter()
         .filter(|item| **item != remove)
@@ -209,13 +209,13 @@ fn add_one_to_list(list: String, add: String) -> Result<String> {
 //Change to a match
 fn string_to_vec(input: String) -> Vec<String> {
     log::info!("input is: {:?}", &input);
-    if input.contains(",") {
+    if input.contains(',') {
         let res_vec = input
-            .split(",")
+            .split(',')
             .map(|item| item.trim().to_string())
             .collect::<Vec<String>>();
         res_vec
-    } else if input == String::from("") {
+    } else if input == *"" {
         let res_vec = vec![];
         res_vec
     } else {
@@ -231,15 +231,15 @@ fn vec_to_string(mut input: Vec<String>) -> String {
             .iter()
             .fold(start, |acc, item| format!("{} , {}", acc, item))
     } else if input.len() == 1 {
-        let start = input.remove(0);
-        start
+        
+        input.remove(0)
     } else {
         String::from("")
     }
 }
 
 pub async fn db_add_user(db: &SqlitePool, user_struct: &AddUser) -> Result<()> {
-    let mut conn = db
+    let _conn = db
         .acquire()
         .await
         .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
@@ -277,15 +277,15 @@ pub async fn leave_user_group(db: &SqlitePool, username: &str, group_name: Strin
         &username,
         &group_name
     );
-    let mut conn = db
+    let _conn = db
         .acquire()
         .await
         .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
     let groups = get_user_groups(db, username).await?;
 
-    let group_id = get_group_id(db, &group_name, &username).await?;
+    let group_id = get_group_id(db, &group_name, username).await?;
 
-    let updated_groups = remove_one_from_list(groups, group_id.clone())?;
+    let _updated_groups = remove_one_from_list(groups, group_id.clone())?;
 
     update_user_group(db, username, &group_id).await?;
 
@@ -293,7 +293,7 @@ pub async fn leave_user_group(db: &SqlitePool, username: &str, group_name: Strin
 
     let members_string = remove_one_from_list(members, username.to_string())?;
 
-    if members_string == String::from("") {
+    if members_string == *"" {
         delete_group(db, &group_id).await?;
     } else {
         log::info!("gotta update");
