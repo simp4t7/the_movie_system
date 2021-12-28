@@ -81,7 +81,7 @@ pub fn create_group(
         .and_then(|group_form: GroupForm, db: SqlitePool| async move {
             match create_new_group(&db, &group_form).await {
                 Ok(uuid) => {
-                    update_user_group(&db, &group_form.username, uuid).await?;
+                    update_user_group(&db, &group_form.username, &uuid).await?;
                     Ok(warp::reply())
                 }
                 Err(_e) => Err(custom(WarpRejections::SqlxRejection(
