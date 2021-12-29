@@ -157,8 +157,8 @@ impl Login {
                 onclick={ctx.link().callback(|_| LoginMsg::VerifyLogin)}>
                 { "Login" }
             </button>
+            <p> {"Don't have an account? <a href="/register">{"Don't have an account? Register here"}"}"</a></p>
             <p> {format!("Login error: {:?}", self.error.clone())} </p>
-            <p> {"Don't have an account? "} <a href="/register">{"Register here"}</a></p>
         </div>}
     }
     pub fn logout_button(&self, ctx: &Context<Self>) -> Html {
