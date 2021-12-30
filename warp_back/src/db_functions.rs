@@ -1,7 +1,5 @@
 use crate::auth::verify_pass;
 
-
-
 use crate::error_handling::{AuthError, Result, SqlxError, WarpRejections};
 
 use shared_stuff::groups_stuff::AddUser;
@@ -207,7 +205,7 @@ fn add_one_to_list(list: String, add: String) -> Result<String> {
 }
 
 //Change to a match
-fn string_to_vec(input: String) -> Vec<String> {
+pub fn string_to_vec(input: String) -> Vec<String> {
     log::info!("input is: {:?}", &input);
     if input.contains(',') {
         let res_vec = input
@@ -231,7 +229,6 @@ fn vec_to_string(mut input: Vec<String>) -> String {
             .iter()
             .fold(start, |acc, item| format!("{} , {}", acc, item))
     } else if input.len() == 1 {
-        
         input.remove(0)
     } else {
         String::from("")

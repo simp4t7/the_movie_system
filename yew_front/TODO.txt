@@ -32,3 +32,5 @@ Move all the request functions in /utils into a new file.
 
 html_gen functions getting passed contexts doesn't seem right. Function components
 and props instead?
+
+Currently there is no auth check if there are no localstorage tokens. Ideally it should check and fail and redirect to Login or something like that.

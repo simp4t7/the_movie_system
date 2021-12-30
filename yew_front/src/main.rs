@@ -3,6 +3,10 @@ use crate::utils::auth_flow;
 use lazy_static::lazy_static;
 use load_dotenv::load_dotenv;
 
+use gloo_storage::LocalStorage;
+use gloo_storage::Storage;
+use shared_stuff::{Deserialize, Serialize};
+use std::rc::Rc;
 use wasm_bindgen_futures::spawn_local;
 use yew::functional::*;
 use yew::prelude::*;
@@ -30,6 +34,7 @@ lazy_static! {
     pub static ref REGISTER_URL: String = format!("{}/register", *ROOT_URL);
     pub static ref ACCESS_URL: String = format!("{}/access_auth", *ROOT_URL);
     pub static ref REFRESH_URL: String = format!("{}/refresh_auth", *ROOT_URL);
+    pub static ref GET_GROUP_MOVIES_URL: String = format!("{}/group_movies", *ROOT_URL);
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Routable)]
@@ -47,13 +52,11 @@ pub enum Route {
     #[at("/404")]
     NotFound,
 }
-#[function_component(Main)]
-pub fn router() -> Html {
-    html! {
-        <BrowserRouter>
-            <Switch<Route> render={Switch::render(switch)} />
-        </BrowserRouter>
-    }
+#[derive(Debug, PartialEq, Clone)]
+pub struct GlobalState {
+    pub username: String,
+    pub groups: Vec<String>,
+    pub initialized: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -63,10 +66,8 @@ pub struct AuthStatus {
     pub exp: Option<i64>,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Properties)]
-pub struct App {
-    username: Option<String>,
-}
+#[derive(Clone, PartialEq)]
+pub struct App {}
 
 pub enum AppMsg {
     AuthCallback,
@@ -79,13 +80,14 @@ impl Component for App {
 
     fn create(ctx: &Context<Self>) -> Self {
         ctx.link().send_message(AppMsg::AuthCallback);
-        App { username: None }
+
+        App {}
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
-        let link_clone = ctx.link().clone();
         match msg {
-            AppMsg::AuthCallback => spawn_local(async move {
+            AppMsg::AuthCallback => ctx.link().send_future(async move {
+                log::info!("inside auth callback");
                 let request_claims = auth_flow().await;
                 let login_status = match request_claims {
                     Ok(claims) => AuthStatus {
@@ -100,10 +102,16 @@ impl Component for App {
                     },
                 };
                 log::info!("auth callback, {:?}", &login_status);
-                link_clone.send_message(AppMsg::UpdateAuth(login_status));
+                AppMsg::UpdateAuth(login_status)
             }),
             AppMsg::UpdateAuth(login) => {
-                self.username = login.username;
+                log::info!("inside update auth");
+                if let Some(username) = login.username {
+                    let storage = LocalStorage::raw();
+                    storage
+                        .set("username", &username)
+                        .expect("problem with local storage");
+                }
             }
         }
         true
@@ -112,12 +120,11 @@ impl Component for App {
     fn changed(&mut self, _ctx: &Context<Self>) -> bool {
         false
     }
-    fn view(&self, _ctx: &Context<Self>) -> Html {
-        log::info!("{:?}", &self);
+    fn view(&self, ctx: &Context<Self>) -> Html {
         html! {
             <BrowserRouter>
             <main>
-            <NavBar username ={self.username.clone()}/>
+            <NavBar/>
             <Switch<Route> render={Switch::render(switch)} />
             </main>
             </BrowserRouter>
@@ -127,30 +134,35 @@ impl Component for App {
 }
 
 #[function_component(NavBar)]
-pub fn nav_bar(app: &App) -> Html {
-    match app.username.clone() {
-        Some(user) => {
+pub fn nav_bar() -> Html {
+    let storage = LocalStorage::raw();
+    match storage.get("username") {
+        Ok(user) if user.is_some() => {
             html! {
-                <div class="nav_bar">
-                    <ul class="nav_bar">
-                        <li><a href="/">{"Home"}</a></li>
-                        <li><a href="/groups">{"Group"}</a></li>
-                        <li style="float:right"><a href="/about">{"About"}</a></li>
-                        <li style="float:right"><a href="/login">{user}</a></li>
-                    </ul>
-                </div>
+            <div class="nav_bar">
+            <ul class="nav_bar">
+            <li><a href="/">{"Home"}</a></li>
+            <li><a href="/groups">{"Group"}</a></li>
+            <li><a href="/add_movies">{"Add Movies"}</a></li>
+            <li><a href="/register">{"Register"}</a></li>
+            <li style="float:right"><a href="/about">{"About"}</a></li>
+            <li style="float:right"><a href="/login">{user.unwrap()}</a></li>
+            </ul>
+            </div>
             }
         }
-        None => {
+        _ => {
             html! {
-                <div class="nav_bar">
-                    <ul class="nav_bar">
-                        <li><a href="/">{"Home"}</a></li>
-                        <li><a href="/groups">{"Groups"}</a></li>
-                        <li style="float:right"><a href="/about">{"About"}</a></li>
-                        <li style="float:right"><a href="/login">{"Login"}</a></li>
-                    </ul>
-                </div>
+            <div class="nav_bar">
+            <ul class="nav_bar">
+            <li><a href="/">{"Home"}</a></li>
+            <li><a href="/groups">{"Groups"}</a></li>
+            <li><a href="/add_movies">{"Add Movies"}</a></li>
+            <li><a href="/register">{"Register"}</a></li>
+            <li style="float:right"><a href="/about">{"About"}</a></li>
+            <li style="float:right"><a href="/login">{"Login"}</a></li>
+            </ul>
+            </div>
             }
         }
     }

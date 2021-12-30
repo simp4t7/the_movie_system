@@ -14,7 +14,11 @@ use imdb_autocomplete::autocomplete_func;
 
 use shared_stuff::groups_stuff::AddUser;
 
+use crate::db_functions::get_user_groups;
+use crate::db_functions::string_to_vec;
+use shared_stuff::groups_stuff::BasicUsername;
 use shared_stuff::groups_stuff::GroupForm;
+use shared_stuff::groups_stuff::UserGroupsJson;
 use shared_stuff::ErrorMessage;
 use shared_stuff::ImdbQuery;
 use shared_stuff::UserInfo;
@@ -49,6 +53,28 @@ pub fn add_user_to_group(
         .and_then(|user: AddUser, db: SqlitePool| async move {
             match db_add_user(&db, &user).await {
                 Ok(_) => Ok(warp::reply()),
+                Err(_e) => Err(custom(WarpRejections::SqlxRejection(
+                    SqlxError::AddUserError,
+                ))),
+            }
+        })
+}
+
+pub fn get_groups(
+    state: &State,
+) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+    warp::path("get_groups")
+        .and(warp::body::json())
+        .and(with_db(state.db.clone()))
+        .and_then(|user: BasicUsername, db: SqlitePool| async move {
+            match get_user_groups(&db, &user.username).await {
+                Ok(groups) => {
+                    let new_vec = string_to_vec(groups);
+                    let groups_struct = UserGroupsJson { groups: new_vec };
+                    let json_resp = serde_json::to_string(&groups_struct)
+                        .map_err(|_| custom(WarpRejections::SerializationError))?;
+                    Ok(json_resp)
+                }
                 Err(_e) => Err(custom(WarpRejections::SqlxRejection(
                     SqlxError::AddUserError,
                 ))),

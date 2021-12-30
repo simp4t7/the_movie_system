@@ -1,35 +1,20 @@
 use crate::utils::auth_flow;
+use crate::GlobalState;
 use anyhow::Result;
+use gloo_storage::Storage;
 use lazy_static::lazy_static;
 use load_dotenv::load_dotenv;
 use reqwasm::http::Request;
 use reqwasm::http::RequestMode;
 use shared_stuff::groups_stuff::AddUser;
+use shared_stuff::groups_stuff::BasicUsername;
+use shared_stuff::groups_stuff::UserGroupsJson;
 
+use gloo_storage::LocalStorage;
 use shared_stuff::groups_stuff::GroupForm;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
-
-#[derive(Debug, PartialEq, Clone)]
-pub struct Groups {
-    username: String,
-    add_user: String,
-    create_group_name: String,
-    leave_group_name: String,
-    group_add: String,
-}
-pub enum GroupsMsg {
-    GroupAdd(InputEvent),
-    CreateGroup,
-    LeaveGroup,
-    UpdateUsername,
-    CreateGroupName(InputEvent),
-    LeaveGroupName(InputEvent),
-    SetUsername(String),
-    AddUser(InputEvent),
-    AddNewUser,
-}
 
 lazy_static! {
     pub static ref ROOT_URL: &'static str = {
@@ -39,6 +24,7 @@ lazy_static! {
     pub static ref CREATE_GROUP_URL: String = format!("{}/create_group", *ROOT_URL);
     pub static ref LEAVE_GROUP_URL: String = format!("{}/leave_group", *ROOT_URL);
     pub static ref ADD_USER_URL: String = format!("{}/add_user", *ROOT_URL);
+    pub static ref GET_ALL_GROUPS_URL: String = format!("{}/get_groups", *ROOT_URL);
 }
 
 pub async fn new_group_request(username: String, group_name: String) -> Result<()> {
@@ -90,18 +76,48 @@ pub async fn add_user_request(
     Ok(())
 }
 
+pub async fn get_all_groups(username: String) -> Result<Vec<String>> {
+    let json_body = serde_json::to_string(&BasicUsername { username })?;
+    let resp = Request::post(&GET_ALL_GROUPS_URL)
+        .header("content-type", "application/json; charset=UTF-8")
+        .mode(RequestMode::Cors)
+        .body(json_body)
+        .send()
+        .await?;
+    let groups: UserGroupsJson = resp.json().await?;
+    log::info!("{:?}", &groups);
+    Ok(groups.groups)
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct Groups {
+    add_user: String,
+    create_group_name: String,
+    leave_group_name: String,
+    group_add: String,
+}
+pub enum GroupsMsg {
+    GroupAdd(InputEvent),
+    UpdateGroups(Vec<String>),
+    CreateGroup,
+    LeaveGroup,
+    CreateGroupName(InputEvent),
+    LeaveGroupName(InputEvent),
+    AddUser(InputEvent),
+    AddNewUser,
+    GetAllGroups,
+}
+
 impl Component for Groups {
     type Message = GroupsMsg;
     type Properties = ();
     fn create(ctx: &Context<Self>) -> Self {
-        ctx.link().send_message(GroupsMsg::UpdateUsername);
-        let username = String::from("");
+        ctx.link().send_message(GroupsMsg::GetAllGroups);
         let add_user = String::from("");
         let create_group_name = String::from("");
         let leave_group_name = String::from("");
         let group_add = String::from("");
         Self {
-            username,
             add_user,
             create_group_name,
             leave_group_name,
@@ -110,17 +126,34 @@ impl Component for Groups {
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
-        use GroupsMsg::*;
-        log::info!("groups stuff: {:?}", self);
         let link_clone = ctx.link().clone();
+        let storage = LocalStorage::raw();
+        let username_option = storage.get("username").expect("problem getting username");
+        let username = username_option.expect("username is empty?");
+        use GroupsMsg::*;
         match msg {
+            UpdateGroups(groups_vec) => {
+                storage
+                    .set(
+                        "all_groups",
+                        serde_json::to_string(&groups_vec)
+                            .expect("serde error")
+                            .as_str(),
+                    )
+                    .expect("storage problem");
+            }
+            GetAllGroups => link_clone.send_future(async move {
+                let groups = get_all_groups(username)
+                    .await
+                    .expect("problem getting groups");
+                GroupsMsg::UpdateGroups(groups)
+            }),
             GroupAdd(text) => {
                 if let Some(elem) = text.target_dyn_into::<HtmlInputElement>() {
                     self.group_add = elem.value();
                 }
             }
             LeaveGroup => {
-                let username = self.username.clone();
                 let group_name = self.leave_group_name.clone();
                 log::info!("username: {:?}, group_name: {:?}", &username, &group_name);
                 spawn_local(async move {
@@ -141,7 +174,6 @@ impl Component for Groups {
                 }
             }
             AddNewUser => {
-                let username = self.username.clone();
                 let add_user = self.add_user.clone();
                 let group_add = self.group_add.clone();
                 spawn_local(async move {
@@ -156,22 +188,13 @@ impl Component for Groups {
                 }
             }
             CreateGroup => {
-                link_clone.send_message(GroupsMsg::UpdateUsername);
-                log::info!("making a group, username is: {:?}", &self.username);
-                let username = self.username.clone();
+                log::info!("making a group, username is: {:?}", &username);
                 let group_name = self.create_group_name.clone();
                 spawn_local(async move {
                     let resp = new_group_request(username, group_name).await;
                     log::info!("{:?}", &resp);
                 })
             }
-            UpdateUsername => {
-                link_clone.send_future(async {
-                    let claims = auth_flow().await.expect("umm");
-                    GroupsMsg::SetUsername(claims.username)
-                });
-            }
-            SetUsername(user) => self.username = user,
         }
         true
     }
@@ -180,6 +203,7 @@ impl Component for Groups {
         false
     }
     fn view(&self, ctx: &Context<Self>) -> Html {
+        log::info!("groups stuff: {:?}", self);
         html! {
         <div>
         { self.create_group(ctx) }

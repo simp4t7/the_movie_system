@@ -1,6 +1,6 @@
+use crate::error::Error;
 use crate::utils::auth_flow;
 use crate::utils::login_request;
-use crate::error::Error;
 
 use crate::LOGIN_URL;
 use gloo_storage::LocalStorage;
@@ -42,6 +42,7 @@ impl Component for Login {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         use LoginMsg::*;
+        let link_clone = ctx.link().clone();
         match msg {
             SetUsername(text) => {
                 if let Some(elem) = text.target_dyn_into::<HtmlInputElement>() {
@@ -58,12 +59,7 @@ impl Component for Login {
             }
             Logout => {
                 let storage = LocalStorage::raw();
-                storage
-                    .delete("access_token")
-                    .expect("problem deleting access token");
-                storage
-                    .delete("refresh_token")
-                    .expect("problem deleting refresh token");
+                storage.clear().expect("problem clearing data");
                 log::info!("stored some data");
             }
             Noop => {}
@@ -71,24 +67,22 @@ impl Component for Login {
                 let _x = auth_flow().await;
             }),
             VerifyLogin => {
+                let storage = LocalStorage::raw();
                 let username = UserInfo {
                     username: self.username.clone(),
                     password: self.password.clone(),
                 };
 
-                let link_clone = ctx.link().clone();
-                let link_clone_for_error = ctx.link().clone();
-                spawn_local(async move {
-                    let token = login_request(&LOGIN_URL, username).await;
+                link_clone.send_future(async move {
+                    let token = login_request(&LOGIN_URL, username.clone()).await;
                     match token {
                         Ok(tok) => {
-                            link_clone.send_message(LoginMsg::SetToken(tok));
-                            link_clone_for_error.send_message(SetError(None));
+                            storage
+                                .set("username", &username.username.clone())
+                                .expect("storage problem");
+                            LoginMsg::SetToken(tok)
                         }
-                        Err(_) => {
-                            link_clone.send_message(LoginMsg::Noop); 
-                            link_clone_for_error.send_message(SetError(Some(Error::LogInError)));
-                        }
+                        Err(_) => SetError(Some(Error::LogInError)),
                     }
                 });
             }

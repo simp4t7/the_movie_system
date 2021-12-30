@@ -13,6 +13,11 @@ pub struct GroupNames {
     pub groups: Option<String>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UserGroupsJson {
+    pub groups: Vec<String>,
+}
+
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct GroupsId {
     pub groups: HashSet<String>,
