@@ -1,6 +1,6 @@
-use crate::error::Error;
 use crate::utils::auth_flow;
 use crate::utils::login_request;
+use crate::error::Error;
 
 use crate::LOGIN_URL;
 use gloo_storage::LocalStorage;
@@ -42,7 +42,6 @@ impl Component for Login {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         use LoginMsg::*;
-        let link_clone = ctx.link().clone();
         match msg {
             SetUsername(text) => {
                 if let Some(elem) = text.target_dyn_into::<HtmlInputElement>() {
@@ -59,7 +58,12 @@ impl Component for Login {
             }
             Logout => {
                 let storage = LocalStorage::raw();
-                storage.clear().expect("problem clearing data");
+                storage
+                    .delete("access_token")
+                    .expect("problem deleting access token");
+                storage
+                    .delete("refresh_token")
+                    .expect("problem deleting refresh token");
                 log::info!("stored some data");
             }
             Noop => {}
@@ -67,22 +71,24 @@ impl Component for Login {
                 let _x = auth_flow().await;
             }),
             VerifyLogin => {
-                let storage = LocalStorage::raw();
                 let username = UserInfo {
                     username: self.username.clone(),
                     password: self.password.clone(),
                 };
 
-                link_clone.send_future(async move {
-                    let token = login_request(&LOGIN_URL, username.clone()).await;
+                let link_clone = ctx.link().clone();
+                let link_clone_for_error = ctx.link().clone();
+                spawn_local(async move {
+                    let token = login_request(&LOGIN_URL, username).await;
                     match token {
                         Ok(tok) => {
-                            storage
-                                .set("username", &username.username.clone())
-                                .expect("storage problem");
-                            LoginMsg::SetToken(tok)
+                            link_clone.send_message(LoginMsg::SetToken(tok));
+                            link_clone_for_error.send_message(SetError(None));
                         }
-                        Err(_) => SetError(Some(Error::LogInError)),
+                        Err(_) => {
+                            link_clone.send_message(LoginMsg::Noop); 
+                            link_clone_for_error.send_message(SetError(Some(Error::LogInError)));
+                        }
                     }
                 });
             }
@@ -151,8 +157,8 @@ impl Login {
                 onclick={ctx.link().callback(|_| LoginMsg::VerifyLogin)}>
                 { "Login" }
             </button>
+            <p> {"Don't have an account? <a href="/register">{"Don't have an account? Register here"}"}"</a></p>
             <p> {format!("Login error: {:?}", self.error.clone())} </p>
-            <p> {"Don't have an account? "} <a href="/register">{"Register here"}</a></p>
         </div>}
     }
     pub fn logout_button(&self, ctx: &Context<Self>) -> Html {
