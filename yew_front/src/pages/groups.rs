@@ -209,6 +209,8 @@ impl Component for Groups {
         { self.create_group(ctx) }
         { self.leave_group(ctx) }
         { self.add_user_to_group(ctx) }
+         <h1> {"Current Groups"} </h1>
+        { self.display_current_groups(ctx) }
         </div> }
     }
 }

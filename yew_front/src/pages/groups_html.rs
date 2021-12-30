@@ -1,5 +1,7 @@
 use crate::pages::groups::Groups;
 use crate::pages::groups::GroupsMsg;
+use gloo_storage::LocalStorage;
+use gloo_storage::Storage;
 use yew::prelude::*;
 
 impl Groups {
@@ -67,5 +69,24 @@ impl Groups {
             </button>
         </div>
         }
+    }
+    pub fn display_current_groups(&self, ctx: &Context<Self>) -> Html {
+        let storage = LocalStorage::raw();
+        let current_groups = storage
+            .get("all_groups")
+            .expect("storage prob")
+            .expect("unwrap option?");
+        let group_vec: Vec<String> =
+            serde_json::from_str(&current_groups).expect("serialization prob");
+        group_vec
+            .iter()
+            .map(|group| {
+                html! {
+                <li>
+                    {group}
+                </li>
+                }
+            })
+            .collect::<Html>()
     }
 }

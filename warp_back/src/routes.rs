@@ -4,6 +4,7 @@ use crate::db_functions::create_new_group;
 use crate::db_functions::db_add_user;
 use crate::db_functions::leave_user_group;
 
+use crate::db_functions::get_group_names;
 use crate::db_functions::update_user_group;
 use crate::db_functions::{check_login, insert_user};
 use crate::error_handling::AuthError;
@@ -70,7 +71,10 @@ pub fn get_groups(
             match get_user_groups(&db, &user.username).await {
                 Ok(groups) => {
                     let new_vec = string_to_vec(groups);
-                    let groups_struct = UserGroupsJson { groups: new_vec };
+                    let group_names = get_group_names(&db, new_vec.clone()).await?;
+                    let groups_struct = UserGroupsJson {
+                        groups: group_names,
+                    };
                     let json_resp = serde_json::to_string(&groups_struct)
                         .map_err(|_| custom(WarpRejections::SerializationError))?;
                     Ok(json_resp)

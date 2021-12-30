@@ -34,6 +34,11 @@ pub struct GroupsStruct {
 pub struct GroupIdStruct {
     id: String,
 }
+
+#[derive(Debug)]
+pub struct GroupNameStruct {
+    name: String,
+}
 #[derive(Debug)]
 pub struct QueryGroupMembers {
     members: String,
@@ -83,6 +88,29 @@ pub async fn get_user_groups(db: &SqlitePool, user: &str) -> Result<String> {
     } else {
         Ok(String::from(""))
     }
+}
+
+pub async fn get_group_names(db: &SqlitePool, group_ids: Vec<String>) -> Result<Vec<String>> {
+    let mut conn = db
+        .acquire()
+        .await
+        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
+    let mut res_vec = vec![];
+    for id in group_ids {
+        let group_name = query_as!(
+            GroupNameStruct,
+            r#"
+                    select name from groups
+                    WHERE id = $1;
+                    "#,
+            id,
+        )
+        .fetch_one(&mut conn)
+        .await
+        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DeleteGroupError)))?;
+        res_vec.push(group_name.name);
+    }
+    Ok(res_vec)
 }
 
 pub async fn get_group_id(db: &SqlitePool, group_name: &str, username: &str) -> Result<String> {
