@@ -72,21 +72,24 @@ impl Groups {
     }
     pub fn display_current_groups(&self, ctx: &Context<Self>) -> Html {
         let storage = LocalStorage::raw();
-        let current_groups = storage
-            .get("all_groups")
-            .expect("storage prob")
-            .expect("unwrap option?");
-        let group_vec: Vec<String> =
-            serde_json::from_str(&current_groups).expect("serialization prob");
-        group_vec
-            .iter()
-            .map(|group| {
-                html! {
-                <li>
-                    {group}
-                </li>
-                }
-            })
-            .collect::<Html>()
+        let current_groups = storage.get("all_groups").expect("storage prob");
+        if let Some(groups) = current_groups {
+            let group_vec: Vec<String> = serde_json::from_str(&groups).expect("serialization prob");
+            let callback = ctx.link().callback(|e| GroupsMsg::SetCurrentGroup(e));
+            group_vec
+                .iter()
+                .map(|group| {
+                    html! {
+                    <li onclick={callback.clone()}>
+                        {group}
+                    </li>
+                    }
+                })
+                .collect::<Html>()
+        } else {
+            html! {
+                <p> {"Join some groups dude"} </p>
+            }
+        }
     }
 }

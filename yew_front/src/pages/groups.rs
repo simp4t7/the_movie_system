@@ -13,6 +13,7 @@ use shared_stuff::groups_stuff::UserGroupsJson;
 use gloo_storage::LocalStorage;
 use shared_stuff::groups_stuff::GroupForm;
 use wasm_bindgen_futures::spawn_local;
+use web_sys::HtmlElement;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
@@ -104,6 +105,7 @@ pub enum GroupsMsg {
     CreateGroupName(InputEvent),
     LeaveGroupName(InputEvent),
     AddUser(InputEvent),
+    SetCurrentGroup(MouseEvent),
     AddNewUser,
     GetAllGroups,
 }
@@ -132,6 +134,14 @@ impl Component for Groups {
         let username = username_option.expect("username is empty?");
         use GroupsMsg::*;
         match msg {
+            SetCurrentGroup(group) => {
+                if let Some(elem) = group.target_dyn_into::<HtmlElement>() {
+                    log::info!("inside set current group");
+                    storage
+                        .set("current_group", &elem.inner_text())
+                        .expect("storage issue");
+                }
+            }
             UpdateGroups(groups_vec) => {
                 storage
                     .set(

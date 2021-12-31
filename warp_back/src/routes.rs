@@ -93,7 +93,7 @@ pub fn leave_group(
         .and(warp::body::json())
         .and(with_db(state.db.clone()))
         .and_then(|group_form: GroupForm, db: SqlitePool| async move {
-            match leave_user_group(&db, &group_form.username, group_form.group_name).await {
+            match leave_user_group(&db, &group_form).await {
                 Ok(_) => Ok(warp::reply()),
                 Err(_) => Err(custom(WarpRejections::SqlxRejection(
                     SqlxError::DeleteGroupError,

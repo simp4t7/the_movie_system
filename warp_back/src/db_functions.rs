@@ -296,23 +296,17 @@ pub async fn db_add_user(db: &SqlitePool, user_struct: &AddUser) -> Result<()> {
 }
 
 // NOTHING WRONG WITH 200 LINE FUNCTIONS...
-pub async fn leave_user_group(db: &SqlitePool, username: &str, group_name: String) -> Result<()> {
-    log::info!(
-        "username is: {:?}, group_id is: {:?}",
-        &username,
-        &group_name
-    );
-    let _conn = db
-        .acquire()
-        .await
-        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
-    let groups = get_user_groups(db, username).await?;
+pub async fn leave_user_group(db: &SqlitePool, group_form: &GroupForm) -> Result<()> {
+    log::info!("group_form is: {:?}", &group_form,);
+    let username = &group_form.username;
+    let group_name = &group_form.group_name;
+    let groups = get_user_groups(db, &username).await?;
 
-    let group_id = get_group_id(db, &group_name, username).await?;
+    let group_id = get_group_id(db, &group_name, &username).await?;
 
-    let _updated_groups = remove_one_from_list(groups, group_id.clone())?;
+    let updated_groups = remove_one_from_list(groups, group_id.clone())?;
 
-    update_user_group(db, username, &group_id).await?;
+    update_user_groups(db, &username, &updated_groups).await?;
 
     let members = get_group_members(db, &group_id).await?;
 
