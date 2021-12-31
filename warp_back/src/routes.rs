@@ -4,8 +4,8 @@ use crate::db_functions::create_new_group;
 use crate::db_functions::db_add_user;
 use crate::db_functions::leave_user_group;
 
+use crate::db_functions::add_to_user_groups;
 use crate::db_functions::get_group_names;
-use crate::db_functions::update_user_group;
 use crate::db_functions::{check_login, insert_user};
 use crate::error_handling::AuthError;
 use crate::error_handling::WarpRejections;
@@ -111,7 +111,7 @@ pub fn create_group(
         .and_then(|group_form: GroupForm, db: SqlitePool| async move {
             match create_new_group(&db, &group_form).await {
                 Ok(uuid) => {
-                    update_user_group(&db, &group_form.username, &uuid).await?;
+                    add_to_user_groups(&db, &group_form.username, &uuid).await?;
                     Ok(warp::reply())
                 }
                 Err(_e) => Err(custom(WarpRejections::SqlxRejection(

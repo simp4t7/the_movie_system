@@ -300,13 +300,13 @@ pub async fn leave_user_group(db: &SqlitePool, group_form: &GroupForm) -> Result
     log::info!("group_form is: {:?}", &group_form,);
     let username = &group_form.username;
     let group_name = &group_form.group_name;
-    let groups = get_user_groups(db, &username).await?;
+    let groups = get_user_groups(db, username).await?;
 
-    let group_id = get_group_id(db, &group_name, &username).await?;
+    let group_id = get_group_id(db, group_name, username).await?;
 
     let updated_groups = remove_one_from_list(groups, group_id.clone())?;
 
-    update_user_groups(db, &username, &updated_groups).await?;
+    update_user_groups(db, username, &updated_groups).await?;
 
     let members = get_group_members(db, &group_id).await?;
 
@@ -324,7 +324,7 @@ pub async fn leave_user_group(db: &SqlitePool, group_form: &GroupForm) -> Result
     Ok(())
 }
 
-pub async fn update_user_group(db: &SqlitePool, username: &str, group_id: &str) -> Result<()> {
+pub async fn add_to_user_groups(db: &SqlitePool, username: &str, group_id: &str) -> Result<()> {
     let mut conn = db
         .acquire()
         .await
@@ -332,9 +332,9 @@ pub async fn update_user_group(db: &SqlitePool, username: &str, group_id: &str) 
     let query = query_as!(
         GroupsStruct,
         r#"
-                    select groups from users 
-                    WHERE username=$1
-                    "#,
+select groups from users
+WHERE username=$1
+"#,
         username
     )
     .fetch_one(&mut conn)
@@ -356,10 +356,10 @@ pub async fn update_user_group(db: &SqlitePool, username: &str, group_id: &str) 
     query!(
         r#"
 
-                    UPDATE users 
-                    set groups=$1
-                    WHERE username=$2
-                    "#,
+UPDATE users
+set groups=$1
+WHERE username=$2
+"#,
         new_entry,
         username
     )

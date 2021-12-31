@@ -1,4 +1,4 @@
-use crate::utils::auth_flow;
+
 use crate::GET_GROUP_MOVIES_URL;
 use crate::SEARCH_URL;
 use anyhow::Result;
@@ -13,14 +13,14 @@ use yew::prelude::*;
 use yew::TargetCast;
 
 use crate::utils::get_search_results;
-use crate::utils::image_processing;
+
 
 #[derive(Debug)]
 pub enum AddMoviesMsg {
     Noop,
     QueryAutocomplete(InputEvent),
     UpdateAutocomplete(Vec<MovieDisplay>),
-    AddedMovies(Vec<MovieDisplay>),
+    AddMovies(MovieDisplay),
     Error(String),
 }
 pub struct AddMovies {
@@ -32,7 +32,7 @@ pub struct AddMovies {
 impl Component for AddMovies {
     type Message = AddMoviesMsg;
     type Properties = ();
-    fn create(ctx: &Context<Self>) -> Self {
+    fn create(_ctx: &Context<Self>) -> Self {
         log::info!("creating search page");
         let group_name = String::from("");
         Self {
@@ -46,7 +46,9 @@ impl Component for AddMovies {
         let link_clone = ctx.link().clone();
         match msg {
             Noop => {}
-            AddedMovies(movies) => {}
+            AddMovies(movie) => {
+                self.added_movies.push(movie);
+            }
             QueryAutocomplete(text) => {
                 // Shouldn't do it if the text is empty, but handle this better probably...
                 if text.current_target().is_some() {

@@ -75,7 +75,7 @@ impl Groups {
         let current_groups = storage.get("all_groups").expect("storage prob");
         if let Some(groups) = current_groups {
             let group_vec: Vec<String> = serde_json::from_str(&groups).expect("serialization prob");
-            let callback = ctx.link().callback(|e| GroupsMsg::SetCurrentGroup(e));
+            let callback = ctx.link().callback(GroupsMsg::SetCurrentGroup);
             group_vec
                 .iter()
                 .map(|group| {

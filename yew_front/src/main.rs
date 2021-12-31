@@ -5,11 +5,11 @@ use load_dotenv::load_dotenv;
 
 use gloo_storage::LocalStorage;
 use gloo_storage::Storage;
-use shared_stuff::{Deserialize, Serialize};
-use std::rc::Rc;
-use wasm_bindgen_futures::spawn_local;
+
+
+
 use yew::functional::*;
-use yew::prelude::*;
+
 use yew_router::prelude::*;
 
 use yew::{html, Component, Context, Html};
@@ -120,7 +120,7 @@ impl Component for App {
     fn changed(&mut self, _ctx: &Context<Self>) -> bool {
         false
     }
-    fn view(&self, ctx: &Context<Self>) -> Html {
+    fn view(&self, _ctx: &Context<Self>) -> Html {
         html! {
             <BrowserRouter>
             <main>

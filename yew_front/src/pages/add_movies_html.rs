@@ -73,4 +73,20 @@ impl AddMovies {
                 .collect::<Html>()
         }
     }
+    pub fn display_chosen_movies(&self, _ctx: &Context<Self>) -> Html {
+        {
+            self.added_movies
+                .iter()
+                // Still not handling the no images nicely?
+                .map(|movie| {
+                    html! {
+                    <li class="search_results_li">
+                        {&movie.movie_title}
+                        {&movie.movie_year.unwrap()}
+                        <img src={image_processing(movie.movie_images.as_ref())}/>
+                    </li>}
+                })
+                .collect::<Html>()
+        }
+    }
 }
