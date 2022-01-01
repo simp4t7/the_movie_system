@@ -4,18 +4,22 @@ use crate::utils::image_processing;
 use yew::prelude::*;
 
 impl AddMovies {
-    pub fn search_results(&self, _ctx: &Context<Self>) -> Html {
+    pub fn search_results(&self, ctx: &Context<Self>) -> Html {
+        let callback = ctx.link().callback(|e| AddMoviesMsg::AddMovie(e));
         {
             self.autocomplete_movies
-                .iter()
+                .values()
                 // Still not handling the no images nicely?
                 .map(|movie| {
                     if movie.movie_images.is_some() {
+                        let formatted =
+                            format!("{} {}", &movie.movie_title, &movie.movie_year.unwrap());
                         html! {
-                        <li class="search_results_li">
-                            {&movie.movie_title}
-                            {&movie.movie_year.unwrap()}
-                            <img src={image_processing(movie.movie_images.as_ref())}/>
+                        <li class="search_results_li" title = {movie.movie_title.clone()}
+                        onclick={callback.clone()}>
+                            {&formatted}
+                        <img src={image_processing(movie.movie_images.as_ref())}
+                        title = {movie.movie_title.clone()}/>
                         </li>}
                     } else {
                         html! {
@@ -57,34 +61,28 @@ impl AddMovies {
         }
     }
 
-    pub fn added_movies(&self, _ctx: &Context<Self>) -> Html {
+    pub fn added_movies(&self, ctx: &Context<Self>) -> Html {
         {
             self.added_movies
-                .iter()
+                .values()
                 // Still not handling the no images nicely?
                 .map(|movie| {
+                    let formatted =
+                        format!("{} {}", &movie.movie_title, &movie.movie_year.unwrap());
                     html! {
-                    <li class="search_results_li">
-                        {&movie.movie_title}
-                        {&movie.movie_year.unwrap()}
-                        <img src={image_processing(movie.movie_images.as_ref())}/>
-                    </li>}
-                })
-                .collect::<Html>()
-        }
-    }
-    pub fn display_chosen_movies(&self, _ctx: &Context<Self>) -> Html {
-        {
-            self.added_movies
-                .iter()
-                // Still not handling the no images nicely?
-                .map(|movie| {
-                    html! {
-                    <li class="search_results_li">
-                        {&movie.movie_title}
-                        {&movie.movie_year.unwrap()}
-                        <img src={image_processing(movie.movie_images.as_ref())}/>
-                    </li>}
+                        <div>
+                            <li class="search_results_li" >
+                                {&formatted}
+                                <img src={image_processing(movie.movie_images.as_ref())}/>
+                            </li>
+                    <button
+                        class="delete entry" title = {movie.movie_title.clone()}
+                        onclick={&ctx.link().callback(|e| AddMoviesMsg::DeleteEntry(e))}>
+                        { "delete entry" }
+                    </button>
+                        </div>
+
+                            }
                 })
                 .collect::<Html>()
         }
