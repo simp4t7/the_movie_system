@@ -32,7 +32,7 @@ pub struct ErrorMessage {
     pub message: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Hash, Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
 pub struct MovieDisplay {
     pub movie_title: String,
     pub movie_year: Option<u32>,
@@ -50,6 +50,11 @@ pub struct UserInfo {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ImdbQuery {
     pub query: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct MovieDisplayResponse {
+    pub movies: Vec<MovieDisplay>,
 }
 
 impl<T: ToString> From<T> for ImdbQuery {
@@ -127,7 +132,7 @@ pub struct JsonQuery {
     pub d: Option<Vec<MovieInfo>>,
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Hash, Deserialize, Serialize, Debug, Clone, PartialEq, Eq)]
 pub struct ImageData {
     pub url: String,
     pub width: u32,

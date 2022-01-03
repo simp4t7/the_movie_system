@@ -87,4 +87,17 @@ impl AddMovies {
                 .collect::<Html>()
         }
     }
+
+    pub fn save_movies(&self, ctx: &Context<Self>) -> Html {
+        html! {
+            <div>
+                <button
+                    class="save_movies"
+                    onclick={&ctx.link().callback(|_| AddMoviesMsg::SaveMovies)}>
+                    { "Save Movies" }
+                </button>
+            </div>
+
+        }
+    }
 }

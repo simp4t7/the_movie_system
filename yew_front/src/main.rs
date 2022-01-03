@@ -6,8 +6,6 @@ use load_dotenv::load_dotenv;
 use gloo_storage::LocalStorage;
 use gloo_storage::Storage;
 
-
-
 use yew::functional::*;
 
 use yew_router::prelude::*;
@@ -34,7 +32,8 @@ lazy_static! {
     pub static ref REGISTER_URL: String = format!("{}/register", *ROOT_URL);
     pub static ref ACCESS_URL: String = format!("{}/access_auth", *ROOT_URL);
     pub static ref REFRESH_URL: String = format!("{}/refresh_auth", *ROOT_URL);
-    pub static ref GET_GROUP_MOVIES_URL: String = format!("{}/group_movies", *ROOT_URL);
+    pub static ref GET_GROUP_MOVIES_URL: String = format!("{}/get_group_movies", *ROOT_URL);
+    pub static ref SAVE_GROUP_MOVIES_URL: String = format!("{}/save_group_movies", *ROOT_URL);
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Routable)]

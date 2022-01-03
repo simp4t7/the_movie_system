@@ -34,6 +34,8 @@ pub enum AuthError {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum SqlxError {
+    SaveMoviesError,
+    CurrentMoviesError,
     UserDoesntExist,
     AddUserError,
     DeleteGroupError,

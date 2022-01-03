@@ -8,6 +8,13 @@ pub struct GroupForm {
     pub group_name: String,
 }
 
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct GroupMoviesForm {
+    pub username: String,
+    pub group_name: String,
+    pub current_movies: HashSet<MovieDisplay>,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GroupNames {
     pub groups: Option<String>,

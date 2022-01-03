@@ -1,10 +1,13 @@
 use crate::auth::verify_pass;
+use std::collections::HashSet;
 
 use crate::error_handling::{AuthError, Result, SqlxError, WarpRejections};
 
 use shared_stuff::groups_stuff::AddUser;
+use shared_stuff::MovieDisplay;
 
 use shared_stuff::groups_stuff::GroupForm;
+use shared_stuff::groups_stuff::GroupMoviesForm;
 use shared_stuff::LoginLookup;
 use shared_stuff::UserInfo;
 use sqlx::types::chrono::NaiveDateTime;
@@ -29,6 +32,11 @@ pub struct User {
 #[derive(Debug)]
 pub struct GroupsStruct {
     groups: Option<String>,
+}
+
+#[derive(Debug)]
+pub struct GroupsCurrentMovies {
+    current_movies: Option<String>,
 }
 #[derive(Debug)]
 pub struct GroupIdStruct {
@@ -152,6 +160,82 @@ pub async fn update_group_members(db: &SqlitePool, group_id: &str, members: &str
     .await
     .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DeleteGroupError)))?;
     Ok(())
+}
+
+pub async fn db_save_group_movies(db: &SqlitePool, group_info: &GroupMoviesForm) -> Result<()> {
+    let mut conn = db
+        .acquire()
+        .await
+        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
+    let username = group_info.username.clone();
+    let group_name = group_info.group_name.clone();
+    log::info!("current movies: {:?}", &group_info.current_movies);
+
+    let group_id = get_group_id(db, &group_name, &username).await?;
+    log::info!("group_id is: {:?}", &group_id);
+    let mut serialized_movies: HashSet<MovieDisplay> = group_info.current_movies.clone();
+    //let mut current_movies = db_get_group_movies(
+    //db,
+    //&GroupForm {
+    //username,
+    //group_name,
+    //},
+    //)
+    //.await?;
+    //let new_set = serialized_movies
+    //.union(&current_movies)
+    //.collect::<HashSet<_>>();
+    let json_movies = serde_json::to_string(&serialized_movies)
+        .map_err(|_| custom(WarpRejections::SerializationError))?;
+
+    query!(
+        r#"
+                    update groups
+                    set current_movies = $1
+                    WHERE id = $2;
+                    "#,
+        json_movies,
+        group_id,
+    )
+    .execute(&mut conn)
+    .await
+    .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::SaveMoviesError)))?;
+    log::info!("got past the stuff?");
+
+    Ok(())
+}
+
+pub async fn db_get_group_movies(
+    db: &SqlitePool,
+    group_form: &GroupForm,
+) -> Result<HashSet<MovieDisplay>> {
+    let mut conn = db
+        .acquire()
+        .await
+        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
+    let username = group_form.username.clone();
+    let group_name = group_form.group_name.clone();
+
+    let group_id = get_group_id(db, &group_name, &username).await?;
+    let current_movies = query_as!(
+        GroupsCurrentMovies,
+        r#"
+                    select current_movies from groups
+                    WHERE id = $1;
+                    "#,
+        group_id,
+    )
+    .fetch_one(&mut conn)
+    .await
+    .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DeleteGroupError)))?;
+
+    if let Some(current) = current_movies.current_movies {
+        let serialized: HashSet<MovieDisplay> = serde_json::from_str(&current)
+            .map_err(|_| custom(WarpRejections::SerializationError))?;
+        return Ok(serialized);
+    } else {
+        return Ok(HashSet::new());
+    }
 }
 
 pub async fn update_user_groups(db: &SqlitePool, user: &str, groups: &str) -> Result<()> {

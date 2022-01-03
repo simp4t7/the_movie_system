@@ -12,13 +12,17 @@ use crate::error_handling::WarpRejections;
 use crate::State;
 use http::status::StatusCode;
 use imdb_autocomplete::autocomplete_func;
+use shared_stuff::MovieDisplayResponse;
 
+use crate::db_functions::db_get_group_movies;
+use crate::db_functions::db_save_group_movies;
 use shared_stuff::groups_stuff::AddUser;
 
 use crate::db_functions::get_user_groups;
 use crate::db_functions::string_to_vec;
 use shared_stuff::groups_stuff::BasicUsername;
 use shared_stuff::groups_stuff::GroupForm;
+use shared_stuff::groups_stuff::GroupMoviesForm;
 use shared_stuff::groups_stuff::UserGroupsJson;
 use shared_stuff::ErrorMessage;
 use shared_stuff::ImdbQuery;
@@ -44,6 +48,46 @@ use warp::Filter;
 //pub fn test_route() -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
 //warp::path("test").map(|| "Hello, World!")
 //}
+
+pub fn get_group_movies(
+    state: &State,
+) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+    warp::path("get_group_movies")
+        .and(warp::body::json())
+        .and(with_db(state.db.clone()))
+        .and_then(|group_form: GroupForm, db: SqlitePool| async move {
+            match db_get_group_movies(&db, &group_form).await {
+                Ok(movies) => {
+                    //let resp = MovieDisplayResponse { movies };
+                    let json_resp = serde_json::to_string(&movies)
+                        .map_err(|_| custom(WarpRejections::SerializationError))?;
+                    Ok(json_resp)
+                }
+                Err(_e) => Err(custom(WarpRejections::SqlxRejection(
+                    SqlxError::CurrentMoviesError,
+                ))),
+            }
+        })
+}
+
+pub fn save_group_movies(
+    state: &State,
+) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+    warp::path("save_group_movies")
+        .and(warp::body::json())
+        .and(with_db(state.db.clone()))
+        .and_then(|group_movies: GroupMoviesForm, db: SqlitePool| async move {
+            match db_save_group_movies(&db, &group_movies).await {
+                Ok(_) => Ok(warp::reply()),
+                Err(e) => {
+                    log::info!("error is: {:?}", &e);
+                    Err(custom(WarpRejections::SqlxRejection(
+                        SqlxError::AddUserError,
+                    )))
+                }
+            }
+        })
+}
 
 pub fn add_user_to_group(
     state: &State,

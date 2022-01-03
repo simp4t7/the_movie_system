@@ -3,7 +3,9 @@ use warp::Filter;
 use warp_back::error_handling::handle_rejection;
 use warp_back::error_handling::Result;
 
-use warp_back::routes::{add_user_to_group, create_group, get_groups, leave_group};
+use warp_back::routes::{
+    add_user_to_group, create_group, get_group_movies, get_groups, leave_group, save_group_movies,
+};
 use warp_back::routes::{authorize_access, authorize_refresh, login, register, search};
 use warp_back::State;
 
@@ -28,6 +30,8 @@ async fn main() -> Result<()> {
         .or(leave_group(&state))
         .or(get_groups(&state))
         .or(add_user_to_group(&state))
+        .or(get_group_movies(&state))
+        .or(save_group_movies(&state))
         .recover(handle_rejection)
         .with(&state.cors);
 
