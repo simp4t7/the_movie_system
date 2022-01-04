@@ -1,7 +1,5 @@
-use crate::pages::groups::Groups;
-use crate::pages::groups::GroupsMsg;
-use gloo_storage::LocalStorage;
-use gloo_storage::Storage;
+use crate::pages::groups::{Groups, GroupsMsg};
+use gloo_storage::{LocalStorage, Storage};
 use yew::prelude::*;
 
 impl Groups {

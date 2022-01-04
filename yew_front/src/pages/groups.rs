@@ -1,31 +1,11 @@
+use crate::{ADD_USER_URL, CREATE_GROUP_URL, GET_ALL_GROUPS_URL, LEAVE_GROUP_URL};
 use anyhow::Result;
-use gloo_storage::Storage;
-use lazy_static::lazy_static;
-use load_dotenv::load_dotenv;
-use reqwasm::http::Request;
-use reqwasm::http::RequestMode;
-use shared_stuff::groups_stuff::AddUser;
-use shared_stuff::groups_stuff::BasicUsername;
-use shared_stuff::groups_stuff::UserGroupsJson;
+use gloo_storage::{LocalStorage, Storage};
+use reqwasm::http::{Request, RequestMode};
+use shared_stuff::groups_stuff::{AddUser, BasicUsername, GroupForm, UserGroupsJson};
 use std::collections::HashSet;
-
-use gloo_storage::LocalStorage;
-use shared_stuff::groups_stuff::GroupForm;
-use wasm_bindgen_futures::spawn_local;
-use web_sys::HtmlElement;
-use web_sys::HtmlInputElement;
+use web_sys::{HtmlElement, HtmlInputElement};
 use yew::prelude::*;
-
-lazy_static! {
-    pub static ref ROOT_URL: &'static str = {
-        load_dotenv!();
-        env!("ROOT_URL")
-    };
-    pub static ref CREATE_GROUP_URL: String = format!("{}/create_group", *ROOT_URL);
-    pub static ref LEAVE_GROUP_URL: String = format!("{}/leave_group", *ROOT_URL);
-    pub static ref ADD_USER_URL: String = format!("{}/add_user", *ROOT_URL);
-    pub static ref GET_ALL_GROUPS_URL: String = format!("{}/get_groups", *ROOT_URL);
-}
 
 pub async fn new_group_request(username: String, group_name: String) -> Result<()> {
     let json_body = serde_json::to_string(&GroupForm {
@@ -98,6 +78,7 @@ pub struct Groups {
     pub current_groups: HashSet<String>,
 }
 pub enum GroupsMsg {
+    Noop,
     GroupAdd(InputEvent),
     UpdateGroups(Vec<String>),
     CreateGroup,
@@ -136,6 +117,7 @@ impl Component for Groups {
         let username = username_option.expect("username is empty?");
         use GroupsMsg::*;
         match msg {
+            Noop => {}
             SetCurrentGroup(group) => {
                 if let Some(elem) = group.target_dyn_into::<HtmlElement>() {
                     log::info!("inside set current group");
@@ -170,9 +152,10 @@ impl Component for Groups {
             LeaveGroup => {
                 let group_name = self.leave_group_name.clone();
                 log::info!("username: {:?}, group_name: {:?}", &username, &group_name);
-                spawn_local(async move {
+                ctx.link().send_future(async move {
                     let resp = leave_group_request(username, group_name).await;
                     log::info!("{:?}", &resp);
+                    GroupsMsg::Noop
                 })
             }
             CreateGroupName(text) => {
@@ -190,9 +173,10 @@ impl Component for Groups {
             AddNewUser => {
                 let add_user = self.add_user.clone();
                 let group_add = self.group_add.clone();
-                spawn_local(async move {
+                ctx.link().send_future(async move {
                     let resp = add_user_request(username, add_user, group_add).await;
                     log::info!("{:?}", &resp);
+                    GroupsMsg::Noop
                 })
             }
             AddUser(text) => {

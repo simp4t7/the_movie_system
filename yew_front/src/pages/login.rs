@@ -1,13 +1,10 @@
 use crate::error::Error;
+use crate::pages::login_html::login_request;
 use crate::utils::auth_flow;
-use crate::utils::login_request;
 
 use crate::LOGIN_URL;
-use gloo_storage::LocalStorage;
-use gloo_storage::Storage;
-use shared_stuff::DoubleTokenResponse;
-use shared_stuff::UserInfo;
-use wasm_bindgen_futures::spawn_local;
+use gloo_storage::{LocalStorage, Storage};
+use shared_stuff::{DoubleTokenResponse, UserInfo};
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
@@ -54,8 +51,8 @@ impl Component for Login {
                     self.password = elem.value();
                 }
             }
-            SetError(errorOption) => {
-                self.error = errorOption;
+            SetError(err) => {
+                self.error = err;
             }
             Logout => {
                 let storage = LocalStorage::raw();
@@ -63,8 +60,9 @@ impl Component for Login {
                 log::info!("stored some data");
             }
             Noop => {}
-            AuthorizeCheck => spawn_local(async move {
-                let _x = auth_flow().await;
+            AuthorizeCheck => ctx.link().send_future(async move {
+                auth_flow().await;
+                LoginMsg::Noop
             }),
             VerifyLogin => {
                 let storage = LocalStorage::raw();
@@ -113,53 +111,5 @@ impl Component for Login {
         { self.logout_button(ctx) }
 
         </div> }
-    }
-}
-
-impl Login {
-    pub fn authorize_html(&self, ctx: &Context<Self>) -> Html {
-        html! {
-        <div>
-            <h1> {"Authorize"} </h1>
-            <button
-                class="authorize_button"
-                onclick={ctx.link().callback(|_| LoginMsg::AuthorizeCheck)}>
-                { "Authorize" }
-            </button>
-        </div>
-        }
-    }
-    pub fn login_html(&self, ctx: &Context<Self>) -> Html {
-        html! {
-        <div>
-            <h1> {"LOGIN"} </h1>
-            <input
-                class="login_user_name"
-                placeholder="Username"
-                maxlength=50
-                oninput={ctx.link().callback(LoginMsg::SetUsername)}
-            />
-            <input
-                type="password"
-                class="login_user_name"
-                placeholder="Password"
-                maxlength=50
-                oninput={ctx.link().callback(LoginMsg::SetPassword)}
-            />
-            <button
-                class="login_user_name"
-                onclick={ctx.link().callback(|_| LoginMsg::VerifyLogin)}>
-                { "Login" }
-            </button>
-            <p> {format!("Login error: {:?}", self.error.clone())} </p>
-            <p> {"Don't have an account? "} <a href="/register">{"Register here"}</a></p>
-        </div>}
-    }
-    pub fn logout_button(&self, ctx: &Context<Self>) -> Html {
-        html! {            <button
-            class="logout_button"
-            onclick={ctx.link().callback(|_| LoginMsg::Logout)}>
-            { "Logout" }
-        </button> }
     }
 }

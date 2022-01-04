@@ -35,6 +35,10 @@ lazy_static! {
     pub static ref REFRESH_URL: String = format!("{}/refresh_auth", *ROOT_URL);
     pub static ref GET_GROUP_MOVIES_URL: String = format!("{}/get_group_movies", *ROOT_URL);
     pub static ref SAVE_GROUP_MOVIES_URL: String = format!("{}/save_group_movies", *ROOT_URL);
+    pub static ref CREATE_GROUP_URL: String = format!("{}/create_group", *ROOT_URL);
+    pub static ref LEAVE_GROUP_URL: String = format!("{}/leave_group", *ROOT_URL);
+    pub static ref ADD_USER_URL: String = format!("{}/add_user", *ROOT_URL);
+    pub static ref GET_ALL_GROUPS_URL: String = format!("{}/get_groups", *ROOT_URL);
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Routable)]

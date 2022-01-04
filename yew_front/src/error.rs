@@ -2,7 +2,6 @@ use thiserror::Error as ThisError;
 
 #[derive(ThisError, Clone, PartialEq, Debug)]
 pub enum Error {
-
     /// 401
     #[error("Unauthorized")]
     Unauthorized,
@@ -15,10 +14,9 @@ pub enum Error {
     #[error("Not Found")]
     NotFound,
 
-//    /// 422
-//    #[error("Unprocessable Entity: {0:?}")]
-//    UnprocessableEntity(ErrorInfo),
-
+    //    /// 422
+    //    #[error("Unprocessable Entity: {0:?}")]
+    //    UnprocessableEntity(ErrorInfo),
     /// 500
     #[error("Internal Server Error")]
     InternalServerError,
@@ -40,4 +38,3 @@ pub enum Error {
     #[error("Login Error")]
     LogInError,
 }
-

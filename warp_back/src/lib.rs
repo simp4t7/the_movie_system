@@ -10,7 +10,6 @@ use warp::cors::Cors;
 use warp::reject::custom;
 
 pub mod auth;
-pub mod db_functions;
 pub mod db_stuff;
 pub mod error_handling;
 pub mod routes;

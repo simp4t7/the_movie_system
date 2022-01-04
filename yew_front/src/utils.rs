@@ -75,54 +75,6 @@ pub async fn auth_flow() -> Result<Claims> {
     }
 }
 
-pub async fn get_search_results(url: &str, body: ImdbQuery) -> Result<Vec<MovieDisplay>> {
-    let imdbquery = serde_json::to_string(&body)?;
-    let resp = Request::post(url)
-        .header("content-type", "application/json; charset=UTF-8")
-        .mode(RequestMode::Cors)
-        .body(imdbquery)
-        .send()
-        .await?
-        .json()
-        .await?;
-    Ok(resp)
-}
-
-pub async fn register_request(url: &str, body: UserInfo) -> Result<()> {
-    let userinfo = serde_json::to_string(&body)?;
-    log::info!("{:?}", &userinfo);
-    let resp = Request::post(url)
-        .header("content-type", "application/json; charset=UTF-8")
-        .mode(RequestMode::Cors)
-        .body(userinfo)
-        .send()
-        .await?;
-    //.text()
-    //.await?;
-    log::info!("{:?}", &resp);
-    Ok(())
-}
-
-pub async fn login_request(url: &str, body: UserInfo) -> Result<DoubleTokenResponse> {
-    let userinfo = serde_json::to_string(&body)?;
-    log::info!("{:?}", &userinfo);
-    let resp: DoubleTokenResponse = Request::post(url)
-        .header("content-type", "application/json; charset=UTF-8")
-        .mode(RequestMode::Cors)
-        .body(userinfo)
-        .send()
-        .await?
-        .json()
-        .await?;
-
-    //let auth_value = resp
-    //.headers()
-    //.get("authorization")
-    //.map_err(|e| anyhow!("header error: {:?}", e))?;
-
-    Ok(resp)
-}
-
 //Need something if there's no picture or poster...
 //There's a lot more processing to be done for different size images, but
 //mostly works now and whatever.

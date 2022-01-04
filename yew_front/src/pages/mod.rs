@@ -5,6 +5,8 @@ pub mod groups_html;
 pub mod home;
 pub mod home_html;
 pub mod login;
+pub mod login_html;
 pub mod register;
+pub mod register_html;
 pub mod the_system;
 pub mod the_system_html;

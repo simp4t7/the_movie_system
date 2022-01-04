@@ -1,27 +1,14 @@
-use crate::GET_GROUP_MOVIES_URL;
-use crate::SAVE_GROUP_MOVIES_URL;
-use crate::SEARCH_URL;
+use crate::pages::add_movies_html::get_search_results;
+use crate::{GET_GROUP_MOVIES_URL, SAVE_GROUP_MOVIES_URL, SEARCH_URL};
 use anyhow::Result;
-use gloo_storage::LocalStorage;
-use gloo_storage::Storage;
-use reqwasm::http::Request;
-use reqwasm::http::RequestMode;
+use gloo_storage::{LocalStorage, Storage};
+use reqwasm::http::{Request, RequestMode};
 use shared_stuff::add_movies_stuff::UserGroup;
-use shared_stuff::groups_stuff::BasicUsername;
-use shared_stuff::groups_stuff::GroupForm;
-use shared_stuff::groups_stuff::GroupMoviesForm;
-use shared_stuff::ImdbQuery;
-use shared_stuff::MovieDisplay;
-use std::collections::HashSet;
-use web_sys::HtmlElement;
-//use web_sys::HtmlImageElement;
-use shared_stuff::groups_stuff::UserGroupsJson;
-use std::collections::HashMap;
-use web_sys::HtmlInputElement;
+use shared_stuff::groups_stuff::{GroupForm, GroupMoviesForm, UserGroupsJson};
+use shared_stuff::{ImdbQuery, MovieDisplay};
+use std::collections::{HashMap, HashSet};
+use web_sys::{HtmlElement, HtmlInputElement};
 use yew::prelude::*;
-use yew::TargetCast;
-
-use crate::utils::get_search_results;
 
 pub async fn get_all_added_movies(username: String, group_name: String) -> Result<Vec<String>> {
     let json_body = serde_json::to_string(&GroupForm {

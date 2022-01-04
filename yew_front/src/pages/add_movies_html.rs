@@ -1,7 +1,33 @@
-use crate::pages::add_movies::AddMovies;
-use crate::pages::add_movies::AddMoviesMsg;
-use crate::utils::image_processing;
+use crate::pages::add_movies::{AddMovies, AddMoviesMsg};
+use anyhow::Result;
+use reqwasm::http::{Request, RequestMode};
+use shared_stuff::{ImageData, ImdbQuery, MovieDisplay};
 use yew::prelude::*;
+
+pub fn image_processing(image: Option<&ImageData>) -> String {
+    if let Some(image) = image {
+        let mut image_url = image.url.to_owned();
+        assert!(&image_url[image_url.len() - 4..] == ".jpg");
+        image_url.truncate(image_url.len() - 4);
+        image_url.push_str("._V1_QL75_UY74_CR30,0,50,74_.jpg");
+        image_url
+    } else {
+        "need to get a decent no pic available pic".to_string()
+    }
+}
+
+pub async fn get_search_results(url: &str, body: ImdbQuery) -> Result<Vec<MovieDisplay>> {
+    let imdbquery = serde_json::to_string(&body)?;
+    let resp = Request::post(url)
+        .header("content-type", "application/json; charset=UTF-8")
+        .mode(RequestMode::Cors)
+        .body(imdbquery)
+        .send()
+        .await?
+        .json()
+        .await?;
+    Ok(resp)
+}
 
 impl AddMovies {
     pub fn search_results(&self, ctx: &Context<Self>) -> Html {
