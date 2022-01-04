@@ -1,5 +1,3 @@
-
-
 use anyhow::Result;
 use gloo_storage::Storage;
 use lazy_static::lazy_static;
@@ -9,6 +7,7 @@ use reqwasm::http::RequestMode;
 use shared_stuff::groups_stuff::AddUser;
 use shared_stuff::groups_stuff::BasicUsername;
 use shared_stuff::groups_stuff::UserGroupsJson;
+use std::collections::HashSet;
 
 use gloo_storage::LocalStorage;
 use shared_stuff::groups_stuff::GroupForm;
@@ -92,10 +91,11 @@ pub async fn get_all_groups(username: String) -> Result<Vec<String>> {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Groups {
-    add_user: String,
-    create_group_name: String,
-    leave_group_name: String,
-    group_add: String,
+    pub add_user: String,
+    pub create_group_name: String,
+    pub leave_group_name: String,
+    pub group_add: String,
+    pub current_groups: HashSet<String>,
 }
 pub enum GroupsMsg {
     GroupAdd(InputEvent),
@@ -119,11 +119,13 @@ impl Component for Groups {
         let create_group_name = String::from("");
         let leave_group_name = String::from("");
         let group_add = String::from("");
+        let current_groups = HashSet::new();
         Self {
             add_user,
             create_group_name,
             leave_group_name,
             group_add,
+            current_groups,
         }
     }
 
@@ -151,6 +153,8 @@ impl Component for Groups {
                             .as_str(),
                     )
                     .expect("storage problem");
+                let new_hash: HashSet<String> = HashSet::from_iter(groups_vec.iter().cloned());
+                self.current_groups = new_hash;
             }
             GetAllGroups => link_clone.send_future(async move {
                 let groups = get_all_groups(username)
@@ -200,9 +204,10 @@ impl Component for Groups {
             CreateGroup => {
                 log::info!("making a group, username is: {:?}", &username);
                 let group_name = self.create_group_name.clone();
-                spawn_local(async move {
+                ctx.link().send_future(async move {
                     let resp = new_group_request(username, group_name).await;
                     log::info!("{:?}", &resp);
+                    GroupsMsg::GetAllGroups
                 })
             }
         }

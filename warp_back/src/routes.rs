@@ -1,37 +1,24 @@
 use crate::auth::verify_pass;
 use crate::auth::verify_token;
-use crate::db_functions::create_new_group;
-use crate::db_functions::db_add_user;
-use crate::db_functions::leave_user_group;
-
-use crate::db_functions::add_to_user_groups;
-use crate::db_functions::get_group_names;
-use crate::db_functions::{check_login, insert_user};
-use crate::error_handling::AuthError;
-use crate::error_handling::WarpRejections;
+use crate::db_stuff::group_db::{
+    add_to_user_groups, create_new_group, db_add_user_to_group, db_get_group_movies,
+    db_save_group_movies, get_all_group_names, get_user_groups, leave_user_group,
+};
+use crate::db_stuff::login_db::check_login;
+use crate::db_stuff::register_db::insert_user;
+use crate::db_stuff::shared_db::string_to_vec;
+use crate::error_handling::{AuthError, WarpRejections};
 use crate::State;
 use http::status::StatusCode;
 use imdb_autocomplete::autocomplete_func;
-use shared_stuff::MovieDisplayResponse;
-
-use crate::db_functions::db_get_group_movies;
-use crate::db_functions::db_save_group_movies;
-use shared_stuff::groups_stuff::AddUser;
-
-use crate::db_functions::get_user_groups;
-use crate::db_functions::string_to_vec;
-use shared_stuff::groups_stuff::BasicUsername;
-use shared_stuff::groups_stuff::GroupForm;
-use shared_stuff::groups_stuff::GroupMoviesForm;
-use shared_stuff::groups_stuff::UserGroupsJson;
-use shared_stuff::ErrorMessage;
-use shared_stuff::ImdbQuery;
-use shared_stuff::UserInfo;
+use shared_stuff::groups_stuff::{
+    AddUser, BasicUsername, GroupForm, GroupMoviesForm, UserGroupsJson,
+};
+use shared_stuff::{ErrorMessage, ImdbQuery, UserInfo};
 use sqlx::SqlitePool;
 use warp::reject::custom;
 
-use crate::auth::generate_access_token;
-use crate::auth::generate_double_token;
+use crate::auth::{generate_access_token, generate_double_token};
 use crate::error_handling::SqlxError;
 
 use warp::reply::json;
@@ -96,7 +83,7 @@ pub fn add_user_to_group(
         .and(warp::body::json())
         .and(with_db(state.db.clone()))
         .and_then(|user: AddUser, db: SqlitePool| async move {
-            match db_add_user(&db, &user).await {
+            match db_add_user_to_group(&db, &user).await {
                 Ok(_) => Ok(warp::reply()),
                 Err(_e) => Err(custom(WarpRejections::SqlxRejection(
                     SqlxError::AddUserError,
@@ -115,7 +102,7 @@ pub fn get_groups(
             match get_user_groups(&db, &user.username).await {
                 Ok(groups) => {
                     let new_vec = string_to_vec(groups);
-                    let group_names = get_group_names(&db, new_vec.clone()).await?;
+                    let group_names = get_all_group_names(&db, new_vec.clone()).await?;
                     let groups_struct = UserGroupsJson {
                         groups: group_names,
                     };

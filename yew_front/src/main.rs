@@ -21,6 +21,7 @@ use pages::groups::Groups;
 use pages::home::Home;
 use pages::login::Login;
 use pages::register::Register;
+use pages::the_system::TheSystem;
 
 lazy_static! {
     pub static ref ROOT_URL: &'static str = {
@@ -48,6 +49,8 @@ pub enum Route {
     AddMovies,
     #[at("groups")]
     Groups,
+    #[at("the_system")]
+    TheSystem,
     #[at("/404")]
     NotFound,
 }
@@ -144,6 +147,7 @@ pub fn nav_bar() -> Html {
             <li><a href="/groups">{"Group"}</a></li>
             <li><a href="/add_movies">{"Add Movies"}</a></li>
             <li><a href="/register">{"Register"}</a></li>
+            <li><a href="/the_system">{"The System"}</a></li>
             <li style="float:right"><a href="/about">{"About"}</a></li>
             <li style="float:right"><a href="/login">{user.unwrap()}</a></li>
             </ul>
@@ -175,6 +179,7 @@ fn switch(routes: &Route) -> Html {
         Route::Groups => html!{<Groups />},
         Route::Register => html!{<Register />},
         Route::AddMovies => html!{<AddMovies />},
+        Route::TheSystem => html!{<TheSystem />},
         //TODO! something for bad urls?
         Route::NotFound => html!{},
     }}

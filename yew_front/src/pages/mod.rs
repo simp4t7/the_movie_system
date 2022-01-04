@@ -6,3 +6,5 @@ pub mod home;
 pub mod home_html;
 pub mod login;
 pub mod register;
+pub mod the_system;
+pub mod the_system_html;
