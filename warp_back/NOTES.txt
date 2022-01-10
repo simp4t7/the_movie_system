@@ -1,2 +1,7 @@
 command to run tests for warp_back
 cargo t -p warp_back
+
+db tables:
+	users: id, username, hashed_password, salt, groups, date_created, date_modified
+	groups: id, name, members, movies_watched, current_movies, turn, date_created, date_modified
+
