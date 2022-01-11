@@ -41,7 +41,7 @@ lazy_static! {
     pub static ref GET_ALL_GROUPS_URL: String = format!("{}/get_groups", *ROOT_URL);
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Routable)]
+#[derive(Debug, Clone, PartialEq, Routable)]
 pub enum Route {
     #[at("/login")]
     Login,
@@ -55,6 +55,8 @@ pub enum Route {
     Groups,
     #[at("the_system")]
     TheSystem,
+    #[at("/user/:username")]
+    User { username: String },
     #[at("/404")]
     NotFound,
 }
