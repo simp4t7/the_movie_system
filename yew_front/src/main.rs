@@ -186,6 +186,7 @@ fn switch(routes: &Route) -> Html {
         Route::Register => html!{<Register />},
         Route::AddMovies => html!{<AddMovies />},
         Route::TheSystem => html!{<TheSystem />},
+        Route::User { username }=> html!{<Groups />},
         //TODO! something for bad urls?
         Route::NotFound => html!{},
     }}
