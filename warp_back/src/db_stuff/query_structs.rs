@@ -34,3 +34,10 @@ pub struct User {
     pub date_created: NaiveDateTime,
     pub date_modified: NaiveDateTime,
 }
+
+#[derive(Debug)]
+pub struct Group {
+    pub id: String,
+    pub name: String,
+    pub members: String,
+}
