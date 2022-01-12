@@ -26,6 +26,7 @@ pub async fn get_search_results(url: &str, body: ImdbQuery) -> Result<Vec<MovieD
         .await?
         .json()
         .await?;
+    log::info!("movie resp: {:?}", &resp);
     Ok(resp)
 }
 
@@ -33,20 +34,35 @@ impl AddMovies {
     pub fn search_results(&self, ctx: &Context<Self>) -> Html {
         let callback = ctx.link().callback(|e| AddMoviesMsg::AddMovie(e));
         {
+            log::info!("autocomplete_movies: {:?}", &self.autocomplete_movies);
             self.autocomplete_movies
                 .values()
                 // Still not handling the no images nicely?
                 .map(|movie| {
                     if movie.movie_images.is_some() {
-                        let formatted =
-                            format!("{} {}", &movie.movie_title, &movie.movie_year.unwrap());
                         html! {
-                        <li class="search_results_li" title = {movie.movie_title.clone()}
-                        onclick={callback.clone()}>
-                            {&formatted}
-                        <img src={image_processing(movie.movie_images.as_ref())}
-                        title = {movie.movie_title.clone()}/>
-                        </li>}
+                        <div class="search_results_div"
+                            title = {movie.movie_id.clone()}
+                            onclick={callback.clone()}>
+                        <img class="search_results_image"
+                            src={image_processing(movie.movie_images.as_ref())}
+                            title = {movie.movie_id.clone()}/>
+                        <ul>
+                        <li class="search_results_info"
+                            title = {movie.movie_id.clone()}>
+                        {&movie.movie_title}
+                        </li>
+                        <li class="search_results_info"
+                            title = {movie.movie_id.clone()}>
+                        {&movie.movie_year.unwrap()}
+                        </li>
+                        <li class="search_results_info"
+                            title = {movie.movie_id.clone()}>
+                        {&movie.movie_stars}
+                        </li>
+                        </ul>
+                        </div>
+                        }
                     } else {
                         html! {
                         <li>

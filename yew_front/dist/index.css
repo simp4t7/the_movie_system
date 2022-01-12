@@ -6,7 +6,7 @@ body {
 .movie_search_div {
   display: flex;
   flex-direction: column;
-  width: 20%;
+  width: 30%;
   margin-left: auto;
   margin-right: auto;
   font-size: 20px;
@@ -24,16 +24,29 @@ body {
   list-style: none;
   margin: 0;
   padding: 0;
-  background: #889799;
 }
 
-.search_results li {
-  display: inline-block;
+.search_results_image {
+  padding: 0.2em;
+}
+
+.search_results_div {
+  background-color: #889799;
+  border-bottom: 1px solid black;
+  padding: 0.2em;
+  display: block;
   width: 100%;
+  white-space: nowrap;
   box-sizing: border-box;
 }
 
-.search_results li:hover {
+.search_results_div ul {
+  display: inline-block;
+  vertical-align: top;
+  margin-left: 0.2em;
+}
+
+.search_results_div:hover {
   background-color: #b5b8a3;
 }
 

@@ -186,7 +186,7 @@ pub async fn update_user_groups(db: &SqlitePool, user: &str, groups: &str) -> Re
 }
 
 pub async fn db_add_user_to_group(db: &SqlitePool, user_struct: &AddUser) -> Result<()> {
-    let mut conn = acquire_db(db).await?;
+    let conn = acquire_db(db).await?;
 
     let username = user_struct.username.clone();
     let add_user = user_struct.add_user.clone();

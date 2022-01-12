@@ -101,7 +101,7 @@ impl Component for AddMovies {
                     .set("added_movies", &movie_string)
                     .expect("storage problem");
                 for i in movies {
-                    self.added_movies.insert(i.movie_title.clone(), i.clone());
+                    self.added_movies.insert(i.movie_id.clone(), i.clone());
                 }
                 log::info!("added_movies: {:?}", &self.added_movies);
             }
@@ -150,7 +150,7 @@ impl Component for AddMovies {
             QueryAutocomplete(text) => {
                 // Shouldn't do it if the text is empty, but handle this better probably...
                 if text.current_target().is_some() {
-                    link_clone.send_future(async move {
+                    link_clone.clone().send_future(async move {
                         if let Some(elem) = text.target_dyn_into::<HtmlInputElement>() {
                             let query = ImdbQuery {
                                 query: elem.value(),
@@ -158,7 +158,10 @@ impl Component for AddMovies {
 
                             match get_search_results(&SEARCH_URL, query).await {
                                 Ok(resp) => AddMoviesMsg::UpdateAutocomplete(resp),
-                                Err(err_msg) => AddMoviesMsg::Error(err_msg.to_string()),
+                                Err(err_msg) => {
+                                    link_clone.clone().send_message(UpdateAutocomplete(vec![]));
+                                    AddMoviesMsg::Error(err_msg.to_string())
+                                }
                             }
                         } else {
                             AddMoviesMsg::Noop
@@ -171,7 +174,7 @@ impl Component for AddMovies {
                 log::info!("{:?}", &movies);
                 self.autocomplete_movies.clear();
                 for i in movies {
-                    self.autocomplete_movies.insert(i.movie_title.clone(), i);
+                    self.autocomplete_movies.insert(i.movie_id.clone(), i);
                 }
 
                 //self.autocomplete_movies = movies;

@@ -1,4 +1,5 @@
 use shared_stuff::{JsonQuery, MediaType, MovieDisplay, MovieInfo};
+use uuid::Uuid;
 
 use log::trace;
 
@@ -20,6 +21,10 @@ fn serialize_raw_json(input: String) -> Result<Vec<MovieDisplay>, Box<dyn std::e
         for movie in movie_vec {
             trace!("{:?}", &movie.q);
             let media_type = MediaType::new(movie.q);
+            let mut movie_stars = String::from("");
+            if let Some(stars) = movie.s {
+                movie_stars = stars;
+            }
             trace!("{:?}", &media_type);
             match media_type {
                 MediaType::Movie | MediaType::MiniSeries | MediaType::TV => {
@@ -27,11 +32,14 @@ fn serialize_raw_json(input: String) -> Result<Vec<MovieDisplay>, Box<dyn std::e
                         Some(image_data) => serde_json::from_value(image_data).unwrap(),
                         None => None,
                     };
+                    let movie_id = Uuid::new_v4().to_string();
 
                     if movie_images.is_some() && movie.y.is_some() {
                         result_vec.push(MovieDisplay {
+                            movie_id,
                             movie_title: movie.l.unwrap(),
                             movie_year: movie.y,
+                            movie_stars,
                             movie_images,
                         });
                     }
