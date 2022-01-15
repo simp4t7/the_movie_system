@@ -14,20 +14,39 @@ body {
 
 .movie_search {
   width: 100%;
+  position: relative;
   box-sizing: border-box;
   margin: auto;
   margin-top: 1em;
   font-size: 20px;
 }
 
-.search_results ul {
-  list-style: none;
+.ul_search {
+  position: absolute;
+  width: 30%;
+  margin: 0;
+  padding: 0;
+  float: left;
+  display: block;
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
 .search_results_image {
   padding: 0.2em;
+}
+
+.search_results_div ul {
+  display: grid;
+  list-style: none;
+  width: 75%;
+}
+
+.search_results_div li {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .search_results_div {
@@ -38,6 +57,32 @@ body {
   width: 100%;
   white-space: nowrap;
   box-sizing: border-box;
+}
+
+.temp_movies {
+  position: relative;
+  background-color: #889799;
+  border-bottom: 1px solid black;
+  padding: 0.2em;
+  display: block;
+  width: 30%;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.temp_movies li {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.temp_movies ul {
+  width: 80%;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: inline-block;
+  vertical-align: top;
+  margin-left: 0.2em;
 }
 
 .search_results_div ul {

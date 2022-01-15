@@ -17,17 +17,21 @@ pub fn image_processing(image: Option<&ImageData>) -> String {
 }
 
 pub async fn get_search_results(url: &str, body: ImdbQuery) -> Result<Vec<MovieDisplay>> {
-    let imdbquery = serde_json::to_string(&body)?;
-    let resp = Request::post(url)
-        .header("content-type", "application/json; charset=UTF-8")
-        .mode(RequestMode::Cors)
-        .body(imdbquery)
-        .send()
-        .await?
-        .json()
-        .await?;
-    log::info!("movie resp: {:?}", &resp);
-    Ok(resp)
+    if !body.query.is_empty() {
+        let imdbquery = serde_json::to_string(&body)?;
+        let resp = Request::post(url)
+            .header("content-type", "application/json; charset=UTF-8")
+            .mode(RequestMode::Cors)
+            .body(imdbquery)
+            .send()
+            .await?
+            .json()
+            .await?;
+        log::info!("movie resp: {:?}", &resp);
+        Ok(resp)
+    } else {
+        Ok(vec![])
+    }
 }
 
 impl AddMovies {
@@ -42,22 +46,22 @@ impl AddMovies {
                     if movie.movie_images.is_some() {
                         html! {
                         <div class="search_results_div"
-                            title = {movie.movie_id.clone()}
+                            id = {movie.movie_id.clone()}
                             onclick={callback.clone()}>
                         <img class="search_results_image"
                             src={image_processing(movie.movie_images.as_ref())}
-                            title = {movie.movie_id.clone()}/>
+                            id = {movie.movie_id.clone()}/>
                         <ul>
                         <li class="search_results_info"
-                            title = {movie.movie_id.clone()}>
+                            id = {movie.movie_id.clone()}>
                         {&movie.movie_title}
                         </li>
                         <li class="search_results_info"
-                            title = {movie.movie_id.clone()}>
+                            id = {movie.movie_id.clone()}>
                         {&movie.movie_year.unwrap()}
                         </li>
                         <li class="search_results_info"
-                            title = {movie.movie_id.clone()}>
+                            id = {movie.movie_id.clone()}>
                         {&movie.movie_stars}
                         </li>
                         </ul>
@@ -84,7 +88,7 @@ impl AddMovies {
                         oninput={ctx.link().callback(AddMoviesMsg::QueryAutocomplete)}
                         />
                     <div class="search_results">
-                    <ul>
+                    <ul class = "ul_search">
                     {self.search_results(ctx)}
                     </ul>
                     </div>
@@ -98,6 +102,7 @@ impl AddMovies {
                 <ul>
                 {self.added_movies(ctx)}
                 </ul>
+                {self.save_movies(ctx)}
             </div>
 
         }
@@ -107,16 +112,19 @@ impl AddMovies {
         {
             self.added_movies
                 .values()
-                // Still not handling the no images nicely?
                 .map(|movie| {
                     let formatted =
                         format!("{} {}", &movie.movie_title, &movie.movie_year.unwrap());
                     html! {
-                        <div>
-                            <li class="search_results_li" >
-                                {&formatted}
-                                <img src={image_processing(movie.movie_images.as_ref())}/>
-                            </li>
+                        <div class="temp_movies">
+                        <img class="search_results_image"
+                            src={image_processing(movie.movie_images.as_ref())}/>
+                        <ul>
+                        <li> {&movie.movie_title} </li>
+                        <li> {&movie.movie_year.unwrap()} </li>
+                        <li> {format!("added by: {}", &movie.added_by)} </li>
+
+                        </ul>
                     <button
                         class="delete entry" title = {movie.movie_title.clone()}
                         onclick={&ctx.link().callback(|e| AddMoviesMsg::DeleteEntry(e))}>

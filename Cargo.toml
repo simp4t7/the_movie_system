@@ -5,4 +5,5 @@
  "yew_front",
  "shared_stuff",
  "imdb_autocomplete",
+ "omdb_info",
  ]
