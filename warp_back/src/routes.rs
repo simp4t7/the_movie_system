@@ -1,5 +1,6 @@
 use crate::auth::verify_pass;
 use crate::auth::verify_token;
+use crate::auth::with_auth;
 use crate::db_stuff::group_db::{
     add_to_user_groups, create_new_group, db_add_user_to_group, db_get_group_movies,
     db_save_group_movies, get_all_group_names, get_user_groups, leave_user_group,
@@ -99,6 +100,33 @@ pub fn get_groups(
         .and(warp::body::json())
         .and(with_db(state.db.clone()))
         .and_then(|user: BasicUsername, db: SqlitePool| async move {
+            match get_user_groups(&db, &user.username).await {
+                Ok(groups) => {
+                    let new_vec = string_to_vec(groups);
+                    let group_names = get_all_group_names(&db, new_vec.clone()).await?;
+                    let groups_struct = UserGroupsJson {
+                        groups: group_names,
+                    };
+                    let json_resp = serde_json::to_string(&groups_struct)
+                        .map_err(|_| custom(WarpRejections::SerializationError))?;
+                    Ok(json_resp)
+                }
+                Err(_e) => Err(custom(WarpRejections::SqlxRejection(
+                    SqlxError::AddUserError,
+                ))),
+            }
+        })
+}
+
+pub fn get_groups1(
+    state: &State,
+) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+    warp::path("get_groups")
+        .and(warp::body::json())
+        .and(with_auth())
+        .and(with_db(state.db.clone()))
+        .and_then(|user: BasicUsername, username: String, db: SqlitePool| async move {
+            log::info!("Passed all wrappers. Username: {:?}", &username);
             match get_user_groups(&db, &user.username).await {
                 Ok(groups) => {
                     let new_vec = string_to_vec(groups);

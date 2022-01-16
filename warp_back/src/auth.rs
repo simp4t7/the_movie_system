@@ -6,6 +6,14 @@ use crate::REFRESH_EXP;
 use crate::TOKEN_SECRET;
 use shared_stuff::DoubleTokenResponse;
 use shared_stuff::SingleTokenResponse;
+use warp::{
+    filters::header::headers_cloned,
+    http::header::{HeaderMap, HeaderValue, AUTHORIZATION},
+    reject, Filter, Rejection,
+};
+
+const BEARER: &str = "Bearer ";
+type WebResult<T> = std::result::Result<T, Rejection>;
 
 use argon2::{
     password_hash::{
@@ -19,6 +27,68 @@ use shared_stuff::Claims;
 use warp::reject::custom;
 
 //pub fn verify_jwt
+fn test_print(a_string: String) -> Result<String> {
+    Ok(format!("test print a string: {:?}", a_string))
+}
+
+pub fn with_auth() -> impl Filter<Extract = (String,), Error = Rejection> + Clone {
+
+    let _ = warp::path("access_auth")
+        .and(warp::filters::header::header("authorization"))
+        .map(|token: String| match test_print(token) {
+            Ok(some_string) => some_string,
+            Err(_) => format!("token err"),
+        });
+
+    headers_cloned()
+    .map(move |headers: HeaderMap<HeaderValue>| headers)
+    .and_then(authorize)
+}
+
+async fn authorize(headers: HeaderMap<HeaderValue>) -> WebResult<String> {
+    match jwt_from_header(&headers) {
+        Ok(jwt) => {
+            let decoded = decode::<Claims>(
+                &jwt,
+                &DecodingKey::from_secret(TOKEN_SECRET.as_ref()),
+                &Validation::new(Algorithm::HS512),
+            )
+            .map_err(|_| custom(WarpRejections::AuthRejection(AuthError::TokenError)))?;
+
+            Ok(decoded.claims.username)
+        }
+        // Err(e) => return Err(custom(WarpRejections::AuthRejection(AuthError::AccessError))),
+        Err(e) => {
+            Err(e)
+        }
+    }
+}
+
+fn jwt_from_header(headers: &HeaderMap<HeaderValue>) -> Result<String> {
+    log::info!("header map: {:?}", &headers);
+    let header = match headers.get(AUTHORIZATION) {
+        Some(v) => v,
+        None => return Err(custom(WarpRejections::AuthRejection(AuthError::NoAuthHeaderError))),
+    };
+    let auth_header = match std::str::from_utf8(header.as_bytes()) {
+        Ok(v) => v,
+        Err(_) => return Err(custom(WarpRejections::AuthRejection(AuthError::InvalidAuthHeaderError))),
+    };
+    if !auth_header.starts_with(BEARER) {
+        return Err(custom(WarpRejections::AuthRejection(AuthError::NoAuthHeaderError)));
+    }
+    Ok(auth_header.trim_start_matches(BEARER).to_owned())
+    /*
+    Ok(auth_header.to_owned())
+    */
+}
+
+// pub async fn auth(headers: HeaderMap<HeaderValue>) -> WebResult<String> {
+pub async fn auth(token: String) -> Result<String> {
+    let claims = verify_token(token)?;
+    log::info!("auth claims: {:?}", claims);
+    Ok(claims.username)
+}
 
 pub fn generate_access_token(username: String) -> Result<SingleTokenResponse> {
     let now = sqlx::types::chrono::Utc::now().timestamp();
