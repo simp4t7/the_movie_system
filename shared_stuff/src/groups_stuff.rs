@@ -1,5 +1,5 @@
-use crate::MovieDisplay;
 use crate::{Deserialize, Serialize};
+use crate::{MovieDisplay, YewMovieDisplay};
 use std::collections::HashSet;
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -12,7 +12,7 @@ pub struct GroupForm {
 pub struct GroupMoviesForm {
     pub username: String,
     pub group_name: String,
-    pub current_movies: HashSet<MovieDisplay>,
+    pub current_movies: HashSet<YewMovieDisplay>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

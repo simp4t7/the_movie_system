@@ -1,5 +1,6 @@
 pub mod add_movies_stuff;
 pub mod groups_stuff;
+pub mod omdb_structs;
 pub mod utils;
 pub use serde::{Deserialize, Serialize};
 pub use serde_json::Value;
@@ -35,11 +36,38 @@ pub struct ErrorMessage {
 
 #[derive(Hash, Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
 pub struct MovieDisplay {
+    pub movie_id: String,
     pub movie_title: String,
     pub movie_year: Option<u32>,
     pub movie_images: Option<ImageData>,
+    pub movie_stars: String,
     //pub media_type: MediaType,
 }
+
+#[derive(Hash, Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
+pub struct YewMovieDisplay {
+    pub movie_id: String,
+    pub movie_title: String,
+    pub movie_year: Option<u32>,
+    pub movie_images: Option<ImageData>,
+    pub movie_stars: String,
+    pub added_by: String,
+    //pub media_type: MediaType,
+}
+
+impl MovieDisplay {
+    pub fn into_yew_display(self, added_by: String) -> YewMovieDisplay {
+        YewMovieDisplay {
+            movie_id: self.movie_id,
+            movie_title: self.movie_title,
+            movie_year: self.movie_year,
+            movie_images: self.movie_images,
+            movie_stars: self.movie_stars,
+            added_by,
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Validate, Deserialize, Clone)]
 pub struct UserInfo {
     #[validate(email)]
@@ -121,7 +149,7 @@ pub struct MovieInfo {
     pub i: Option<Value>,
     pub y: Option<u32>,
     pub q: Option<String>, // MediaType: feature / tv series
-    //pub s: Option<String>,
+    pub s: Option<String>,
     //pub link: Option<String>,
     pub id: Option<String>,
 }

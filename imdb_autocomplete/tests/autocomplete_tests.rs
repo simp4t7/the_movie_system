@@ -2,26 +2,13 @@ use ctor::ctor;
 use imdb_autocomplete::autocomplete_func;
 use imdb_autocomplete::test_functions::check_client_connection;
 use imdb_autocomplete::test_functions::status_and_headers;
-
-
-
-//use shared_stuff::utils::load_logger;
 use shared_stuff::MovieDisplay;
-
 
 #[ctor]
 fn load_logger() {
     dotenv::dotenv().ok();
     pretty_env_logger::init();
 }
-
-//static INIT: Once = Once::new();
-
-//fn logger_init() {
-//INIT.call_once(|| {
-//load_logger().unwrap();
-//})
-//}
 
 // GET A GOOD LIST OF QUERIES TO TEST
 const LONGEST_MOVIE_TITLE: &str = "Night of the Day of the Dawn of the Son of the Bride of the Return of the Revenge of the Terror of the Attack of the Evil, Mutant, Hellbound, Flesh-Eating Subhumanoid Zombified Living Dead, Part 3";

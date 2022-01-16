@@ -6,7 +6,7 @@ use crate::db_stuff::shared_db::{
 };
 use crate::error_handling::{AuthError, Result, SqlxError, WarpRejections};
 use shared_stuff::groups_stuff::{AddUser, GroupForm, GroupMoviesForm};
-use shared_stuff::MovieDisplay;
+use shared_stuff::{MovieDisplay, YewMovieDisplay};
 use sqlx::SqlitePool;
 use sqlx::{query, query_as};
 use std::collections::HashSet;
@@ -116,7 +116,7 @@ pub async fn db_save_group_movies(db: &SqlitePool, group_info: &GroupMoviesForm)
 
     let group_id = get_group_id(db, &group_name, &username).await?;
     log::info!("group_id is: {:?}", &group_id);
-    let mut serialized_movies: HashSet<MovieDisplay> = group_info.current_movies.clone();
+    let mut serialized_movies: HashSet<YewMovieDisplay> = group_info.current_movies.clone();
 
     let json_movies = serde_json::to_string(&serialized_movies)
         .map_err(|_| custom(WarpRejections::SerializationError))?;
@@ -141,7 +141,7 @@ pub async fn db_save_group_movies(db: &SqlitePool, group_info: &GroupMoviesForm)
 pub async fn db_get_group_movies(
     db: &SqlitePool,
     group_form: &GroupForm,
-) -> Result<HashSet<MovieDisplay>> {
+) -> Result<HashSet<YewMovieDisplay>> {
     let mut conn = acquire_db(db).await?;
     let username = group_form.username.clone();
     let group_name = group_form.group_name.clone();
@@ -160,7 +160,7 @@ pub async fn db_get_group_movies(
     .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DeleteGroupError)))?;
 
     if let Some(current) = current_movies.current_movies {
-        let serialized: HashSet<MovieDisplay> = serde_json::from_str(&current)
+        let serialized: HashSet<YewMovieDisplay> = serde_json::from_str(&current)
             .map_err(|_| custom(WarpRejections::SerializationError))?;
         return Ok(serialized);
     } else {
@@ -186,7 +186,7 @@ pub async fn update_user_groups(db: &SqlitePool, user: &str, groups: &str) -> Re
 }
 
 pub async fn db_add_user_to_group(db: &SqlitePool, user_struct: &AddUser) -> Result<()> {
-    let mut conn = acquire_db(db).await?;
+    let conn = acquire_db(db).await?;
 
     let username = user_struct.username.clone();
     let add_user = user_struct.add_user.clone();
