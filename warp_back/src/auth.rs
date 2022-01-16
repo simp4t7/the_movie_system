@@ -23,7 +23,7 @@ use argon2::{
 };
 
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
-use shared_stuff::Claims;
+use shared_stuff::{Claims, Token};
 use warp::reject::custom;
 
 //pub fn verify_jwt
@@ -97,6 +97,7 @@ pub fn generate_access_token(username: String) -> Result<SingleTokenResponse> {
     let token_claims = Claims {
         username,
         exp: token_exp,
+        token: Token::Access,
     };
     log::info!("past claims inside");
     let access_token = encode(
@@ -116,6 +117,7 @@ pub fn generate_double_token(username: String) -> Result<DoubleTokenResponse> {
     let token_claims = Claims {
         username: username.clone(),
         exp: token_exp,
+        token: Token::Access,
     };
     log::info!("past claims inside");
     let access_token = encode(
@@ -129,6 +131,7 @@ pub fn generate_double_token(username: String) -> Result<DoubleTokenResponse> {
     let refresh_claims = Claims {
         username,
         exp: refresh_exp,
+        token: Token::Refresh,
     };
     let refresh_token = encode(
         &Header::new(Algorithm::HS512),
