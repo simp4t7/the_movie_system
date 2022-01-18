@@ -5,6 +5,7 @@ use gloo_storage::LocalStorage;
 use gloo_storage::Storage;
 use reqwasm::http::Request;
 use reqwasm::http::RequestMode;
+use reqwasm::http::Response;
 use shared_stuff::Claims;
 use shared_stuff::DoubleTokenResponse;
 use shared_stuff::SingleTokenResponse;
@@ -75,6 +76,51 @@ pub async fn auth_flow() -> Result<Claims> {
     }
 }
 
+pub async fn post_route_with_auth(url: &str, json_body: String) -> Result<Response> {
+    let storage = LocalStorage::raw();
+    let access_token = storage
+        .get("access_token")
+        .map_err(|e| anyhow!("storage error: {:?}", e))?;
+    let refresh_token = storage
+        .get("refresh_token")
+        .map_err(|e| anyhow!("storage error: {:?}", e))?;
+    if let Some(token) = access_token {
+        let resp = Request::post(url)
+            .mode(RequestMode::Cors)
+            .header("authorization", &token)
+            .send()
+            .await?;
+        match resp.status() {
+            200 => {
+                let claims: Claims = resp.json().await?;
+                log::info!("{:?}", &claims);
+                Ok(resp)
+            }
+            401 => {
+                authorize_refresh(refresh_token.unwrap()).await?;
+                let new_token = storage.get("access_token").expect("umm storage??").unwrap();
+                let retry_resp = Request::post(url)
+                    .mode(RequestMode::Cors)
+                    .header("authorization", &new_token)
+                    .send()
+                    .await?;
+                Ok(retry_resp)
+            }
+            e => Err(anyhow!("weird status code: {:?}", e)),
+        }
+    } else if let Some(token) = refresh_token {
+        authorize_refresh(token).await?;
+        let new_token = storage.get("access_token").expect("umm storage??").unwrap();
+        let retry_resp = Request::post(url)
+            .mode(RequestMode::Cors)
+            .header("authorization", &new_token)
+            .send()
+            .await?;
+        Ok(retry_resp)
+    } else {
+        Err(anyhow!("bad error uh oh"))
+    }
+}
 //Need something if there's no picture or poster...
 //There's a lot more processing to be done for different size images, but
 //mostly works now and whatever.
