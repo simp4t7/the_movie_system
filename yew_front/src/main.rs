@@ -87,7 +87,7 @@ impl Component for App {
     type Properties = ();
 
     fn create(ctx: &Context<Self>) -> Self {
-//        ctx.link().send_message(AppMsg::AuthCallback);
+        //        ctx.link().send_message(AppMsg::AuthCallback);
 
         App {}
     }

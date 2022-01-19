@@ -108,9 +108,9 @@ impl Component for AddMovies {
             AddMovie(movie) => {
                 let storage = LocalStorage::raw();
                 if let Some(elem) = movie.target_dyn_into::<HtmlElement>() {
-                    log::trace!("inside AddMovie");
-                    log::trace!("checking current movies: {:?}", &self.autocomplete_movies);
-                    log::trace!("current element: {:?}", &elem.title());
+                    log::info!("inside AddMovie");
+                    log::info!("checking current movies: {:?}", &self.autocomplete_movies);
+                    log::info!("current element: {:?}", &elem.title());
                     let lookup_title = &elem.id();
                     let movie = self
                         .autocomplete_movies

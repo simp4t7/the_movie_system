@@ -1,3 +1,4 @@
+use crate::utils::post_route_with_auth;
 use crate::{ADD_USER_URL, CREATE_GROUP_URL, GET_ALL_GROUPS_URL, LEAVE_GROUP_URL};
 use anyhow::Result;
 use gloo_storage::{LocalStorage, Storage};
@@ -6,7 +7,6 @@ use shared_stuff::groups_stuff::{AddUser, BasicUsername, GroupForm, UserGroupsJs
 use std::collections::HashSet;
 use web_sys::{HtmlElement, HtmlInputElement};
 use yew::prelude::*;
-use crate::utils::post_route_with_auth;
 
 pub async fn new_group_request(username: String, group_name: String) -> Result<()> {
     let json_body = serde_json::to_string(&GroupForm {
