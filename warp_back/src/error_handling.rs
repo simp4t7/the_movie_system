@@ -9,6 +9,7 @@ pub type Result<T> = std::result::Result<T, warp::Rejection>;
 #[derive(Debug, PartialEq, Eq)]
 pub enum WarpRejections {
     SerializationError,
+    UuidError,
     EnvError,
     AutocompleteError,
     UTF8Error,
@@ -34,7 +35,11 @@ pub enum AuthError {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum SqlxError {
+    DeleteUserError,
+    FindGroupIdError,
     GroupError,
+    SelectUserError,
+    SelectGroupError,
     SelectGroupsError,
     SaveMoviesError,
     CurrentMoviesError,

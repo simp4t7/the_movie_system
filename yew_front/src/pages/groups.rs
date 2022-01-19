@@ -38,12 +38,12 @@ pub async fn leave_group_request(username: String, group_name: String) -> Result
 
 pub async fn add_user_request(
     username: String,
-    add_user: String,
+    new_member: String,
     group_name: String,
 ) -> Result<()> {
     let json_body = serde_json::to_string(&AddUser {
         username,
-        add_user,
+        new_member,
         group_name,
     })?;
     let resp = Request::post(&ADD_USER_URL)

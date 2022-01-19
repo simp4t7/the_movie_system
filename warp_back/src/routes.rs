@@ -1,12 +1,5 @@
 use crate::auth::verify_pass;
 use crate::auth::verify_token;
-use crate::db_stuff::group_db::{
-    add_to_user_groups, create_new_group, db_add_user_to_group, db_get_group_movies,
-    db_save_group_movies, get_all_group_names, get_user_groups, leave_user_group,
-};
-use crate::db_stuff::login_db::check_login;
-use crate::db_stuff::register_db::insert_user;
-use crate::db_stuff::shared_db::string_to_vec;
 use crate::error_handling::{AuthError, WarpRejections};
 use crate::State;
 use http::status::StatusCode;
@@ -20,6 +13,7 @@ use warp::reject::custom;
 
 use crate::auth::{generate_access_token, generate_double_token};
 use crate::error_handling::SqlxError;
+use uuid::Uuid;
 
 use warp::reply::json;
 use warp::Filter;
@@ -36,6 +30,12 @@ use warp::Filter;
 //warp::path("test").map(|| "Hello, World!")
 //}
 
+use crate::new_db_stuff::{
+    db_add_group_to_user, db_add_user_to_group, db_get_all_group_names, db_get_group_movies,
+    db_get_user, db_get_user_groups, db_insert_group, db_insert_user, db_save_group_movies,
+    db_user_leave_group, GroupData, UserData,
+};
+
 pub fn get_group_movies(
     state: &State,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
@@ -50,9 +50,7 @@ pub fn get_group_movies(
                         .map_err(|_| custom(WarpRejections::SerializationError))?;
                     Ok(json_resp)
                 }
-                Err(_e) => Err(custom(WarpRejections::SqlxRejection(
-                    SqlxError::CurrentMoviesError,
-                ))),
+                Err(e) => Err(e),
             }
         })
 }
@@ -68,9 +66,7 @@ pub fn save_group_movies(
                 Ok(_) => Ok(warp::reply()),
                 Err(e) => {
                     log::info!("error is: {:?}", &e);
-                    Err(custom(WarpRejections::SqlxRejection(
-                        SqlxError::AddUserError,
-                    )))
+                    Err(e)
                 }
             }
         })
@@ -85,9 +81,7 @@ pub fn add_user_to_group(
         .and_then(|user: AddUser, db: SqlitePool| async move {
             match db_add_user_to_group(&db, &user).await {
                 Ok(_) => Ok(warp::reply()),
-                Err(_e) => Err(custom(WarpRejections::SqlxRejection(
-                    SqlxError::AddUserError,
-                ))),
+                Err(e) => Err(e),
             }
         })
 }
@@ -99,10 +93,10 @@ pub fn get_groups(
         .and(warp::body::json())
         .and(with_db(state.db.clone()))
         .and_then(|user: BasicUsername, db: SqlitePool| async move {
-            match get_user_groups(&db, &user.username).await {
+            match db_get_user_groups(&db, &user.username).await {
                 Ok(groups) => {
-                    let new_vec = string_to_vec(groups);
-                    let group_names = get_all_group_names(&db, new_vec.clone()).await?;
+                    log::info!("okay, got the groups: {:?}", &groups);
+                    let group_names = db_get_all_group_names(&db, &user.username).await?;
                     let groups_struct = UserGroupsJson {
                         groups: group_names,
                     };
@@ -110,9 +104,7 @@ pub fn get_groups(
                         .map_err(|_| custom(WarpRejections::SerializationError))?;
                     Ok(json_resp)
                 }
-                Err(_e) => Err(custom(WarpRejections::SqlxRejection(
-                    SqlxError::AddUserError,
-                ))),
+                Err(e) => Err(e),
             }
         })
 }
@@ -124,11 +116,9 @@ pub fn leave_group(
         .and(warp::body::json())
         .and(with_db(state.db.clone()))
         .and_then(|group_form: GroupForm, db: SqlitePool| async move {
-            match leave_user_group(&db, &group_form).await {
+            match db_user_leave_group(&db, &group_form).await {
                 Ok(_) => Ok(warp::reply()),
-                Err(_) => Err(custom(WarpRejections::SqlxRejection(
-                    SqlxError::DeleteGroupError,
-                ))),
+                Err(e) => Err(e),
             }
         })
 }
@@ -140,14 +130,16 @@ pub fn create_group(
         .and(warp::body::json())
         .and(with_db(state.db.clone()))
         .and_then(|group_form: GroupForm, db: SqlitePool| async move {
-            match create_new_group(&db, &group_form).await {
-                Ok(uuid) => {
-                    add_to_user_groups(&db, &group_form.username, &uuid).await?;
+            let uuid = Uuid::new_v4();
+            let uuid_string = uuid.to_string();
+            let group_data = GroupData::new(group_form.clone());
+            match db_insert_group(&db, &uuid_string, group_data).await {
+                Ok(_) => {
+                    let user_data = db_get_user(&db, &group_form.username).await?;
+                    db_add_group_to_user(&db, user_data, (group_form.group_name, uuid)).await?;
                     Ok(warp::reply())
                 }
-                Err(_e) => Err(custom(WarpRejections::SqlxRejection(
-                    SqlxError::CreateGroupError,
-                ))),
+                Err(e) => Err(e),
             }
         })
 }
@@ -213,13 +205,13 @@ pub fn search(
     warp::path("search")
         .and(warp::body::json())
         .and_then(|query: ImdbQuery| async move {
-            if let Ok(movie_vec) = autocomplete_func(query).await {
-                log::info!("{:?}", &movie_vec);
-                let json_res = json(&movie_vec);
-                Ok(json_res)
-            } else {
-                log::info!("error in autocomplete_func?");
-                Err(custom(WarpRejections::AutocompleteError))
+            match autocomplete_func(query).await {
+                Ok(movie_vec) => {
+                    log::info!("{:?}", &movie_vec);
+                    let json_res = json(&movie_vec);
+                    Ok(json_res)
+                }
+                Err(e) => Err(custom(WarpRejections::AutocompleteError)),
             }
         })
         .with(&state.cors)
@@ -231,13 +223,11 @@ pub fn register(
     warp::path("register")
         .and(warp::body::json())
         .and(with_db(state.db.clone()))
-        .and_then(|user: UserInfo, db: SqlitePool| async move {
-            log::info!("{:?}", &user);
-            match insert_user(&user, &db).await {
+        .and_then(|user_info: UserInfo, db: SqlitePool| async move {
+            let user_data = UserData::new(user_info.clone()).await?;
+            match db_insert_user(&db, &user_info.username, user_data).await {
                 Ok(_e) => Ok(warp::reply()),
-                Err(_e) => Err(custom(WarpRejections::SqlxRejection(
-                    SqlxError::InsertUserError,
-                ))),
+                Err(e) => Err(e),
             }
         })
         .with(&state.cors)
@@ -250,10 +240,10 @@ pub fn login(
         .and(warp::body::json())
         .and(with_db(state.db.clone()))
         .and_then(|user: UserInfo, db: SqlitePool| async move {
-            let user_info = check_login(&db, &user.username).await?;
-            let token_response = generate_double_token(user_info.username.clone())?;
+            let user_info = db_get_user(&db, &user.username).await?;
+            let token_response = generate_double_token(user_info.0.clone())?;
             log::info!("user_info: {:?}", &user_info);
-            match verify_pass(user.password, user_info.salt, user_info.hashed_password)? {
+            match verify_pass(user.password, user_info.1.salt, user_info.1.hashed_password)? {
                 true => Ok(json(&token_response)),
                 false => Err(custom(WarpRejections::AuthRejection(
                     AuthError::VerifyError,
