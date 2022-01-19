@@ -64,6 +64,6 @@ pub struct BasicUsername {
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct AddUser {
     pub username: String,
-    pub add_user: String,
+    pub new_member: String,
     pub group_name: String,
 }
