@@ -14,6 +14,7 @@ use validator::ValidationError;
 pub struct Claims {
     pub username: String,
     pub exp: i64,
+    pub token: Token,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -165,4 +166,10 @@ pub struct ImageData {
     pub url: String,
     pub width: u32,
     pub height: u32,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum Token {
+    Access,
+    Refresh,
 }

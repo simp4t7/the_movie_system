@@ -5,6 +5,7 @@ use gloo_storage::LocalStorage;
 use gloo_storage::Storage;
 use reqwasm::http::Request;
 use reqwasm::http::RequestMode;
+use reqwasm::http::Response;
 use shared_stuff::Claims;
 use shared_stuff::DoubleTokenResponse;
 use shared_stuff::SingleTokenResponse;
@@ -51,6 +52,8 @@ pub async fn auth_flow() -> Result<Claims> {
             .header("authorization", &token)
             .send()
             .await?;
+        log::info!("resp auth_flow: {:?}", &resp);
+
         match resp.status() {
             200 => {
                 let claims: Claims = resp.json().await?;
@@ -73,6 +76,56 @@ pub async fn auth_flow() -> Result<Claims> {
     } else {
         Err(anyhow!("bad error uh oh"))
     }
+}
+
+/// Post Request with tokens included in the header's authorization field.
+/// Flow:
+///     send the request to `url` with access_token
+///         200 => return response
+///         401 => send request to `REFRESH_URL` to apply for a new access_token and try again
+///         error => return error
+pub async fn post_route_with_auth(url: &str, json_body: String) -> Result<Response> {
+    let storage = LocalStorage::raw();
+    let access_token = storage
+        .get("access_token")
+        .map_err(|e| anyhow!("storage error: {:?}", e))?;
+    let refresh_token = storage
+        .get("refresh_token")
+        .map_err(|e| anyhow!("storage error: {:?}", e))?;
+    if let Some(token) = access_token {
+        let request = make_post_request(url, &json_body, &token);
+        let resp = request.send().await?;
+        match resp.status() {
+            200 => {
+                Ok(resp)
+            }
+            401 => {
+                log::info!("access tokem 401");
+                authorize_refresh(refresh_token.unwrap()).await?;
+                let new_token = storage.get("access_token").expect("umm storage??").unwrap();
+                let retry_request = make_post_request(url, &json_body, &new_token);
+                let retry_resp = retry_request.send().await?;
+                Ok(retry_resp)
+            }
+            e => Err(anyhow!("weird status code: {:?}", e)),
+        }
+    } else if let Some(token) = refresh_token {
+        authorize_refresh(token).await?;
+        let new_token = storage.get("access_token").expect("umm storage??").unwrap();
+        let retry_request = make_post_request(url, &json_body, &new_token);
+        let retry_resp = retry_request.send().await?;
+        Ok(retry_resp)
+    } else {
+        Err(anyhow!("bad error uh oh"))
+    }
+}
+
+pub fn make_post_request(url: &str, json_body: &str, token: &str) -> Request {
+    Request::post(url)
+        .mode(RequestMode::Cors)
+        .header("authorization", &token)
+        .header("content-type", "application/json; charset=UTF-8")
+        .body(json_body)
 }
 
 //Need something if there's no picture or poster...

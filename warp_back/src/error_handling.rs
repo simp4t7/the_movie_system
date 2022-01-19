@@ -31,6 +31,8 @@ pub enum AuthError {
     TokenError,
     HasherError,
     VerifyError,
+    NoAuthHeaderError,
+    InvalidAuthHeaderError,
 }
 
 #[derive(Debug, PartialEq, Eq)]

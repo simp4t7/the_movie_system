@@ -41,7 +41,7 @@ lazy_static! {
     pub static ref GET_ALL_GROUPS_URL: String = format!("{}/get_groups", *ROOT_URL);
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Routable)]
+#[derive(Debug, Clone, PartialEq, Routable)]
 pub enum Route {
     #[at("/login")]
     Login,
@@ -55,6 +55,8 @@ pub enum Route {
     Groups,
     #[at("the_system")]
     TheSystem,
+    #[at("/user/:username")]
+    User { username: String },
     #[at("/404")]
     NotFound,
 }
@@ -85,7 +87,7 @@ impl Component for App {
     type Properties = ();
 
     fn create(ctx: &Context<Self>) -> Self {
-        ctx.link().send_message(AppMsg::AuthCallback);
+//        ctx.link().send_message(AppMsg::AuthCallback);
 
         App {}
     }
@@ -184,6 +186,7 @@ fn switch(routes: &Route) -> Html {
         Route::Register => html!{<Register />},
         Route::AddMovies => html!{<AddMovies />},
         Route::TheSystem => html!{<TheSystem />},
+        Route::User { username }=> html!{<Groups />},
         //TODO! something for bad urls?
         Route::NotFound => html!{},
     }}

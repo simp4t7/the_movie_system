@@ -46,6 +46,8 @@ pub async fn get_user_groups(db: &SqlitePool, user: &str) -> Result<String> {
     .await
     .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::SelectGroupsError)))?;
 
+    log::info!("get groups for {:?}. groups: {:?}", &user, &groups);
+
     if let Some(user_groups) = groups.groups {
         Ok(user_groups)
     } else {

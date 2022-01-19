@@ -6,6 +6,7 @@ use shared_stuff::groups_stuff::{AddUser, BasicUsername, GroupForm, UserGroupsJs
 use std::collections::HashSet;
 use web_sys::{HtmlElement, HtmlInputElement};
 use yew::prelude::*;
+use crate::utils::post_route_with_auth;
 
 pub async fn new_group_request(username: String, group_name: String) -> Result<()> {
     let json_body = serde_json::to_string(&GroupForm {
@@ -58,14 +59,18 @@ pub async fn add_user_request(
 
 pub async fn get_all_groups(username: String) -> Result<Vec<String>> {
     let json_body = serde_json::to_string(&BasicUsername { username })?;
+    let resp = post_route_with_auth(&GET_ALL_GROUPS_URL, json_body.clone()).await?;
+    log::info!("get_all_groups post_route_with_auth: {:?}", &resp);
+    /*
     let resp = Request::post(&GET_ALL_GROUPS_URL)
         .header("content-type", "application/json; charset=UTF-8")
         .mode(RequestMode::Cors)
         .body(json_body)
         .send()
         .await?;
+        */
     let groups: UserGroupsJson = resp.json().await?;
-    log::info!("{:?}", &groups);
+    log::info!("response json: {:?}", &groups);
     Ok(groups.groups)
 }
 
@@ -115,6 +120,7 @@ impl Component for Groups {
         let storage = LocalStorage::raw();
         let username_option = storage.get("username").expect("problem getting username");
         let username = username_option.expect("username is empty?");
+        log::info!("username is: {:?}", &username);
         use GroupsMsg::*;
         match msg {
             Noop => {}
@@ -142,6 +148,7 @@ impl Component for Groups {
                 let groups = get_all_groups(username)
                     .await
                     .expect("problem getting groups");
+                log::info!("passed get_all_groups");
                 GroupsMsg::UpdateGroups(groups)
             }),
             GroupAdd(text) => {
