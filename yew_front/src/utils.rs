@@ -52,6 +52,8 @@ pub async fn auth_flow() -> Result<Claims> {
             .header("authorization", &token)
             .send()
             .await?;
+        log::info!("resp auth_flow: {:?}", &resp);
+
         match resp.status() {
             200 => {
                 let claims: Claims = resp.json().await?;
@@ -85,15 +87,20 @@ pub async fn post_route_with_auth(url: &str, json_body: String) -> Result<Respon
         .get("refresh_token")
         .map_err(|e| anyhow!("storage error: {:?}", e))?;
     if let Some(token) = access_token {
-        let resp = Request::post(url)
+        let request = Request::post(url)
             .mode(RequestMode::Cors)
             .header("authorization", &token)
-            .send()
-            .await?;
+            .header("content-type", "application/json; charset=UTF-8")
+            .body(json_body.to_owned());
+        log::info!("request: {:?}", &request);
+
+        let resp = request.send().await?;
+        log::info!("resp get_group: {:?}", &resp);
+
         match resp.status() {
             200 => {
                 let claims: Claims = resp.json().await?;
-                log::info!("{:?}", &claims);
+                log::info!("response json body: {:?}", &claims);
                 Ok(resp)
             }
             401 => {
@@ -102,6 +109,8 @@ pub async fn post_route_with_auth(url: &str, json_body: String) -> Result<Respon
                 let retry_resp = Request::post(url)
                     .mode(RequestMode::Cors)
                     .header("authorization", &new_token)
+                    .header("content-type", "application/json; charset=UTF-8")
+                    .body(json_body.to_owned())
                     .send()
                     .await?;
                 Ok(retry_resp)

@@ -32,14 +32,6 @@ fn test_print(a_string: String) -> Result<String> {
 }
 
 pub fn with_auth() -> impl Filter<Extract = (String,), Error = Rejection> + Clone {
-
-    let _ = warp::path("access_auth")
-        .and(warp::filters::header::header("authorization"))
-        .map(|token: String| match test_print(token) {
-            Ok(some_string) => some_string,
-            Err(_) => format!("token err"),
-        });
-
     headers_cloned()
     .map(move |headers: HeaderMap<HeaderValue>| headers)
     .and_then(authorize)
@@ -66,10 +58,11 @@ async fn authorize(headers: HeaderMap<HeaderValue>) -> WebResult<String> {
 
 fn jwt_from_header(headers: &HeaderMap<HeaderValue>) -> Result<String> {
     log::info!("header map: {:?}", &headers);
-    let header = match headers.get(AUTHORIZATION) {
-        Some(v) => v,
+    match headers.get(AUTHORIZATION) {
+        Some(v) => return Ok(v.to_str().unwrap_or_default().to_string()),
         None => return Err(custom(WarpRejections::AuthRejection(AuthError::NoAuthHeaderError))),
     };
+    /*
     let auth_header = match std::str::from_utf8(header.as_bytes()) {
         Ok(v) => v,
         Err(_) => return Err(custom(WarpRejections::AuthRejection(AuthError::InvalidAuthHeaderError))),
@@ -78,7 +71,7 @@ fn jwt_from_header(headers: &HeaderMap<HeaderValue>) -> Result<String> {
         return Err(custom(WarpRejections::AuthRejection(AuthError::NoAuthHeaderError)));
     }
     Ok(auth_header.trim_start_matches(BEARER).to_owned())
-    /*
+    warp::filters::header::header("authorization")
     Ok(auth_header.to_owned())
     */
 }
