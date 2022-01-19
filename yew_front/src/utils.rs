@@ -99,11 +99,10 @@ pub async fn post_route_with_auth(url: &str, json_body: String) -> Result<Respon
 
         match resp.status() {
             200 => {
-                let claims: Claims = resp.json().await?;
-                log::info!("response json body: {:?}", &claims);
                 Ok(resp)
             }
             401 => {
+                log::info!("access tokem 401");
                 authorize_refresh(refresh_token.unwrap()).await?;
                 let new_token = storage.get("access_token").expect("umm storage??").unwrap();
                 let retry_resp = Request::post(url)

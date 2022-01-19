@@ -59,8 +59,8 @@ pub async fn add_user_request(
 
 pub async fn get_all_groups(username: String) -> Result<Vec<String>> {
     let json_body = serde_json::to_string(&BasicUsername { username })?;
-    log::info!("get_all_groups json_body: {:?}", &json_body);
     let resp = post_route_with_auth(&GET_ALL_GROUPS_URL, json_body.clone()).await?;
+    log::info!("get_all_groups post_route_with_auth: {:?}", &resp);
     /*
     let resp = Request::post(&GET_ALL_GROUPS_URL)
         .header("content-type", "application/json; charset=UTF-8")
