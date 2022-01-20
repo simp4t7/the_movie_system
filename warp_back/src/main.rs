@@ -29,7 +29,6 @@ async fn main() -> Result<()> {
         .or(create_group(&state))
         .or(leave_group(&state))
         .or(get_groups(&state))
-        //.or(get_groups1(&state))
         .or(add_user_to_group(&state))
         .or(get_group_movies(&state))
         .or(save_group_movies(&state))

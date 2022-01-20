@@ -5,3 +5,10 @@ db tables:
 	users: id, username, hashed_password, salt, groups, date_created, date_modified
 	groups: id, name, members, movies_watched, current_movies, turn, date_created, date_modified
 
+route to make for with_auth
+        .or(create_group(&state))	// done
+        .or(leave_group(&state))	// done
+        .or(get_groups(&state))		// done
+        .or(add_user_to_group(&state))	// done
+        .or(get_group_movies(&state))	
+        .or(save_group_movies(&state))

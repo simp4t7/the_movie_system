@@ -78,8 +78,9 @@ pub fn add_user_to_group(
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path("add_user")
         .and(warp::body::json())
+        .and(with_auth())
         .and(with_db(state.db.clone()))
-        .and_then(|user: AddUser, db: SqlitePool| async move {
+        .and_then(|user: AddUser, _username:String, db: SqlitePool| async move {
             match db_add_user_to_group(&db, &user).await {
                 Ok(_) => Ok(warp::reply()),
                 Err(e) => Err(e),
@@ -90,14 +91,12 @@ pub fn add_user_to_group(
 pub fn get_groups(
     state: &State,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
-    log::info!("Entering get_groups");
     warp::path("get_groups")
         .and(warp::body::json())
         .and(with_auth())
         .and(with_db(state.db.clone()))
         .and_then(
             |user: BasicUsername, _username: String, db: SqlitePool| async move {
-                log::info!("username: {:?}", &user);
                 match db_get_user_groups(&db, &user.username).await {
                     Ok(groups) => {
                         log::info!("okay, got the groups: {:?}", &groups);
@@ -107,7 +106,6 @@ pub fn get_groups(
                         };
                         let json_resp = serde_json::to_string(&groups_struct)
                             .map_err(|_| custom(WarpRejections::SerializationError(err_info!())))?;
-                        log::info!("get group json_resp: {:?}", &json_resp);
                         Ok(json_resp)
                     }
                     Err(_e) => Err(custom(WarpRejections::SqlxError(err_info!()))),
@@ -116,47 +114,14 @@ pub fn get_groups(
         )
 }
 
-//pub fn get_groups1(
-//state: &State,
-//) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
-//log::info!("Entering get_groups1");
-//warp::path("get_groups")
-//.and(warp::body::json())
-//.and(with_auth())
-//.and(with_db(state.db.clone()))
-//.and_then(
-//|user: BasicUsername, username: String, db: SqlitePool| async move {
-//log::info!(
-//"Passed all wrappers. BasicUsername: {:?}, username: {:?}",
-//&user,
-//&username
-//);
-//match get_user_groups(&db, &username).await {
-//Ok(groups) => {
-//let new_vec = string_to_vec(groups);
-//let group_names = get_all_group_names(&db, new_vec.clone()).await?;
-//log::info!("get group group_names: {:?}", &group_names);
-//let groups_struct = UserGroupsJson {
-//groups: group_names,
-//};
-//let json_resp = serde_json::to_string(&groups_struct)
-//.map_err(|_| custom(WarpRejections::SerializationError))?;
-//log::info!("get group json_resp: {:?}", &json_resp);
-//Ok(json_resp)
-//}
-//Err(e) => Err(e),
-//}
-//},
-//)
-//}
-
 pub fn leave_group(
     state: &State,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path("leave_group")
         .and(warp::body::json())
+        .and(with_auth())
         .and(with_db(state.db.clone()))
-        .and_then(|group_form: GroupForm, db: SqlitePool| async move {
+        .and_then(|group_form: GroupForm, _username: String, db: SqlitePool| async move {
             match db_user_leave_group(&db, &group_form).await {
                 Ok(_) => Ok(warp::reply()),
                 Err(e) => Err(e),
@@ -169,8 +134,9 @@ pub fn create_group(
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path("create_group")
         .and(warp::body::json())
+        .and(with_auth())
         .and(with_db(state.db.clone()))
-        .and_then(|group_form: GroupForm, db: SqlitePool| async move {
+        .and_then(|group_form: GroupForm, _username: String, db: SqlitePool| async move {
             let uuid = Uuid::new_v4();
             let uuid_string = uuid.to_string();
             let group_data = GroupData::new(group_form.clone());
