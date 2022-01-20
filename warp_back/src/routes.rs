@@ -118,8 +118,9 @@ pub fn leave_group(
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path("leave_group")
         .and(warp::body::json())
+        .and(with_auth())
         .and(with_db(state.db.clone()))
-        .and_then(|group_form: GroupForm, db: SqlitePool| async move {
+        .and_then(|group_form: GroupForm, _username: String, db: SqlitePool| async move {
             match db_user_leave_group(&db, &group_form).await {
                 Ok(_) => Ok(warp::reply()),
                 Err(e) => Err(e),

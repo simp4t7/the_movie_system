@@ -13,12 +13,15 @@ pub async fn leave_group_request(username: String, group_name: String) -> Result
         username,
         group_name,
     })?;
+    let resp = post_route_with_auth(&LEAVE_GROUP_URL, json_body.clone()).await?;
+    /*
     let resp = Request::post(&LEAVE_GROUP_URL)
         .header("content-type", "application/json; charset=UTF-8")
         .mode(RequestMode::Cors)
         .body(json_body)
         .send()
         .await?;
+        */
     log::info!("{:?}", &resp);
     Ok(())
 }
@@ -56,15 +59,6 @@ pub async fn new_group_request(username: String, group_name: String) -> Result<(
         group_name,
     })?;
     let resp = post_route_with_auth(&CREATE_GROUP_URL, json_body.clone()).await?;
-
-    /*
-    let resp = Request::post(&CREATE_GROUP_URL)
-        .header("content-type", "application/json; charset=UTF-8")
-        .mode(RequestMode::Cors)
-        .body(json_body)
-        .send()
-        .await?;
-        */
     log::info!("Create new group resp: {:?}", &resp);
     Ok(())
 }

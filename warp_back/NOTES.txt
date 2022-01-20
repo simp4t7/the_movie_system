@@ -6,9 +6,9 @@ db tables:
 	groups: id, name, members, movies_watched, current_movies, turn, date_created, date_modified
 
 route to make for with_auth
-        .or(create_group(&state))
+        .or(create_group(&state))	// done
         .or(leave_group(&state))
-        .or(get_groups(&state))
+        .or(get_groups(&state))		// done
         .or(add_user_to_group(&state))
-        .or(get_group_movies(&state))	// done
+        .or(get_group_movies(&state))	
         .or(save_group_movies(&state))
