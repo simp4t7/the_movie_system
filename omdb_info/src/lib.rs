@@ -1,7 +1,7 @@
 use anyhow::Result;
 use ctor::ctor;
 use lazy_static::lazy_static;
-use shared_stuff::omdb_structs::{OmdbRatings, OmdbStruct};
+use shared_stuff::omdb_structs::{OmdbStruct};
 use std::fs::File;
 use std::io::Read;
 
@@ -40,7 +40,7 @@ async fn query_builder(id: &str) -> Result<OmdbStruct> {
 }
 
 mod tests {
-    use super::*;
+    
     #[tokio::test]
     async fn first_test() -> Result<()> {
         query_builder("tt1160419").await?;

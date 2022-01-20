@@ -7,9 +7,9 @@ use reqwasm::http::Request;
 use reqwasm::http::RequestMode;
 use reqwasm::http::Response;
 use shared_stuff::Claims;
-use shared_stuff::DoubleTokenResponse;
+
 use shared_stuff::SingleTokenResponse;
-use shared_stuff::{ImageData, ImdbQuery, MovieDisplay, UserInfo};
+use shared_stuff::{ImageData};
 
 pub async fn authorize_refresh(refresh_token: String) -> Result<SingleTokenResponse> {
     let storage = LocalStorage::raw();
@@ -123,7 +123,7 @@ pub async fn post_route_with_auth(url: &str, json_body: String) -> Result<Respon
 pub fn make_post_request(url: &str, json_body: &str, token: &str) -> Request {
     Request::post(url)
         .mode(RequestMode::Cors)
-        .header("authorization", &token)
+        .header("authorization", token)
         .header("content-type", "application/json; charset=UTF-8")
         .body(json_body)
 }

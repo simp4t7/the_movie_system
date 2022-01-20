@@ -36,7 +36,7 @@ pub async fn get_search_results(url: &str, body: ImdbQuery) -> Result<Vec<MovieD
 
 impl AddMovies {
     pub fn search_results(&self, ctx: &Context<Self>) -> Html {
-        let callback = ctx.link().callback(|e| AddMoviesMsg::AddMovie(e));
+        let callback = ctx.link().callback(AddMoviesMsg::AddMovie);
         {
             log::info!("autocomplete_movies: {:?}", &self.autocomplete_movies);
             self.autocomplete_movies
@@ -113,7 +113,7 @@ impl AddMovies {
             self.added_movies
                 .values()
                 .map(|movie| {
-                    let formatted =
+                    let _formatted =
                         format!("{} {}", &movie.movie_title, &movie.movie_year.unwrap());
                     html! {
                         <div class="temp_movies">
@@ -127,7 +127,7 @@ impl AddMovies {
                         </ul>
                     <button
                         class="delete entry" title = {movie.movie_title.clone()}
-                        onclick={&ctx.link().callback(|e| AddMoviesMsg::DeleteEntry(e))}>
+                        onclick={&ctx.link().callback(AddMoviesMsg::DeleteEntry)}>
                         { "delete entry" }
                     </button>
                         </div>

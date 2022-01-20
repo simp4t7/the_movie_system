@@ -269,7 +269,7 @@ pub async fn db_get_all_group_names(db: &SqlitePool, username: &str) -> Result<V
     let user_groups = db_user_data.1.groups;
     let group_names = user_groups
         .iter()
-        .map(|(group_name, uuid)| group_name.to_string())
+        .map(|(group_name, _)| group_name.to_string())
         .collect::<Vec<String>>();
     Ok(group_names)
 }
@@ -314,7 +314,7 @@ pub async fn db_add_user_to_group(db: &SqlitePool, add_user: &AddUser) -> Result
 pub async fn db_save_group_movies(db: &SqlitePool, group_info: &GroupMoviesForm) -> Result<()> {
     let username = &group_info.username;
     let group_name = &group_info.group_name;
-    let group_id = db_get_group_id(db, &group_name, &username).await?;
+    let group_id = db_get_group_id(db, group_name, username).await?;
     let current_movies: HashSet<YewMovieDisplay> = group_info.current_movies.clone();
     let mut group_data = db_get_group(db, &group_id).await?;
     log::info!("current_movies: {:?}", &current_movies);
@@ -330,7 +330,7 @@ pub async fn db_get_group_movies(
 ) -> Result<HashSet<YewMovieDisplay>> {
     let username = &group_form.username;
     let group_name = &group_form.group_name;
-    let group_id = db_get_group_id(db, &group_name, &username).await?;
+    let group_id = db_get_group_id(db, group_name, username).await?;
     let group_data: GroupData = db_get_group(db, &group_id).await?.1;
     Ok(group_data.current_movies)
 }
@@ -348,19 +348,17 @@ pub async fn db_add_group_to_user(
 }
 
 pub async fn db_group_add_new_user(db: &SqlitePool, user_struct: &AddUser) -> Result<()> {
-    let conn = acquire_db(db).await?;
-
     let username = &user_struct.username;
     let new_member = &user_struct.new_member;
     let group_name = &user_struct.group_name;
-    let group_id = db_get_group_id(db, &group_name, &username).await?;
+    let group_id = db_get_group_id(db, group_name, username).await?;
     let group_uuid = Uuid::parse_str(&group_id).map_err(|_| custom(WarpRejections::UuidError))?;
 
-    match db_get_user(db, &new_member).await {
+    match db_get_user(db, new_member).await {
         Ok(user_data) => {
             log::info!("in here");
             db_add_group_to_user(db, user_data.clone(), (group_name.clone(), group_uuid)).await?;
-            db_add_user_to_group(db, user_struct);
+            db_add_user_to_group(db, user_struct).await?;
         }
         Err(e) => return Err(e),
     }
@@ -379,12 +377,12 @@ pub async fn db_user_leave_group(db: &SqlitePool, group_form: &GroupForm) -> Res
     log::info!("group_id is: {:?}", &group_id);
     let mut group_data = db_get_group(db, &group_id).await?;
     log::info!("group_data is: {:?}", &group_data);
-    let mut user_data = db_get_user(db, &username).await?;
+    let mut user_data = db_get_user(db, username).await?;
     log::info!("user_data is: {:?}", &user_data);
     let user_groups = db_get_user_groups(db, username)
         .await?
         .iter()
-        .filter(|(name, uuid)| name != group_name)
+        .filter(|(name, _)| name != group_name)
         .cloned()
         .collect::<HashSet<(String, Uuid)>>();
     log::info!("user_groups is: {:?}", &user_groups);
@@ -448,11 +446,7 @@ pub async fn db_update_password(
     Ok(())
 }
 
-pub async fn db_update_username(
-    db: &SqlitePool,
-    old_user: &UserInfo,
-    new_user: &UserInfo,
-) -> Result<()> {
+pub async fn db_update_username(db: &SqlitePool, old_user: &UserInfo) -> Result<()> {
     let now = sqlx::types::chrono::Utc::now().timestamp();
     match db_get_user(db, &old_user.username).await {
         Ok(mut user_info) => match verify_pass(

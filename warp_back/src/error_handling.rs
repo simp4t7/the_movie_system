@@ -13,15 +13,14 @@ pub enum WarpRejections {
     EnvError,
     AutocompleteError,
     UTF8Error,
-    BodyDeserializeError,
     AuthRejection(AuthError),
     SqlxRejection(SqlxError),
     Other(String),
 }
 
-impl Into<String> for WarpRejections {
-    fn into(self) -> String {
-        format!("{:?}", self)
+impl From<WarpRejections> for String {
+    fn from(error: WarpRejections) -> Self {
+        format!("{:?}", error)
     }
 }
 
@@ -69,9 +68,6 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl Reply> {
     if let Some(e) = err.find::<WarpRejections>() {
         code = StatusCode::BAD_REQUEST;
         message = format!("{:?}", e);
-    } else if let Some(_e) = err.find::<warp::filters::body::BodyDeserializeError>() {
-        code = StatusCode::BAD_REQUEST;
-        message = format!("{:?}", WarpRejections::BodyDeserializeError);
     } else {
         code = StatusCode::INTERNAL_SERVER_ERROR;
         message = format!("unhandled error: {:?}", err);

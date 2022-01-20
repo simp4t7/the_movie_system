@@ -61,7 +61,7 @@ impl Component for Login {
             }
             Noop => {}
             AuthorizeCheck => ctx.link().send_future(async move {
-                auth_flow().await;
+                auth_flow().await.expect("auth flow issue");
                 LoginMsg::Noop
             }),
             VerifyLogin => {

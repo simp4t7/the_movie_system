@@ -86,7 +86,7 @@ impl Component for App {
     type Message = AppMsg;
     type Properties = ();
 
-    fn create(ctx: &Context<Self>) -> Self {
+    fn create(_ctx: &Context<Self>) -> Self {
         //        ctx.link().send_message(AppMsg::AuthCallback);
 
         App {}
@@ -186,7 +186,7 @@ fn switch(routes: &Route) -> Html {
         Route::Register => html!{<Register />},
         Route::AddMovies => html!{<AddMovies />},
         Route::TheSystem => html!{<TheSystem />},
-        Route::User { username }=> html!{<Groups />},
+        Route::User { username: _ }=> html!{<Groups />},
         //TODO! something for bad urls?
         Route::NotFound => html!{},
     }}

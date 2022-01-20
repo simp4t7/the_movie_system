@@ -2,7 +2,7 @@ use crate::pages::the_system::TheSystem;
 use yew::prelude::*;
 
 impl TheSystem {
-    pub fn system_ready_status(&self, ctx: &Context<Self>) -> Html {
+    pub fn system_ready_status(&self, _ctx: &Context<Self>) -> Html {
         if self.ready_status {
             html! {
                 <div>

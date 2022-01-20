@@ -69,7 +69,7 @@ impl Groups {
         }
     }
     pub fn display_current_groups(&self, ctx: &Context<Self>) -> Html {
-        let storage = LocalStorage::raw();
+        let _storage = LocalStorage::raw();
         let current_groups = self.current_groups.clone();
         if !current_groups.is_empty() {
             //let group_vec: Vec<String> = serde_json::from_str(&groups).expect("serialization prob");

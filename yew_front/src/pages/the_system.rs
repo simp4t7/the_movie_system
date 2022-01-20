@@ -13,7 +13,7 @@ impl Component for TheSystem {
     type Message = TheSystemMsg;
     type Properties = ();
 
-    fn create(ctx: &Context<Self>) -> Self {
+    fn create(_ctx: &Context<Self>) -> Self {
         let ready_status = false;
         let users_not_ready = HashSet::new();
         let users_ready = HashSet::new();

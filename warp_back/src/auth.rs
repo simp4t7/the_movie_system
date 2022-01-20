@@ -9,10 +9,9 @@ use shared_stuff::SingleTokenResponse;
 use warp::{
     filters::header::headers_cloned,
     http::header::{HeaderMap, HeaderValue, AUTHORIZATION},
-    reject, Filter, Rejection,
+    Filter, Rejection,
 };
 
-const BEARER: &str = "Bearer ";
 type WebResult<T> = std::result::Result<T, Rejection>;
 
 use argon2::{
@@ -23,11 +22,6 @@ use argon2::{
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use shared_stuff::{Claims, Token};
 use warp::reject::custom;
-
-//pub fn verify_jwt
-fn test_print(a_string: String) -> Result<String> {
-    Ok(format!("test print a string: {:?}", a_string))
-}
 
 pub fn with_auth() -> impl Filter<Extract = (String,), Error = Rejection> + Clone {
     headers_cloned()
@@ -55,13 +49,11 @@ async fn authorize(headers: HeaderMap<HeaderValue>) -> WebResult<String> {
 fn jwt_from_header(headers: &HeaderMap<HeaderValue>) -> Result<String> {
     log::info!("header map: {:?}", &headers);
     match headers.get(AUTHORIZATION) {
-        Some(v) => return Ok(v.to_str().unwrap_or_default().to_string()),
-        None => {
-            return Err(custom(WarpRejections::AuthRejection(
-                AuthError::NoAuthHeaderError,
-            )))
-        }
-    };
+        Some(v) => Ok(v.to_str().unwrap_or_default().to_string()),
+        None => Err(custom(WarpRejections::AuthRejection(
+            AuthError::NoAuthHeaderError,
+        ))),
+    }
     /*
     let auth_header = match std::str::from_utf8(header.as_bytes()) {
         Ok(v) => v,

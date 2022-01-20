@@ -59,11 +59,11 @@ impl Component for AddMovies {
         let storage = LocalStorage::raw();
         let username = storage.get("username").expect("storage issue");
         let group_name = storage.get("current_group").expect("storage issue");
-        let movies = storage.get("added_movies").expect("storage issue");
-        let mut current_movies: HashSet<MovieDisplay> = HashSet::new();
-        if let Some(movies) = movies {
-            current_movies = serde_json::from_str(&movies).expect("serialization error");
-        }
+        //let movies = storage.get("added_movies").expect("storage issue");
+        //let mut current_movies: HashSet<MovieDisplay> = HashSet::new();
+        //if let Some(movies) = movies {
+        //current_movies = serde_json::from_str(&movies).expect("serialization error");
+        //}
         match msg {
             UpdateCurrentMovies(movies) => {
                 log::info!("inside update current movies");
@@ -228,7 +228,7 @@ pub async fn save_movies_request(
             group_name,
             current_movies,
         })?;
-        let resp = Request::post(&SAVE_GROUP_MOVIES_URL)
+        let _resp = Request::post(&SAVE_GROUP_MOVIES_URL)
             .header("content-type", "application/json; charset=UTF-8")
             .mode(RequestMode::Cors)
             .body(json_body)

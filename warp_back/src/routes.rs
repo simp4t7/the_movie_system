@@ -96,7 +96,7 @@ pub fn get_groups(
         .and(with_auth())
         .and(with_db(state.db.clone()))
         .and_then(
-            |user: BasicUsername, username: String, db: SqlitePool| async move {
+            |user: BasicUsername, _username: String, db: SqlitePool| async move {
                 log::info!("username: {:?}", &user);
                 match db_get_user_groups(&db, &user.username).await {
                     Ok(groups) => {
@@ -254,7 +254,7 @@ pub fn search(
                     let json_res = json(&movie_vec);
                     Ok(json_res)
                 }
-                Err(e) => Err(custom(WarpRejections::AutocompleteError)),
+                Err(_e) => Err(custom(WarpRejections::AutocompleteError)),
             }
         })
         .with(&state.cors)
