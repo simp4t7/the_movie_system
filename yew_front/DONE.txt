@@ -1,2 +1,0 @@
-Setup environment variables for hardcoded URLS
--> Done, now all hardcoded variables are called from the .env file.

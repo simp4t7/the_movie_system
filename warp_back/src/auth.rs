@@ -16,9 +16,7 @@ const BEARER: &str = "Bearer ";
 type WebResult<T> = std::result::Result<T, Rejection>;
 
 use argon2::{
-    password_hash::{
-        rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString,
-    },
+    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2,
 };
 
@@ -33,8 +31,8 @@ fn test_print(a_string: String) -> Result<String> {
 
 pub fn with_auth() -> impl Filter<Extract = (String,), Error = Rejection> + Clone {
     headers_cloned()
-    .map(move |headers: HeaderMap<HeaderValue>| headers)
-    .and_then(authorize)
+        .map(move |headers: HeaderMap<HeaderValue>| headers)
+        .and_then(authorize)
 }
 
 async fn authorize(headers: HeaderMap<HeaderValue>) -> WebResult<String> {
@@ -50,9 +48,7 @@ async fn authorize(headers: HeaderMap<HeaderValue>) -> WebResult<String> {
             Ok(decoded.claims.username)
         }
         // Err(e) => return Err(custom(WarpRejections::AuthRejection(AuthError::AccessError))),
-        Err(e) => {
-            Err(e)
-        }
+        Err(e) => Err(e),
     }
 }
 
@@ -60,7 +56,11 @@ fn jwt_from_header(headers: &HeaderMap<HeaderValue>) -> Result<String> {
     log::info!("header map: {:?}", &headers);
     match headers.get(AUTHORIZATION) {
         Some(v) => return Ok(v.to_str().unwrap_or_default().to_string()),
-        None => return Err(custom(WarpRejections::AuthRejection(AuthError::NoAuthHeaderError))),
+        None => {
+            return Err(custom(WarpRejections::AuthRejection(
+                AuthError::NoAuthHeaderError,
+            )))
+        }
     };
     /*
     let auth_header = match std::str::from_utf8(header.as_bytes()) {

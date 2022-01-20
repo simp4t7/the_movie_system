@@ -1,8 +1,0 @@
-REMOVE OPTION YEAR / IMAGEDATA
-This would handle the issue of movies without posters or years, which we don't want.
--> The issue is handled, but not convinced it has been done properly. Leaving this open for now.
-
-Sometimes the responses come in out of order maybe? Not sure, but worth checking on. 
-Displays empty results because of the first search returning later than the others...
--> This is a pretty big issue, but also a way to optimize the search by canceling previous
--> requests, or cacheing them temporarily. Needs to be done eventually.
