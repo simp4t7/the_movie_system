@@ -132,8 +132,9 @@ pub fn create_group(
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path("create_group")
         .and(warp::body::json())
+        .and(with_auth())
         .and(with_db(state.db.clone()))
-        .and_then(|group_form: GroupForm, db: SqlitePool| async move {
+        .and_then(|group_form: GroupForm, _username: String, db: SqlitePool| async move {
             let uuid = Uuid::new_v4();
             let uuid_string = uuid.to_string();
             let group_data = GroupData::new(group_form.clone());

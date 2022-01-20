@@ -8,20 +8,6 @@ use std::collections::HashSet;
 use web_sys::{HtmlElement, HtmlInputElement};
 use yew::prelude::*;
 
-pub async fn new_group_request(username: String, group_name: String) -> Result<()> {
-    let json_body = serde_json::to_string(&GroupForm {
-        username,
-        group_name,
-    })?;
-    let resp = Request::post(&CREATE_GROUP_URL)
-        .header("content-type", "application/json; charset=UTF-8")
-        .mode(RequestMode::Cors)
-        .body(json_body)
-        .send()
-        .await?;
-    log::info!("{:?}", &resp);
-    Ok(())
-}
 pub async fn leave_group_request(username: String, group_name: String) -> Result<()> {
     let json_body = serde_json::to_string(&GroupForm {
         username,
@@ -60,18 +46,27 @@ pub async fn add_user_request(
 pub async fn get_all_groups(username: String) -> Result<Vec<String>> {
     let json_body = serde_json::to_string(&BasicUsername { username })?;
     let resp = post_route_with_auth(&GET_ALL_GROUPS_URL, json_body.clone()).await?;
-    log::info!("get_all_groups post_route_with_auth: {:?}", &resp);
+    let groups: UserGroupsJson = resp.json().await?;
+    Ok(groups.groups)
+}
+
+pub async fn new_group_request(username: String, group_name: String) -> Result<()> {
+    let json_body = serde_json::to_string(&GroupForm {
+        username,
+        group_name,
+    })?;
+    let resp = post_route_with_auth(&CREATE_GROUP_URL, json_body.clone()).await?;
+
     /*
-    let resp = Request::post(&GET_ALL_GROUPS_URL)
+    let resp = Request::post(&CREATE_GROUP_URL)
         .header("content-type", "application/json; charset=UTF-8")
         .mode(RequestMode::Cors)
         .body(json_body)
         .send()
         .await?;
         */
-    let groups: UserGroupsJson = resp.json().await?;
-    log::info!("response json: {:?}", &groups);
-    Ok(groups.groups)
+    log::info!("Create new group resp: {:?}", &resp);
+    Ok(())
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -148,7 +143,6 @@ impl Component for Groups {
                 let groups = get_all_groups(username)
                     .await
                     .expect("problem getting groups");
-                log::info!("passed get_all_groups");
                 GroupsMsg::UpdateGroups(groups)
             }),
             GroupAdd(text) => {
