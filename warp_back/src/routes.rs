@@ -1,7 +1,8 @@
 use crate::auth::verify_pass;
 use crate::auth::verify_token;
 use crate::auth::with_auth;
-use crate::error_handling::{AuthError, WarpRejections};
+use crate::err_info;
+use crate::error_handling::WarpRejections;
 use crate::State;
 use http::status::StatusCode;
 use imdb_autocomplete::autocomplete_func;
@@ -13,7 +14,6 @@ use sqlx::SqlitePool;
 use warp::reject::custom;
 
 use crate::auth::{generate_access_token, generate_double_token};
-use crate::error_handling::SqlxError;
 use uuid::Uuid;
 
 use warp::reply::json;
@@ -48,7 +48,7 @@ pub fn get_group_movies(
                 Ok(movies) => {
                     //let resp = MovieDisplayResponse { movies };
                     let json_resp = serde_json::to_string(&movies)
-                        .map_err(|_| custom(WarpRejections::SerializationError))?;
+                        .map_err(|_| custom(WarpRejections::SerializationError(err_info!())))?;
                     Ok(json_resp)
                 }
                 Err(e) => Err(e),
@@ -106,13 +106,11 @@ pub fn get_groups(
                             groups: group_names,
                         };
                         let json_resp = serde_json::to_string(&groups_struct)
-                            .map_err(|_| custom(WarpRejections::SerializationError))?;
+                            .map_err(|_| custom(WarpRejections::SerializationError(err_info!())))?;
                         log::info!("get group json_resp: {:?}", &json_resp);
                         Ok(json_resp)
                     }
-                    Err(_e) => Err(custom(WarpRejections::SqlxRejection(
-                        SqlxError::AddUserError,
-                    ))),
+                    Err(_e) => Err(custom(WarpRejections::SqlxError(err_info!()))),
                 }
             },
         )
@@ -202,7 +200,7 @@ pub fn authorize_refresh(
                     let code = StatusCode::BAD_REQUEST;
                     let reply = warp::reply::json(&ErrorMessage {
                         code: code.into(),
-                        message: WarpRejections::AuthRejection(AuthError::AccessError).into(),
+                        message: WarpRejections::AuthError(err_info!()).into(),
                     });
                     warp::reply::with_status(reply, code)
                 }
@@ -211,7 +209,7 @@ pub fn authorize_refresh(
                 let code = StatusCode::UNAUTHORIZED;
                 let reply = warp::reply::json(&ErrorMessage {
                     code: code.into(),
-                    message: WarpRejections::AuthRejection(AuthError::AccessError).into(),
+                    message: WarpRejections::AuthError(err_info!()).into(),
                 });
                 warp::reply::with_status(reply, code)
             }
@@ -234,7 +232,7 @@ pub fn authorize_access(
                 let code = StatusCode::UNAUTHORIZED;
                 let reply = warp::reply::json(&ErrorMessage {
                     code: code.into(),
-                    message: WarpRejections::AuthRejection(AuthError::AccessError).into(),
+                    message: WarpRejections::AuthError(err_info!()).into(),
                 });
                 warp::reply::with_status(reply, code)
             }
@@ -254,7 +252,7 @@ pub fn search(
                     let json_res = json(&movie_vec);
                     Ok(json_res)
                 }
-                Err(_e) => Err(custom(WarpRejections::AutocompleteError)),
+                Err(_e) => Err(custom(WarpRejections::AutocompleteError(err_info!()))),
             }
         })
         .with(&state.cors)
@@ -288,9 +286,7 @@ pub fn login(
             log::info!("user_info: {:?}", &user_info);
             match verify_pass(user.password, user_info.1.salt, user_info.1.hashed_password)? {
                 true => Ok(json(&token_response)),
-                false => Err(custom(WarpRejections::AuthRejection(
-                    AuthError::VerifyError,
-                ))),
+                false => Err(custom(WarpRejections::AuthError(err_info!()))),
             }
         })
         .with(&state.cors)

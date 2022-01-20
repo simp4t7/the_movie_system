@@ -1,5 +1,5 @@
+use crate::err_info;
 use crate::error_handling::Result;
-use crate::error_handling::SqlxError;
 use crate::error_handling::WarpRejections;
 use crate::{make_cors, State};
 use sqlx::migrate::MigrateDatabase;
@@ -31,7 +31,7 @@ pub async fn init_db(db: &SqlitePool) -> Result<()> {
     let mut conn = db
         .acquire()
         .await
-        .map_err(|_e| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
+        .map_err(|_e| custom(WarpRejections::SqlxError(err_info!())))?;
     query(
         r#"
             CREATE TABLE users
@@ -48,7 +48,7 @@ pub async fn init_db(db: &SqlitePool) -> Result<()> {
     )
     .execute(&mut conn)
     .await
-    .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::CreateTableError)))?;
+    .map_err(|_| custom(WarpRejections::SqlxError(err_info!())))?;
 
     Ok(())
 }
@@ -68,16 +68,16 @@ pub async fn setup_new_db(db_name: &str) -> Result<SqlitePool> {
     let db_str = get_db_url(db_name)?;
     if Sqlite::database_exists(&db_str)
         .await
-        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?
+        .map_err(|_| custom(WarpRejections::SqlxError(err_info!())))?
     {
         delete_db(db_name)?;
     }
     let _new_db = Sqlite::create_database(&db_str)
         .await
-        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::CreateDBError)))?;
+        .map_err(|_| custom(WarpRejections::SqlxError(err_info!())))?;
     let pool = SqlitePool::connect(&db_str)
         .await
-        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
+        .map_err(|_| custom(WarpRejections::SqlxError(err_info!())))?;
     init_db(&pool).await?;
 
     Ok(pool)

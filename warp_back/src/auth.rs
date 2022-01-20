@@ -1,11 +1,7 @@
-use crate::error_handling::AuthError;
-use crate::error_handling::Result;
-use crate::error_handling::WarpRejections;
-use crate::ACCESS_EXP;
-use crate::REFRESH_EXP;
-use crate::TOKEN_SECRET;
-use shared_stuff::DoubleTokenResponse;
-use shared_stuff::SingleTokenResponse;
+use crate::err_info;
+use crate::error_handling::{Result, WarpRejections};
+use crate::{ACCESS_EXP, REFRESH_EXP, TOKEN_SECRET};
+use shared_stuff::{DoubleTokenResponse, SingleTokenResponse};
 use warp::{
     filters::header::headers_cloned,
     http::header::{HeaderMap, HeaderValue, AUTHORIZATION},
@@ -37,7 +33,7 @@ async fn authorize(headers: HeaderMap<HeaderValue>) -> WebResult<String> {
                 &DecodingKey::from_secret(TOKEN_SECRET.as_ref()),
                 &Validation::new(Algorithm::HS512),
             )
-            .map_err(|_| custom(WarpRejections::AuthRejection(AuthError::TokenError)))?;
+            .map_err(|_| custom(WarpRejections::AuthError(err_info!())))?;
 
             Ok(decoded.claims.username)
         }
@@ -50,9 +46,7 @@ fn jwt_from_header(headers: &HeaderMap<HeaderValue>) -> Result<String> {
     log::info!("header map: {:?}", &headers);
     match headers.get(AUTHORIZATION) {
         Some(v) => Ok(v.to_str().unwrap_or_default().to_string()),
-        None => Err(custom(WarpRejections::AuthRejection(
-            AuthError::NoAuthHeaderError,
-        ))),
+        None => Err(custom(WarpRejections::AuthError(err_info!()))),
     }
     /*
     let auth_header = match std::str::from_utf8(header.as_bytes()) {
@@ -90,7 +84,7 @@ pub fn generate_access_token(username: String) -> Result<SingleTokenResponse> {
         &token_claims,
         &EncodingKey::from_secret(TOKEN_SECRET.as_bytes()),
     )
-    .map_err(|_| custom(WarpRejections::AuthRejection(AuthError::TokenError)))?;
+    .map_err(|_| custom(WarpRejections::AuthError(err_info!())))?;
 
     Ok(SingleTokenResponse { access_token })
 }
@@ -110,7 +104,7 @@ pub fn generate_double_token(username: String) -> Result<DoubleTokenResponse> {
         &token_claims,
         &EncodingKey::from_secret(TOKEN_SECRET.as_bytes()),
     )
-    .map_err(|_| custom(WarpRejections::AuthRejection(AuthError::TokenError)))?;
+    .map_err(|_| custom(WarpRejections::AuthError(err_info!())))?;
 
     let refresh_exp = now + *REFRESH_EXP;
     let refresh_claims = Claims {
@@ -123,7 +117,7 @@ pub fn generate_double_token(username: String) -> Result<DoubleTokenResponse> {
         &refresh_claims,
         &EncodingKey::from_secret(TOKEN_SECRET.as_bytes()),
     )
-    .map_err(|_| custom(WarpRejections::AuthRejection(AuthError::TokenError)))?;
+    .map_err(|_| custom(WarpRejections::AuthError(err_info!())))?;
     let token_response = DoubleTokenResponse {
         access_token,
         refresh_token,
@@ -138,7 +132,7 @@ pub fn verify_token(token: String) -> Result<Claims> {
         &DecodingKey::from_secret(TOKEN_SECRET.as_ref()),
         &Validation::new(Algorithm::HS512),
     )
-    .map_err(|_| custom(WarpRejections::AuthRejection(AuthError::TokenError)))?;
+    .map_err(|_| custom(WarpRejections::AuthError(err_info!())))?;
     let claims = token.claims;
     Ok(claims)
 }
@@ -150,10 +144,10 @@ pub async fn hasher(password: &str) -> Result<(String, String)> {
     let argon2 = Argon2::default();
     let password_hash = argon2
         .hash_password(password.as_bytes(), &salt)
-        .map_err(|_| custom(WarpRejections::AuthRejection(AuthError::HasherError)))?
+        .map_err(|_| custom(WarpRejections::AuthError(err_info!())))?
         .to_string();
     let parsed_hash = PasswordHash::new(&password_hash)
-        .map_err(|_| custom(WarpRejections::AuthRejection(AuthError::HasherError)))?;
+        .map_err(|_| custom(WarpRejections::AuthError(err_info!())))?;
     assert!(argon2
         .verify_password(password.as_bytes(), &parsed_hash)
         .is_ok());
@@ -169,7 +163,7 @@ pub fn verify_pass(password: String, salt: String, hashed_pw: String) -> Result<
     let argon2 = Argon2::default();
     let password_hash = argon2
         .hash_password(password.as_bytes(), &salt)
-        .map_err(|_| custom(WarpRejections::AuthRejection(AuthError::VerifyError)))?;
+        .map_err(|_| custom(WarpRejections::AuthError(err_info!())))?;
     Ok(hashed_pw == password_hash.to_string())
 }
 

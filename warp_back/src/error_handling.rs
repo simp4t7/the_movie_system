@@ -6,15 +6,21 @@ use warp::reply::Reply;
 
 pub type Result<T> = std::result::Result<T, warp::Rejection>;
 
+#[macro_export]
+macro_rules! err_info {
+    () => {
+        format!("file name is: {} | line number is: {}", file!(), line!())
+    };
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum WarpRejections {
-    SerializationError,
-    UuidError,
-    EnvError,
-    AutocompleteError,
-    UTF8Error,
-    AuthRejection(AuthError),
-    SqlxRejection(SqlxError),
+    SerializationError(String),
+    UuidError(String),
+    EnvError(String),
+    AutocompleteError(String),
+    AuthError(String),
+    SqlxError(String),
     Other(String),
 }
 
@@ -24,40 +30,40 @@ impl From<WarpRejections> for String {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub enum AuthError {
-    AccessError,
-    TokenError,
-    HasherError,
-    VerifyError,
-    NoAuthHeaderError,
-    InvalidAuthHeaderError,
-}
+//#[derive(Debug, PartialEq, Eq)]
+//pub enum AuthError {
+//AccessError,
+//TokenError,
+//HasherError,
+//VerifyError(String),
+//NoAuthHeaderError,
+//InvalidAuthHeaderError,
+//}
 
-#[derive(Debug, PartialEq, Eq)]
-pub enum SqlxError {
-    DeleteUserError,
-    FindGroupIdError,
-    GroupError,
-    SelectUserError,
-    SelectGroupError,
-    SelectGroupsError,
-    SaveMoviesError,
-    CurrentMoviesError,
-    UserDoesntExist,
-    AddUserError,
-    DeleteGroupError,
-    CreateGroupError,
-    InsertUserError,
-    CreateDBError,
-    CreateTableError,
-    FetchUserError,
-    DBConnectionError,
-    CheckLoginError,
-    SelectAllUsersError,
-    HasherError,
-    Other,
-}
+//#[derive(Debug, PartialEq, Eq)]
+//pub enum SqlxError {
+//DeleteUserError,
+//FindGroupIdError,
+//GroupError,
+//SelectUserError,
+//SelectGroupError,
+//SelectGroupsError,
+//SaveMoviesError,
+//CurrentMoviesError,
+//UserDoesntExist,
+//AddUserError,
+//DeleteGroupError,
+//CreateGroupError,
+//InsertUserError,
+//CreateDBError,
+//CreateTableError,
+//FetchUserError,
+//DBConnectionError,
+//CheckLoginError,
+//SelectAllUsersError,
+//HasherError,
+//Other,
+//}
 
 impl warp::reject::Reject for WarpRejections {}
 
