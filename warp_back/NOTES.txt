@@ -7,8 +7,8 @@ db tables:
 
 route to make for with_auth
         .or(create_group(&state))	// done
-        .or(leave_group(&state))
+        .or(leave_group(&state))	// done
         .or(get_groups(&state))		// done
-        .or(add_user_to_group(&state))
+        .or(add_user_to_group(&state))	// done
         .or(get_group_movies(&state))	
         .or(save_group_movies(&state))

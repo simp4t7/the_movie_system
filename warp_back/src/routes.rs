@@ -78,8 +78,9 @@ pub fn add_user_to_group(
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path("add_user")
         .and(warp::body::json())
+        .and(with_auth())
         .and(with_db(state.db.clone()))
-        .and_then(|user: AddUser, db: SqlitePool| async move {
+        .and_then(|user: AddUser, _username:String, db: SqlitePool| async move {
             match db_add_user_to_group(&db, &user).await {
                 Ok(_) => Ok(warp::reply()),
                 Err(e) => Err(e),
