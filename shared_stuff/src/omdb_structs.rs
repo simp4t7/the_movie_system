@@ -1,11 +1,13 @@
 use serde::{Deserialize, Serialize};
 
+#[allow(non_snake_case)]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct OmdbRatings {
     Source: String,
     Value: String,
 }
 
+#[allow(non_snake_case)]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct OmdbStruct {
     Title: String,

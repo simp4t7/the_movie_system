@@ -1,5 +1,4 @@
 use crate::error_handling::Result;
-use crate::error_handling::SqlxError;
 use crate::error_handling::WarpRejections;
 use dotenv::dotenv;
 use dotenv::var;
@@ -71,10 +70,11 @@ pub fn make_cors() -> Cors {
 }
 
 pub async fn make_db_pool() -> Result<SqlitePool> {
-    dotenv().map_err(|_| custom(WarpRejections::EnvError))?;
-    let pool =
-        SqlitePool::connect(&var("DATABASE_URL").map_err(|_| custom(WarpRejections::EnvError))?)
-            .await
-            .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
+    dotenv().map_err(|_| custom(WarpRejections::EnvError(err_info!())))?;
+    let pool = SqlitePool::connect(
+        &var("DATABASE_URL").map_err(|_| custom(WarpRejections::EnvError(err_info!())))?,
+    )
+    .await
+    .map_err(|_| custom(WarpRejections::SqlxError(err_info!())))?;
     Ok(pool)
 }

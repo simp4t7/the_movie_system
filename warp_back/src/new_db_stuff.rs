@@ -1,5 +1,7 @@
 use crate::auth::{hasher, verify_pass};
-use crate::error_handling::{AuthError, Result, SqlxError, WarpRejections};
+
+use crate::err_info;
+use crate::error_handling::{Result, WarpRejections};
 use shared_stuff::groups_stuff::{AddUser, GroupForm, GroupMoviesForm};
 use shared_stuff::UserInfo;
 use shared_stuff::YewMovieDisplay;
@@ -83,7 +85,7 @@ pub async fn acquire_db(db: &SqlitePool) -> Result<PoolConnection<Sqlite>> {
     let conn = db
         .acquire()
         .await
-        .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DBConnectionError)))?;
+        .map_err(|_| custom(WarpRejections::SqlxError(err_info!())))?;
     Ok(conn)
 }
 
@@ -101,7 +103,7 @@ pub async fn db_get_user(db: &SqlitePool, username: &str) -> Result<(String, Use
     )
     .fetch_one(&mut conn)
     .await
-    .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::SelectUserError)))?;
+    .map_err(|_| custom(WarpRejections::SqlxError(err_info!())))?;
 
     let user_data = db_get_user_data(db_user)?;
 
@@ -113,7 +115,7 @@ pub fn db_get_user_data(db_user: DBUser) -> Result<(String, UserData)> {
     log::info!("DBUser is: {:?}", &db_user);
     log::info!("DBUser data is: {:?}", &db_user.data);
     let user_data: UserData = serde_json::from_str(&db_user.data)
-        .map_err(|_| custom(WarpRejections::SerializationError))?;
+        .map_err(|_| custom(WarpRejections::SerializationError(err_info!())))?;
     Ok((db_user.username, user_data))
 }
 
@@ -130,7 +132,7 @@ pub async fn db_insert_user(db: &SqlitePool, username: &str, user_data: UserData
     )
     .execute(&mut conn)
     .await
-    .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::SelectUserError)))?;
+    .map_err(|_| custom(WarpRejections::SqlxError(err_info!())))?;
 
     Ok(())
 }
@@ -147,7 +149,7 @@ pub async fn db_update_user(db: &SqlitePool, user_data: (String, UserData)) -> R
     )
     .execute(&mut conn)
     .await
-    .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::SelectUserError)))?;
+    .map_err(|_| custom(WarpRejections::SqlxError(err_info!())))?;
 
     Ok(())
 }
@@ -163,7 +165,7 @@ pub async fn db_delete_user(db: &SqlitePool, username: &str) -> Result<()> {
     )
     .execute(&mut conn)
     .await
-    .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DeleteUserError)))?;
+    .map_err(|_| custom(WarpRejections::SqlxError(err_info!())))?;
     Ok(())
 }
 
@@ -182,7 +184,7 @@ pub async fn db_get_group(db: &SqlitePool, group_id: &str) -> Result<(String, Gr
     )
     .fetch_one(&mut conn)
     .await
-    .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::SelectGroupError)))?;
+    .map_err(|_| custom(WarpRejections::SqlxError(err_info!())))?;
 
     let group_data = db_get_group_data(db_group)?;
 
@@ -192,7 +194,7 @@ pub async fn db_get_group(db: &SqlitePool, group_id: &str) -> Result<(String, Gr
 pub fn db_get_group_data(db_group: DBGroup) -> Result<(String, GroupData)> {
     log::info!("DBGroup is: {:?}", &db_group);
     let group_data: GroupData = serde_json::from_str(&db_group.data)
-        .map_err(|_| custom(WarpRejections::SerializationError))?;
+        .map_err(|_| custom(WarpRejections::SerializationError(err_info!())))?;
     log::info!("group_data is: {:?}", &group_data);
     Ok((db_group.id, group_data))
 }
@@ -209,7 +211,7 @@ pub async fn db_update_group(db: &SqlitePool, group_data: (String, GroupData)) -
     )
     .execute(&mut conn)
     .await
-    .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::SelectUserError)))?;
+    .map_err(|_| custom(WarpRejections::SqlxError(err_info!())))?;
 
     Ok(())
 }
@@ -227,7 +229,7 @@ pub async fn db_insert_group(db: &SqlitePool, group_id: &str, group_data: GroupD
     )
     .execute(&mut conn)
     .await
-    .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::SelectUserError)))?;
+    .map_err(|_| custom(WarpRejections::SqlxError(err_info!())))?;
 
     Ok(())
 }
@@ -243,7 +245,7 @@ pub async fn db_delete_group(db: &SqlitePool, group_id: &str) -> Result<()> {
     )
     .execute(&mut conn)
     .await
-    .map_err(|_| custom(WarpRejections::SqlxRejection(SqlxError::DeleteGroupError)))?;
+    .map_err(|_| custom(WarpRejections::SqlxError(err_info!())))?;
     Ok(())
 }
 
@@ -286,9 +288,7 @@ pub async fn db_get_group_id(db: &SqlitePool, group_name: &str, username: &str) 
     if let Some(group_id) = option_id {
         Ok(group_id.1.clone().to_string())
     } else {
-        Err(custom(WarpRejections::SqlxRejection(
-            SqlxError::FindGroupIdError,
-        )))
+        Err(custom(WarpRejections::SqlxError(err_info!())))
     }
 }
 
@@ -302,7 +302,8 @@ pub async fn db_add_user_to_group(db: &SqlitePool, add_user: &AddUser) -> Result
     log::info!("db_group_data: {:?}", &db_group_data);
     db_update_group(db, db_group_data).await?;
     let mut user_info = db_get_user(db, &add_user.new_member).await?;
-    let group_uuid = Uuid::parse_str(&group_id).map_err(|_| custom(WarpRejections::UuidError))?;
+    let group_uuid =
+        Uuid::parse_str(&group_id).map_err(|_e| custom(WarpRejections::UuidError(err_info!())))?;
     user_info
         .1
         .groups
@@ -352,7 +353,8 @@ pub async fn db_group_add_new_user(db: &SqlitePool, user_struct: &AddUser) -> Re
     let new_member = &user_struct.new_member;
     let group_name = &user_struct.group_name;
     let group_id = db_get_group_id(db, group_name, username).await?;
-    let group_uuid = Uuid::parse_str(&group_id).map_err(|_| custom(WarpRejections::UuidError))?;
+    let group_uuid =
+        Uuid::parse_str(&group_id).map_err(|_e| custom(WarpRejections::UuidError(err_info!())))?;
 
     match db_get_user(db, new_member).await {
         Ok(user_data) => {
@@ -434,14 +436,10 @@ pub async fn db_update_password(
                 db_update_user(db, old_user_info).await?;
             }
             false => {
-                custom(WarpRejections::AuthRejection(AuthError::VerifyError));
+                custom(WarpRejections::AuthError(err_info!()));
             }
         },
-        Err(_) => {
-            return Err(custom(WarpRejections::SqlxRejection(
-                SqlxError::CheckLoginError,
-            )))
-        }
+        Err(_) => return Err(custom(WarpRejections::SqlxError(err_info!()))),
     }
     Ok(())
 }
@@ -459,14 +457,10 @@ pub async fn db_update_username(db: &SqlitePool, old_user: &UserInfo) -> Result<
                 db_update_user(db, user_info).await?;
             }
             false => {
-                custom(WarpRejections::AuthRejection(AuthError::VerifyError));
+                custom(WarpRejections::AuthError(err_info!()));
             }
         },
-        Err(_) => {
-            return Err(custom(WarpRejections::SqlxRejection(
-                SqlxError::CheckLoginError,
-            )))
-        }
+        Err(_) => return Err(custom(WarpRejections::SqlxError(err_info!()))),
     }
     Ok(())
 }

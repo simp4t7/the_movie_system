@@ -1,12 +1,10 @@
 use anyhow::Result;
 use ctor::ctor;
 use lazy_static::lazy_static;
-use shared_stuff::omdb_structs::{OmdbStruct};
+use shared_stuff::omdb_structs::OmdbStruct;
 use std::fs::File;
 use std::io::Read;
 
-const OMDB_URL_EXAMPLE: &str =
-    "http://www.omdbapi.com/?i={IMDB TITLE ID}&plot=full&apikey={API KEY}";
 const OMDB_URL: &str = "http://www.omdbapi.com/";
 const API_KEY_PATH: &str = "../keys/omdb_api.txt";
 
@@ -40,7 +38,7 @@ async fn query_builder(id: &str) -> Result<OmdbStruct> {
 }
 
 mod tests {
-    
+
     #[tokio::test]
     async fn first_test() -> Result<()> {
         query_builder("tt1160419").await?;
