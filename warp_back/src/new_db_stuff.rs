@@ -10,7 +10,6 @@ use sqlx::pool::PoolConnection;
 use sqlx::Sqlite;
 use sqlx::{query, query_as, SqlitePool};
 use std::collections::HashSet;
-use std::hash::Hash;
 use uuid::Uuid;
 use warp::reject::custom;
 
@@ -274,7 +273,7 @@ pub async fn db_get_all_group_names(db: &SqlitePool, username: &str) -> Result<H
 }
 
 pub async fn db_get_group_id(db: &SqlitePool, group_name: &str, username: &str) -> Result<String> {
-    log::info!("group_name: {:?}, username: {:?}", &group_name, &username);
+    log::info!("db_get_group_id group_name: {:?}, username: {:?}", &group_name, &username);
     let db_user_data = db_get_user(db, username).await?;
     let user_groups = db_user_data.1.groups;
     let option_group_info = user_groups.iter().find(|group_info| {
