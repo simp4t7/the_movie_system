@@ -7,7 +7,7 @@ use crate::State;
 use http::status::StatusCode;
 use imdb_autocomplete::autocomplete_func;
 use shared_stuff::groups_stuff::{
-    AddUser, BasicUsername, GroupForm, GroupMoviesForm, UserGroupsJson,
+    AddUser, BasicUsername, GroupForm, GroupMoviesForm, UserGroupsJson, GroupInfo,
 };
 use shared_stuff::{ErrorMessage, ImdbQuery, UserInfo};
 use sqlx::SqlitePool;
@@ -143,7 +143,8 @@ pub fn create_group(
             match db_insert_group(&db, &uuid_string, group_data).await {
                 Ok(_) => {
                     let user_data = db_get_user(&db, &group_form.username).await?;
-                    db_add_group_to_user(&db, user_data, (group_form.group_name, uuid)).await?;
+                    let group_info = GroupInfo { uuid: uuid.to_string(), name: group_form.group_name };
+                    db_add_group_to_user(&db, user_data, group_info).await?;
                     Ok(warp::reply())
                 }
                 Err(e) => Err(e),
