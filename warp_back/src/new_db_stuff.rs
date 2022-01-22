@@ -2,7 +2,7 @@ use crate::auth::{hasher, verify_pass};
 
 use crate::err_info;
 use crate::error_handling::{Result, WarpRejections};
-use shared_stuff::groups_stuff::{AddUser, GroupForm, GroupMoviesForm};
+use shared_stuff::groups_stuff::{AddUser, GroupForm, GroupMoviesForm, GroupInfo};
 use shared_stuff::UserInfo;
 use shared_stuff::YewMovieDisplay;
 use shared_stuff::{Deserialize, Serialize};
@@ -10,6 +10,7 @@ use sqlx::pool::PoolConnection;
 use sqlx::Sqlite;
 use sqlx::{query, query_as, SqlitePool};
 use std::collections::HashSet;
+use std::hash::Hash;
 use uuid::Uuid;
 use warp::reject::custom;
 
@@ -24,7 +25,7 @@ pub struct UserData {
     pub id: Uuid,
     pub hashed_password: String,
     pub salt: String,
-    pub groups: HashSet<(String, Uuid)>,
+    pub groups: HashSet<GroupInfo>,
     pub date_created: i64,
     pub date_modified: i64,
 }
@@ -260,33 +261,29 @@ pub async fn db_get_group_members(db: &SqlitePool, group_id: &str) -> Result<Has
 pub async fn db_get_user_groups(
     db: &SqlitePool,
     username: &str,
-) -> Result<HashSet<(String, Uuid)>> {
+) -> Result<HashSet<GroupInfo>> {
     let db_user_data = db_get_user(db, username).await?;
     let user_groups = db_user_data.1.groups;
     Ok(user_groups)
 }
 
-pub async fn db_get_all_group_names(db: &SqlitePool, username: &str) -> Result<Vec<String>> {
+pub async fn db_get_all_group_names(db: &SqlitePool, username: &str) -> Result<HashSet<GroupInfo>> {
     let db_user_data = db_get_user(db, username).await?;
     let user_groups = db_user_data.1.groups;
-    let group_names = user_groups
-        .iter()
-        .map(|(group_name, _)| group_name.to_string())
-        .collect::<Vec<String>>();
-    Ok(group_names)
+    Ok(user_groups)
 }
 
 pub async fn db_get_group_id(db: &SqlitePool, group_name: &str, username: &str) -> Result<String> {
     log::info!("group_name: {:?}, username: {:?}", &group_name, &username);
     let db_user_data = db_get_user(db, username).await?;
     let user_groups = db_user_data.1.groups;
-    let option_id = user_groups.iter().find(|(name, uuid)| {
-        log::info!("name: {:?}, uuid: {:?}", &name, &uuid);
-        name.as_str() == group_name
+    let option_group_info = user_groups.iter().find(|group_info| {
+        log::info!("name: {:?}, uuid: {:?}", &group_info.name, &group_info.uuid);
+        group_info.name.as_str() == group_name
     });
-    log::info!("option_id: {:?}", &option_id);
-    if let Some(group_id) = option_id {
-        Ok(group_id.1.clone().to_string())
+    log::info!("option_id: {:?}", &option_group_info);
+    if let Some(info) = option_group_info {
+        Ok(info.uuid.clone())
     } else {
         Err(custom(WarpRejections::SqlxError(err_info!())))
     }
@@ -304,10 +301,11 @@ pub async fn db_add_user_to_group(db: &SqlitePool, add_user: &AddUser) -> Result
     let mut user_info = db_get_user(db, &add_user.new_member).await?;
     let group_uuid =
         Uuid::parse_str(&group_id).map_err(|_e| custom(WarpRejections::UuidError(err_info!())))?;
+    let group_info = GroupInfo { uuid: group_uuid.to_string(), name: add_user.group_name.clone() };
     user_info
         .1
         .groups
-        .insert((add_user.group_name.clone(), group_uuid));
+        .insert(group_info);
     db_update_user(db, user_info).await?;
     Ok(())
 }
@@ -339,7 +337,7 @@ pub async fn db_get_group_movies(
 pub async fn db_add_group_to_user(
     db: &SqlitePool,
     mut user_data: (String, UserData),
-    group: (String, Uuid),
+    group: GroupInfo
 ) -> Result<()> {
     let mut new_groups = user_data.1.groups;
     new_groups.insert(group);
@@ -359,7 +357,8 @@ pub async fn db_group_add_new_user(db: &SqlitePool, user_struct: &AddUser) -> Re
     match db_get_user(db, new_member).await {
         Ok(user_data) => {
             log::info!("in here");
-            db_add_group_to_user(db, user_data.clone(), (group_name.clone(), group_uuid)).await?;
+            let group_info = GroupInfo { uuid: group_uuid.to_string(), name: group_name.clone() };
+            db_add_group_to_user(db, user_data.clone(), group_info).await?;
             db_add_user_to_group(db, user_struct).await?;
         }
         Err(e) => return Err(e),
@@ -384,9 +383,9 @@ pub async fn db_user_leave_group(db: &SqlitePool, group_form: &GroupForm) -> Res
     let user_groups = db_get_user_groups(db, username)
         .await?
         .iter()
-        .filter(|(name, _)| name != group_name)
+        .filter(|group_info| !group_info.name.eq(group_name))
         .cloned()
-        .collect::<HashSet<(String, Uuid)>>();
+        .collect::<HashSet<GroupInfo>>();
     log::info!("user_groups is: {:?}", &user_groups);
     user_data.1.groups = user_groups;
 

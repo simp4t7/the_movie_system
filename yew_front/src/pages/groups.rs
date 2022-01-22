@@ -3,7 +3,7 @@ use crate::{ADD_USER_URL, CREATE_GROUP_URL, GET_ALL_GROUPS_URL, LEAVE_GROUP_URL}
 use anyhow::Result;
 use gloo_storage::{LocalStorage, Storage};
 use reqwasm::http::{Request, RequestMode};
-use shared_stuff::groups_stuff::{AddUser, BasicUsername, GroupForm, UserGroupsJson};
+use shared_stuff::groups_stuff::{AddUser, BasicUsername, GroupForm, UserGroupsJson, GroupInfo};
 use std::collections::HashSet;
 use web_sys::{HtmlElement, HtmlInputElement};
 use yew::prelude::*;
@@ -33,7 +33,7 @@ pub async fn add_user_request(
     Ok(())
 }
 
-pub async fn get_all_groups(username: String) -> Result<Vec<String>> {
+pub async fn get_all_groups(username: String) -> Result<HashSet<GroupInfo>> {
     let json_body = serde_json::to_string(&BasicUsername { username })?;
     let resp = post_route_with_auth(&GET_ALL_GROUPS_URL, json_body.clone()).await?;
     let groups: UserGroupsJson = resp.json().await?;
@@ -56,12 +56,12 @@ pub struct Groups {
     pub create_group_name: String,
     pub leave_group_name: String,
     pub group_add: String,
-    pub current_groups: HashSet<String>,
+    pub current_groups: HashSet<GroupInfo>,
 }
 pub enum GroupsMsg {
     Noop,
     GroupAdd(InputEvent),
-    UpdateGroups(Vec<String>),
+    UpdateGroups(HashSet<GroupInfo>),
     CreateGroup,
     LeaveGroup,
     CreateGroupName(InputEvent),
@@ -117,7 +117,7 @@ impl Component for Groups {
                             .as_str(),
                     )
                     .expect("storage problem");
-                let new_hash: HashSet<String> = HashSet::from_iter(groups_vec.iter().cloned());
+                let new_hash: HashSet<GroupInfo> = HashSet::from_iter(groups_vec.iter().cloned());
                 self.current_groups = new_hash;
             }
             GetAllGroups => link_clone.send_future(async move {

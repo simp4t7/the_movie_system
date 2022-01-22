@@ -4,7 +4,7 @@ use anyhow::{anyhow, Result};
 use gloo_storage::{LocalStorage, Storage};
 use reqwasm::http::{Request, RequestMode};
 use shared_stuff::add_movies_stuff::UserGroup;
-use shared_stuff::groups_stuff::{GroupForm, GroupMoviesForm, UserGroupsJson};
+use shared_stuff::groups_stuff::{GroupForm, GroupMoviesForm, UserGroupsJson, GroupInfo};
 use shared_stuff::{ImdbQuery, MovieDisplay, YewMovieDisplay};
 use std::collections::{HashMap, HashSet};
 use web_sys::{HtmlElement, HtmlInputElement};
@@ -201,7 +201,7 @@ pub async fn get_group_movies(
     }
 }
 
-pub async fn get_all_added_movies(username: String, group_name: String) -> Result<Vec<String>> {
+pub async fn get_all_added_movies(username: String, group_name: String) -> Result<HashSet<GroupInfo>> {
     let json_body = serde_json::to_string(&GroupForm {
         username,
         group_name,
