@@ -1,4 +1,4 @@
-use crate::utils::auth_flow;
+use crate::utils::request_auth_flow;
 
 use lazy_static::lazy_static;
 use load_dotenv::load_dotenv;
@@ -96,7 +96,7 @@ impl Component for App {
         match msg {
             AppMsg::AuthCallback => ctx.link().send_future(async move {
                 log::info!("inside auth callback");
-                let request_claims = auth_flow().await;
+                let request_claims = request_auth_flow().await;
                 let login_status = match request_claims {
                     Ok(claims) => AuthStatus {
                         status: true,

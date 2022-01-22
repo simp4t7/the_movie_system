@@ -1,12 +1,28 @@
 use crate::error::Error;
-use crate::pages::login_html::login_request;
-use crate::utils::auth_flow;
+use crate::utils::request_auth_flow;
+use reqwasm::http::{Request, RequestMode};
 
 use crate::LOGIN_URL;
+use anyhow::Result;
 use gloo_storage::{LocalStorage, Storage};
 use shared_stuff::{DoubleTokenResponse, UserInfo};
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
+
+pub async fn request_login(url: &str, body: UserInfo) -> Result<DoubleTokenResponse> {
+    let userinfo = serde_json::to_string(&body)?;
+    log::info!("{:?}", &userinfo);
+    let resp: DoubleTokenResponse = Request::post(url)
+        .header("content-type", "application/json; charset=UTF-8")
+        .mode(RequestMode::Cors)
+        .body(userinfo)
+        .send()
+        .await?
+        .json()
+        .await?;
+
+    Ok(resp)
+}
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Login {
@@ -61,7 +77,7 @@ impl Component for Login {
             }
             Noop => {}
             AuthorizeCheck => ctx.link().send_future(async move {
-                auth_flow().await.expect("auth flow issue");
+                request_auth_flow().await.expect("auth flow issue");
                 LoginMsg::Noop
             }),
             VerifyLogin => {
@@ -72,7 +88,7 @@ impl Component for Login {
                 };
 
                 link_clone.send_future(async move {
-                    let token = login_request(&LOGIN_URL, username.clone()).await;
+                    let token = request_login(&LOGIN_URL, username.clone()).await;
                     match token {
                         Ok(tok) => {
                             storage

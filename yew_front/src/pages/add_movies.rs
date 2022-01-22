@@ -1,10 +1,8 @@
-use crate::pages::add_movies_html::get_search_results;
 use crate::{GET_GROUP_MOVIES_URL, SAVE_GROUP_MOVIES_URL, SEARCH_URL};
 use anyhow::{anyhow, Result};
 use gloo_storage::{LocalStorage, Storage};
 use reqwasm::http::{Request, RequestMode};
-use shared_stuff::add_movies_stuff::UserGroup;
-use shared_stuff::groups_stuff::{GroupForm, GroupMoviesForm, UserGroupsJson, GroupInfo};
+use shared_stuff::groups_stuff::{GroupForm, GroupInfo, GroupMoviesForm, UserGroupsJson};
 use shared_stuff::{ImdbQuery, MovieDisplay, YewMovieDisplay};
 use std::collections::{HashMap, HashSet};
 use web_sys::{HtmlElement, HtmlInputElement};
@@ -84,13 +82,13 @@ impl Component for AddMovies {
                     let current: HashSet<YewMovieDisplay> =
                         HashSet::from_iter(movies.values().cloned());
                     log::info!("current is: {:?}", &current);
-                    let resp = save_movies_request(username, group_name, current).await;
+                    let resp = request_save_movies_request(username, group_name, current).await;
                     log::info!("resp is: {:?}", &resp);
                     AddMoviesMsg::Noop
                 })
             }
             GetMovies => link_clone.send_future(async move {
-                let current = get_group_movies(username, group_name).await;
+                let current = request_get_group_movies(username, group_name).await;
                 match current {
                     Ok(current_movies) => AddMoviesMsg::UpdateCurrentMovies(current_movies),
                     Err(e) => AddMoviesMsg::Error(e.to_string()),
@@ -136,7 +134,7 @@ impl Component for AddMovies {
                                 query: elem.value(),
                             };
 
-                            match get_search_results(&SEARCH_URL, query).await {
+                            match request_get_search_results(&SEARCH_URL, query).await {
                                 Ok(resp) => AddMoviesMsg::UpdateAutocomplete(resp),
                                 Err(err_msg) => {
                                     link_clone.clone().send_message(UpdateAutocomplete(vec![]));
@@ -177,12 +175,12 @@ impl Component for AddMovies {
     }
 }
 
-pub async fn get_group_movies(
+pub async fn request_get_group_movies(
     username: Option<String>,
     group_name: Option<String>,
 ) -> Result<Vec<YewMovieDisplay>> {
     if let (Some(username), Some(group_name)) = (username, group_name) {
-        let json_body = serde_json::to_string(&UserGroup {
+        let json_body = serde_json::to_string(&GroupForm {
             username,
             group_name,
         })?;
@@ -202,7 +200,10 @@ pub async fn get_group_movies(
     }
 }
 
-pub async fn get_all_added_movies(username: String, group_name: String) -> Result<HashSet<GroupInfo>> {
+pub async fn request_get_all_added_movies(
+    username: String,
+    group_name: String,
+) -> Result<HashSet<GroupInfo>> {
     let json_body = serde_json::to_string(&GroupForm {
         username,
         group_name,
@@ -218,7 +219,7 @@ pub async fn get_all_added_movies(username: String, group_name: String) -> Resul
     Ok(groups.groups)
 }
 
-pub async fn save_movies_request(
+pub async fn request_save_movies_request(
     username: Option<String>,
     group_name: Option<String>,
     current_movies: HashSet<YewMovieDisplay>,
@@ -241,16 +242,20 @@ pub async fn save_movies_request(
     }
 }
 
-//pub async fn get_all_groups(username: String) -> Result<Vec<String>> {
-//let json_body = serde_json::to_string(&BasicUsername { username })?;
-//let resp: Vec<String> = Request::post(&GET_GROUP_MOVIES_URL)
-//.header("content-type", "application/json; charset=UTF-8")
-//.mode(RequestMode::Cors)
-//.body(json_body)
-//.send()
-//.await?
-//.json()
-//.await?;
-//log::info!("{:?}", &resp);
-//Ok(resp)
-//}
+pub async fn request_get_search_results(url: &str, body: ImdbQuery) -> Result<Vec<MovieDisplay>> {
+    if !body.query.is_empty() {
+        let imdbquery = serde_json::to_string(&body)?;
+        let resp = Request::post(url)
+            .header("content-type", "application/json; charset=UTF-8")
+            .mode(RequestMode::Cors)
+            .body(imdbquery)
+            .send()
+            .await?
+            .json()
+            .await?;
+        log::info!("movie resp: {:?}", &resp);
+        Ok(resp)
+    } else {
+        Ok(vec![])
+    }
+}

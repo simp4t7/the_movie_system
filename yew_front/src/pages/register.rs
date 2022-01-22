@@ -1,12 +1,25 @@
-use crate::pages::register_html::register_request;
-
 use zxcvbn::zxcvbn;
 
 use crate::error::Error;
 use crate::REGISTER_URL;
+use anyhow::Result;
+use reqwasm::http::{Request, RequestMode};
 use shared_stuff::UserInfo;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
+
+pub async fn request_register(url: &str, body: UserInfo) -> Result<()> {
+    let userinfo = serde_json::to_string(&body)?;
+    log::info!("{:?}", &userinfo);
+    let resp = Request::post(url)
+        .header("content-type", "application/json; charset=UTF-8")
+        .mode(RequestMode::Cors)
+        .body(userinfo)
+        .send()
+        .await?;
+    log::info!("{:?}", &resp);
+    Ok(())
+}
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Register {
@@ -72,7 +85,7 @@ impl Component for Register {
                 //} else {
                 //self.error = None;
                 ctx.link().send_future(async move {
-                    let resp = register_request(&REGISTER_URL, username).await;
+                    let resp = request_register(&REGISTER_URL, username).await;
                     match resp {
                         Ok(_a) => log::info!("success!"),
                         Err(e) => log::info!("oh no, {:?}", &e),

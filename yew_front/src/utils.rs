@@ -8,10 +8,10 @@ use reqwasm::http::RequestMode;
 use reqwasm::http::Response;
 use shared_stuff::Claims;
 
+use shared_stuff::ImageData;
 use shared_stuff::SingleTokenResponse;
-use shared_stuff::{ImageData};
 
-pub async fn authorize_refresh(refresh_token: String) -> Result<SingleTokenResponse> {
+pub async fn request_authorize_refresh(refresh_token: String) -> Result<SingleTokenResponse> {
     let storage = LocalStorage::raw();
     let resp = Request::post(&REFRESH_URL)
         .mode(RequestMode::Cors)
@@ -26,7 +26,7 @@ pub async fn authorize_refresh(refresh_token: String) -> Result<SingleTokenRespo
     //log::info!("{:?}", &access_token);
     Ok(single_token)
 }
-pub async fn authorize_access(access_token: String) -> Result<Claims> {
+pub async fn request_authorize_access(access_token: String) -> Result<Claims> {
     let resp = Request::post(&ACCESS_URL)
         .mode(RequestMode::Cors)
         .header("authorization", &access_token)
@@ -38,7 +38,7 @@ pub async fn authorize_access(access_token: String) -> Result<Claims> {
     Ok(claims)
 }
 
-pub async fn auth_flow() -> Result<Claims> {
+pub async fn request_auth_flow() -> Result<Claims> {
     let storage = LocalStorage::raw();
     let access_token = storage
         .get("access_token")
@@ -61,17 +61,17 @@ pub async fn auth_flow() -> Result<Claims> {
                 Ok(claims)
             }
             401 => {
-                authorize_refresh(refresh_token.unwrap()).await?;
+                request_authorize_refresh(refresh_token.unwrap()).await?;
                 let new_token = storage.get("access_token").expect("umm storage??").unwrap();
-                let claims = authorize_access(new_token).await?;
+                let claims = request_authorize_access(new_token).await?;
                 Ok(claims)
             }
             e => Err(anyhow!("weird status code: {:?}", e)),
         }
     } else if let Some(token) = refresh_token {
-        authorize_refresh(token).await?;
+        request_authorize_refresh(token).await?;
         let new_token = storage.get("access_token").expect("umm storage??").unwrap();
-        let claims = authorize_access(new_token).await?;
+        let claims = request_authorize_access(new_token).await?;
         Ok(claims)
     } else {
         Err(anyhow!("bad error uh oh"))
@@ -96,12 +96,10 @@ pub async fn post_route_with_auth(url: &str, json_body: String) -> Result<Respon
         let request = make_post_request(url, &json_body, &token);
         let resp = request.send().await?;
         match resp.status() {
-            200 => {
-                Ok(resp)
-            }
+            200 => Ok(resp),
             401 => {
                 log::info!("access tokem 401");
-                authorize_refresh(refresh_token.unwrap()).await?;
+                request_authorize_refresh(refresh_token.unwrap()).await?;
                 let new_token = storage.get("access_token").expect("umm storage??").unwrap();
                 let retry_request = make_post_request(url, &json_body, &new_token);
                 let retry_resp = retry_request.send().await?;
@@ -110,7 +108,7 @@ pub async fn post_route_with_auth(url: &str, json_body: String) -> Result<Respon
             e => Err(anyhow!("weird status code: {:?}", e)),
         }
     } else if let Some(token) = refresh_token {
-        authorize_refresh(token).await?;
+        request_authorize_refresh(token).await?;
         let new_token = storage.get("access_token").expect("umm storage??").unwrap();
         let retry_request = make_post_request(url, &json_body, &new_token);
         let retry_resp = retry_request.send().await?;

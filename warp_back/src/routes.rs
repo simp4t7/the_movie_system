@@ -7,7 +7,7 @@ use crate::State;
 use http::status::StatusCode;
 use imdb_autocomplete::autocomplete_func;
 use shared_stuff::groups_stuff::{
-    AddUser, BasicUsername, GroupForm, GroupMoviesForm, UserGroupsJson, GroupInfo,
+    AddUser, BasicUsername, GroupForm, GroupInfo, GroupMoviesForm, UserGroupsJson,
 };
 use shared_stuff::{ErrorMessage, ImdbQuery, UserInfo};
 use sqlx::SqlitePool;
@@ -18,18 +18,6 @@ use uuid::Uuid;
 
 use warp::reply::json;
 use warp::Filter;
-
-// domain/search -> do seach()
-// why bytes? some of these could def use json since requests come in as json
-
-// getthe search string -> bytes
-// use the bytes -> &str -> send to the autocomplete_func and get back the results
-// results ok -> turn it to json and send it back to yew
-// results bad -> 400 bad request. //TODO currently it's 404
-
-//pub fn test_route() -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
-//warp::path("test").map(|| "Hello, World!")
-//}
 
 use crate::new_db_stuff::{
     db_add_group_to_user, db_add_user_to_group, db_get_all_group_names, db_get_group_movies,
@@ -80,12 +68,14 @@ pub fn add_user_to_group(
         .and(warp::body::json())
         .and(with_auth())
         .and(with_db(state.db.clone()))
-        .and_then(|user: AddUser, _username:String, db: SqlitePool| async move {
-            match db_add_user_to_group(&db, &user).await {
-                Ok(_) => Ok(warp::reply()),
-                Err(e) => Err(e),
-            }
-        })
+        .and_then(
+            |user: AddUser, _username: String, db: SqlitePool| async move {
+                match db_add_user_to_group(&db, &user).await {
+                    Ok(_) => Ok(warp::reply()),
+                    Err(e) => Err(e),
+                }
+            },
+        )
 }
 
 pub fn get_groups(
@@ -121,12 +111,14 @@ pub fn leave_group(
         .and(warp::body::json())
         .and(with_auth())
         .and(with_db(state.db.clone()))
-        .and_then(|group_form: GroupForm, _username: String, db: SqlitePool| async move {
-            match db_user_leave_group(&db, &group_form).await {
-                Ok(_) => Ok(warp::reply()),
-                Err(e) => Err(e),
-            }
-        })
+        .and_then(
+            |group_form: GroupForm, _username: String, db: SqlitePool| async move {
+                match db_user_leave_group(&db, &group_form).await {
+                    Ok(_) => Ok(warp::reply()),
+                    Err(e) => Err(e),
+                }
+            },
+        )
 }
 
 pub fn create_group(
@@ -136,20 +128,25 @@ pub fn create_group(
         .and(warp::body::json())
         .and(with_auth())
         .and(with_db(state.db.clone()))
-        .and_then(|group_form: GroupForm, _username: String, db: SqlitePool| async move {
-            let uuid = Uuid::new_v4();
-            let uuid_string = uuid.to_string();
-            let group_data = GroupData::new(group_form.clone());
-            match db_insert_group(&db, &uuid_string, group_data).await {
-                Ok(_) => {
-                    let user_data = db_get_user(&db, &group_form.username).await?;
-                    let group_info = GroupInfo { uuid: uuid.to_string(), name: group_form.group_name };
-                    db_add_group_to_user(&db, user_data, group_info).await?;
-                    Ok(warp::reply())
+        .and_then(
+            |group_form: GroupForm, _username: String, db: SqlitePool| async move {
+                let uuid = Uuid::new_v4();
+                let uuid_string = uuid.to_string();
+                let group_data = GroupData::new(group_form.clone());
+                match db_insert_group(&db, &uuid_string, group_data).await {
+                    Ok(_) => {
+                        let user_data = db_get_user(&db, &group_form.username).await?;
+                        let group_info = GroupInfo {
+                            uuid: uuid.to_string(),
+                            name: group_form.group_name,
+                        };
+                        db_add_group_to_user(&db, user_data, group_info).await?;
+                        Ok(warp::reply())
+                    }
+                    Err(e) => Err(e),
                 }
-                Err(e) => Err(e),
-            }
-        })
+            },
+        )
 }
 pub fn authorize_refresh(
     state: &State,

@@ -49,10 +49,6 @@ impl Groups {
                 maxlength=50
                 oninput={ctx.link().callback(GroupsMsg::AddUser)}
             />
-            //<select id="user_groups" name="groups">
-                //<option>{"group 1"}</option>
-                //<option>{"group 2"}</option>
-            //</select>
 
             <input
                 class="add_user"

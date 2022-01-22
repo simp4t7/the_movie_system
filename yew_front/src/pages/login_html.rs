@@ -4,21 +4,6 @@ use reqwasm::http::{Request, RequestMode};
 use shared_stuff::{DoubleTokenResponse, UserInfo};
 use yew::prelude::*;
 
-pub async fn login_request(url: &str, body: UserInfo) -> Result<DoubleTokenResponse> {
-    let userinfo = serde_json::to_string(&body)?;
-    log::info!("{:?}", &userinfo);
-    let resp: DoubleTokenResponse = Request::post(url)
-        .header("content-type", "application/json; charset=UTF-8")
-        .mode(RequestMode::Cors)
-        .body(userinfo)
-        .send()
-        .await?
-        .json()
-        .await?;
-
-    Ok(resp)
-}
-
 impl Login {
     pub fn authorize_html(&self, ctx: &Context<Self>) -> Html {
         html! {

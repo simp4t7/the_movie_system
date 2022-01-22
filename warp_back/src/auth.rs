@@ -1,7 +1,14 @@
 use crate::err_info;
 use crate::error_handling::{Result, WarpRejections};
 use crate::{ACCESS_EXP, REFRESH_EXP, TOKEN_SECRET};
+use argon2::{
+    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
+    Argon2,
+};
+use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
+use shared_stuff::{Claims, Token};
 use shared_stuff::{DoubleTokenResponse, SingleTokenResponse};
+use warp::reject::custom;
 use warp::{
     filters::header::headers_cloned,
     http::header::{HeaderMap, HeaderValue, AUTHORIZATION},
@@ -9,15 +16,6 @@ use warp::{
 };
 
 type WebResult<T> = std::result::Result<T, Rejection>;
-
-use argon2::{
-    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
-    Argon2,
-};
-
-use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
-use shared_stuff::{Claims, Token};
-use warp::reject::custom;
 
 pub fn with_auth() -> impl Filter<Extract = (String,), Error = Rejection> + Clone {
     headers_cloned()
@@ -48,21 +46,8 @@ fn jwt_from_header(headers: &HeaderMap<HeaderValue>) -> Result<String> {
         Some(v) => Ok(v.to_str().unwrap_or_default().to_string()),
         None => Err(custom(WarpRejections::AuthError(err_info!()))),
     }
-    /*
-    let auth_header = match std::str::from_utf8(header.as_bytes()) {
-        Ok(v) => v,
-        Err(_) => return Err(custom(WarpRejections::AuthRejection(AuthError::InvalidAuthHeaderError))),
-    };
-    if !auth_header.starts_with(BEARER) {
-        return Err(custom(WarpRejections::AuthRejection(AuthError::NoAuthHeaderError)));
-    }
-    Ok(auth_header.trim_start_matches(BEARER).to_owned())
-    warp::filters::header::header("authorization")
-    Ok(auth_header.to_owned())
-    */
 }
 
-// pub async fn auth(headers: HeaderMap<HeaderValue>) -> WebResult<String> {
 pub async fn auth(token: String) -> Result<String> {
     let claims = verify_token(token)?;
     log::info!("auth claims: {:?}", claims);
@@ -166,7 +151,3 @@ pub fn verify_pass(password: String, salt: String, hashed_pw: String) -> Result<
         .map_err(|_| custom(WarpRejections::AuthError(err_info!())))?;
     Ok(hashed_pw == password_hash.to_string())
 }
-
-// db: username | hash_password | the_salt
-// verify: compute the input pw with the_salt of username, check the result against with the
-// hash_password

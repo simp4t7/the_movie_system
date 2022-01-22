@@ -5,19 +5,6 @@ use shared_stuff::UserInfo;
 use yew::prelude::*;
 use zxcvbn::zxcvbn;
 
-pub async fn register_request(url: &str, body: UserInfo) -> Result<()> {
-    let userinfo = serde_json::to_string(&body)?;
-    log::info!("{:?}", &userinfo);
-    let resp = Request::post(url)
-        .header("content-type", "application/json; charset=UTF-8")
-        .mode(RequestMode::Cors)
-        .body(userinfo)
-        .send()
-        .await?;
-    log::info!("{:?}", &resp);
-    Ok(())
-}
-
 impl Register {
     fn get_password_strength_estimate(&self) -> Option<u8> {
         zxcvbn(&self.password, &[])

@@ -16,24 +16,6 @@ pub fn image_processing(image: Option<&ImageData>) -> String {
     }
 }
 
-pub async fn get_search_results(url: &str, body: ImdbQuery) -> Result<Vec<MovieDisplay>> {
-    if !body.query.is_empty() {
-        let imdbquery = serde_json::to_string(&body)?;
-        let resp = Request::post(url)
-            .header("content-type", "application/json; charset=UTF-8")
-            .mode(RequestMode::Cors)
-            .body(imdbquery)
-            .send()
-            .await?
-            .json()
-            .await?;
-        log::info!("movie resp: {:?}", &resp);
-        Ok(resp)
-    } else {
-        Ok(vec![])
-    }
-}
-
 impl AddMovies {
     pub fn search_results(&self, ctx: &Context<Self>) -> Html {
         let callback = ctx.link().callback(AddMoviesMsg::AddMovie);

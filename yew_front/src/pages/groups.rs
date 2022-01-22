@@ -2,13 +2,12 @@ use crate::utils::post_route_with_auth;
 use crate::{ADD_USER_URL, CREATE_GROUP_URL, GET_ALL_GROUPS_URL, LEAVE_GROUP_URL};
 use anyhow::Result;
 use gloo_storage::{LocalStorage, Storage};
-use reqwasm::http::{Request, RequestMode};
-use shared_stuff::groups_stuff::{AddUser, BasicUsername, GroupForm, UserGroupsJson, GroupInfo};
+use shared_stuff::groups_stuff::{AddUser, BasicUsername, GroupForm, GroupInfo, UserGroupsJson};
 use std::collections::HashSet;
 use web_sys::{HtmlElement, HtmlInputElement};
 use yew::prelude::*;
 
-pub async fn leave_group_request(username: String, group_name: String) -> Result<()> {
+pub async fn request_leave_group(username: String, group_name: String) -> Result<()> {
     let json_body = serde_json::to_string(&GroupForm {
         username,
         group_name,
@@ -18,7 +17,7 @@ pub async fn leave_group_request(username: String, group_name: String) -> Result
     Ok(())
 }
 
-pub async fn add_user_request(
+pub async fn request_add_user(
     username: String,
     new_member: String,
     group_name: String,
@@ -33,14 +32,14 @@ pub async fn add_user_request(
     Ok(())
 }
 
-pub async fn get_all_groups(username: String) -> Result<HashSet<GroupInfo>> {
+pub async fn request_get_all_groups(username: String) -> Result<HashSet<GroupInfo>> {
     let json_body = serde_json::to_string(&BasicUsername { username })?;
     let resp = post_route_with_auth(&GET_ALL_GROUPS_URL, json_body.clone()).await?;
     let groups: UserGroupsJson = resp.json().await?;
     Ok(groups.groups)
 }
 
-pub async fn new_group_request(username: String, group_name: String) -> Result<()> {
+pub async fn request_new_group(username: String, group_name: String) -> Result<()> {
     let json_body = serde_json::to_string(&GroupForm {
         username,
         group_name,
@@ -121,7 +120,7 @@ impl Component for Groups {
                 self.current_groups = new_hash;
             }
             GetAllGroups => link_clone.send_future(async move {
-                let groups = get_all_groups(username)
+                let groups = request_get_all_groups(username)
                     .await
                     .expect("problem getting groups");
                 GroupsMsg::UpdateGroups(groups)
@@ -135,7 +134,7 @@ impl Component for Groups {
                 let group_name = self.leave_group_name.clone();
                 log::info!("username: {:?}, group_name: {:?}", &username, &group_name);
                 ctx.link().send_future(async move {
-                    let resp = leave_group_request(username, group_name).await;
+                    let resp = request_leave_group(username, group_name).await;
                     log::info!("{:?}", &resp);
                     GroupsMsg::Noop
                 })
@@ -156,7 +155,7 @@ impl Component for Groups {
                 let add_user = self.add_user.clone();
                 let group_add = self.group_add.clone();
                 ctx.link().send_future(async move {
-                    let resp = add_user_request(username, add_user, group_add).await;
+                    let resp = request_add_user(username, add_user, group_add).await;
                     log::info!("{:?}", &resp);
                     GroupsMsg::Noop
                 })
@@ -171,7 +170,7 @@ impl Component for Groups {
                 log::info!("making a group, username is: {:?}", &username);
                 let group_name = self.create_group_name.clone();
                 ctx.link().send_future(async move {
-                    let resp = new_group_request(username, group_name).await;
+                    let resp = request_new_group(username, group_name).await;
                     log::info!("{:?}", &resp);
                     GroupsMsg::GetAllGroups
                 })

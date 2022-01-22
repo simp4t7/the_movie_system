@@ -1,4 +1,3 @@
-pub mod add_movies_stuff;
 pub mod groups_stuff;
 pub mod omdb_structs;
 pub mod utils;
@@ -72,18 +71,12 @@ impl MovieDisplay {
 pub struct UserInfo {
     #[validate(email)]
     pub username: String,
-    #[validate(custom = "zxcvbn_func")]
     pub password: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ImdbQuery {
     pub query: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct MovieDisplayResponse {
-    pub movies: Vec<MovieDisplay>,
 }
 
 impl<T: ToString> From<T> for ImdbQuery {
@@ -99,13 +92,6 @@ pub struct LoginLookup {
     pub username: String,
     pub hashed_password: String,
     pub salt: String,
-}
-
-pub fn zxcvbn_func(password: &str) -> Result<(), ValidationError> {
-    if password == "password123" {
-        return Err(ValidationError::new("umm, bad password"));
-    }
-    Ok(())
 }
 
 impl fmt::Display for MovieDisplay {
