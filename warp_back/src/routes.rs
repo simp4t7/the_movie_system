@@ -7,7 +7,7 @@ use crate::State;
 use http::status::StatusCode;
 use imdb_autocomplete::autocomplete_func;
 use shared_stuff::groups_stuff::{
-    AddUser, BasicUsername, GroupForm, GroupMoviesForm, UserGroupsJson,
+    AddUser, BasicUsername, GroupForm, GroupMoviesForm, UserGroupsJson, GroupInfo,
 };
 use shared_stuff::{ErrorMessage, ImdbQuery, UserInfo};
 use sqlx::SqlitePool;
