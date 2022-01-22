@@ -61,9 +61,16 @@ pub struct CurrentMovies {
 pub struct BasicUsername {
     pub username: String,
 }
+
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct AddUser {
     pub username: String,
     pub new_member: String,
     pub group_name: String,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct GroupInfo {
+    pub uuid: String,
+    pub name: String,
 }
