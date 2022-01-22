@@ -186,6 +186,7 @@ pub async fn get_group_movies(
             username,
             group_name,
         })?;
+        log::info!("get_group_movies json_body: {:?}", &json_body);
         let resp: Vec<YewMovieDisplay> = Request::post(&GET_GROUP_MOVIES_URL)
             .header("content-type", "application/json; charset=UTF-8")
             .mode(RequestMode::Cors)
@@ -194,7 +195,7 @@ pub async fn get_group_movies(
             .await?
             .json()
             .await?;
-        log::info!("{:?}", &resp);
+        log::info!("get_group_movies response {:?}", &resp);
         Ok(resp)
     } else {
         Err(anyhow!("user or group not set"))
