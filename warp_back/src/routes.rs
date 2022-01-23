@@ -13,7 +13,8 @@ use shared_stuff::{ErrorMessage, ImdbQuery, UserInfo};
 use sqlx::SqlitePool;
 use warp::reject::custom;
 
-use crate::auth::{generate_access_token, generate_double_token};
+use crate::auth::generate_tokens;
+use shared_stuff::Token;
 use uuid::Uuid;
 
 use warp::reply::json;
@@ -156,7 +157,7 @@ pub fn authorize_refresh(
         .map(|token: String| match verify_token(token) {
             Ok(claims) => {
                 let username = claims.username;
-                if let Ok(token_response) = generate_access_token(username) {
+                if let Ok(token_response) = generate_tokens(username, Token::Access) {
                     let code = StatusCode::OK;
                     let reply = warp::reply::json(&token_response);
                     warp::reply::with_status(reply, code)
@@ -246,7 +247,7 @@ pub fn login(
         .and(with_db(state.db.clone()))
         .and_then(|user: UserInfo, db: SqlitePool| async move {
             let user_info = db_get_user(&db, &user.username).await?;
-            let token_response = generate_double_token(user_info.0.clone())?;
+            let token_response = generate_tokens(user_info.0.clone(), Token::Refresh)?;
             log::info!("user_info: {:?}", &user_info);
             match verify_pass(user.password, user_info.1.salt, user_info.1.hashed_password)? {
                 true => Ok(json(&token_response)),

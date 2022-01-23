@@ -5,14 +5,15 @@ use reqwasm::http::{Request, RequestMode};
 use crate::LOGIN_URL;
 use anyhow::Result;
 use gloo_storage::{LocalStorage, Storage};
+use shared_stuff::TokenResponse;
 use shared_stuff::{DoubleTokenResponse, UserInfo};
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
-pub async fn request_login(url: &str, body: UserInfo) -> Result<DoubleTokenResponse> {
+pub async fn request_login(url: &str, body: UserInfo) -> Result<TokenResponse> {
     let userinfo = serde_json::to_string(&body)?;
     log::info!("{:?}", &userinfo);
-    let resp: DoubleTokenResponse = Request::post(url)
+    let resp: TokenResponse = Request::post(url)
         .header("content-type", "application/json; charset=UTF-8")
         .mode(RequestMode::Cors)
         .body(userinfo)
@@ -34,7 +35,7 @@ pub enum LoginMsg {
     SetUsername(InputEvent),
     SetPassword(InputEvent),
     VerifyLogin,
-    SetToken(DoubleTokenResponse),
+    SetToken(TokenResponse),
     AuthorizeCheck,
     Logout,
     Noop,
@@ -107,7 +108,7 @@ impl Component for Login {
                     .set("access_token", &token.access_token)
                     .expect("problem setting token");
                 storage
-                    .set("refresh_token", &token.refresh_token)
+                    .set("refresh_token", &token.refresh_token.unwrap())
                     .expect("problem setting token");
                 log::info!("stored some data");
             }

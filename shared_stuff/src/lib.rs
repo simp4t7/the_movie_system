@@ -6,7 +6,6 @@ pub use serde_json::Value;
 use std::fmt;
 use validator::Validate;
 
-
 //WHICH STUFF NEEDS TO BE SERIALIZE / DESERIALIZE? ¯\_(-_-)_/¯
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -25,6 +24,12 @@ pub struct DoubleTokenResponse {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SingleTokenResponse {
     pub access_token: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TokenResponse {
+    pub access_token: String,
+    pub refresh_token: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

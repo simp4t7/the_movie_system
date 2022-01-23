@@ -6,8 +6,9 @@ use argon2::{
     Argon2,
 };
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
+use shared_stuff::TokenResponse;
 use shared_stuff::{Claims, Token};
-use shared_stuff::{DoubleTokenResponse, SingleTokenResponse};
+//use shared_stuff::{DoubleTokenResponse, SingleTokenResponse};
 use warp::reject::custom;
 use warp::{
     filters::header::headers_cloned,
@@ -15,7 +16,9 @@ use warp::{
     Filter, Rejection,
 };
 
-type WebResult<T> = std::result::Result<T, Rejection>;
+//I'm pretty sure you can use the <Result> type from error_handling.
+//If I'm wrong, you only used this one place so shouldn't be hard to revert it.
+//type WebResult<T> = std::result::Result<T, Rejection>;
 
 pub fn with_auth() -> impl Filter<Extract = (String,), Error = Rejection> + Clone {
     headers_cloned()
@@ -23,7 +26,7 @@ pub fn with_auth() -> impl Filter<Extract = (String,), Error = Rejection> + Clon
         .and_then(authorize)
 }
 
-async fn authorize(headers: HeaderMap<HeaderValue>) -> WebResult<String> {
+async fn authorize(headers: HeaderMap<HeaderValue>) -> Result<String> {
     match jwt_from_header(&headers) {
         Ok(jwt) => {
             let decoded = decode::<Claims>(
@@ -54,27 +57,7 @@ pub async fn auth(token: String) -> Result<String> {
     Ok(claims.username)
 }
 
-pub fn generate_access_token(username: String) -> Result<SingleTokenResponse> {
-    let now = sqlx::types::chrono::Utc::now().timestamp();
-    let token_exp = now + *ACCESS_EXP;
-
-    let token_claims = Claims {
-        username,
-        exp: token_exp,
-        token: Token::Access,
-    };
-    log::info!("past claims inside");
-    let access_token = encode(
-        &Header::new(Algorithm::HS512),
-        &token_claims,
-        &EncodingKey::from_secret(TOKEN_SECRET.as_bytes()),
-    )
-    .map_err(|_| custom(WarpRejections::AuthError(err_info!())))?;
-
-    Ok(SingleTokenResponse { access_token })
-}
-
-pub fn generate_double_token(username: String) -> Result<DoubleTokenResponse> {
+pub fn generate_tokens(username: String, token_type: Token) -> Result<TokenResponse> {
     let now = sqlx::types::chrono::Utc::now().timestamp();
     let token_exp = now + *ACCESS_EXP;
 
@@ -83,33 +66,96 @@ pub fn generate_double_token(username: String) -> Result<DoubleTokenResponse> {
         exp: token_exp,
         token: Token::Access,
     };
-    log::info!("past claims inside");
     let access_token = encode(
         &Header::new(Algorithm::HS512),
         &token_claims,
         &EncodingKey::from_secret(TOKEN_SECRET.as_bytes()),
     )
     .map_err(|_| custom(WarpRejections::AuthError(err_info!())))?;
-
-    let refresh_exp = now + *REFRESH_EXP;
-    let refresh_claims = Claims {
-        username,
-        exp: refresh_exp,
-        token: Token::Refresh,
-    };
-    let refresh_token = encode(
-        &Header::new(Algorithm::HS512),
-        &refresh_claims,
-        &EncodingKey::from_secret(TOKEN_SECRET.as_bytes()),
-    )
-    .map_err(|_| custom(WarpRejections::AuthError(err_info!())))?;
-    let token_response = DoubleTokenResponse {
+    let mut token_resp = TokenResponse {
         access_token,
-        refresh_token,
+        refresh_token: None,
     };
-    log::info!("{:?}", &token_response);
-    Ok(token_response)
+    match token_type {
+        Token::Access => Ok(token_resp),
+        Token::Refresh => {
+            let refresh_exp = now + *REFRESH_EXP;
+            let refresh_claims = Claims {
+                username,
+                exp: refresh_exp,
+                token: Token::Refresh,
+            };
+            let refresh_token = encode(
+                &Header::new(Algorithm::HS512),
+                &refresh_claims,
+                &EncodingKey::from_secret(TOKEN_SECRET.as_bytes()),
+            )
+            .map_err(|_| custom(WarpRejections::AuthError(err_info!())))?;
+            token_resp.refresh_token = Some(refresh_token);
+            Ok(token_resp)
+        }
+    }
 }
+
+//pub fn generate_access_token(username: String) -> Result<TokenResponse> {
+//let now = sqlx::types::chrono::Utc::now().timestamp();
+//let token_exp = now + *ACCESS_EXP;
+
+//let token_claims = Claims {
+//username,
+//exp: token_exp,
+//token: Token::Access,
+//};
+//log::info!("past claims inside");
+//let access_token = encode(
+//&Header::new(Algorithm::HS512),
+//&token_claims,
+//&EncodingKey::from_secret(TOKEN_SECRET.as_bytes()),
+//)
+//.map_err(|_| custom(WarpRejections::AuthError(err_info!())))?;
+
+//Ok(TokenResponse {
+//access_token,
+//refresh_token: None,
+//})
+//}
+
+//pub fn generate_double_token(username: String) -> Result<TokenResponse> {
+//let now = sqlx::types::chrono::Utc::now().timestamp();
+//let token_exp = now + *ACCESS_EXP;
+
+//let token_claims = Claims {
+//username: username.clone(),
+//exp: token_exp,
+//token: Token::Access,
+//};
+//log::info!("past claims inside");
+//let access_token = encode(
+//&Header::new(Algorithm::HS512),
+//&token_claims,
+//&EncodingKey::from_secret(TOKEN_SECRET.as_bytes()),
+//)
+//.map_err(|_| custom(WarpRejections::AuthError(err_info!())))?;
+
+//let refresh_exp = now + *REFRESH_EXP;
+//let refresh_claims = Claims {
+//username,
+//exp: refresh_exp,
+//token: Token::Refresh,
+//};
+//let refresh_token = encode(
+//&Header::new(Algorithm::HS512),
+//&refresh_claims,
+//&EncodingKey::from_secret(TOKEN_SECRET.as_bytes()),
+//)
+//.map_err(|_| custom(WarpRejections::AuthError(err_info!())))?;
+//let token_response = TokenResponse {
+//access_token,
+//refresh_token: Some(refresh_token),
+//};
+//log::info!("{:?}", &token_response);
+//Ok(token_response)
+//}
 
 pub fn verify_token(token: String) -> Result<Claims> {
     let token = decode(
