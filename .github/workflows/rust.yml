@@ -17,6 +17,7 @@ jobs:
     steps:
     - name: Startup Script
       run: |
+          echo $PWD
           chmod +x ./gh_actions_init.sh
           ./gh_actions_init.sh
       shell: bash
