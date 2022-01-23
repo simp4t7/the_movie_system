@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo $PWD
+echo $ls
 sqlite3 db/movie_site.db '.quit'
 sqlite3 db/movie_site.db < db/clear_table.sql
 sqlite3 db/movie_site.db < db/db_setup.sql
