@@ -10,21 +10,22 @@ use shared_stuff::Claims;
 
 use shared_stuff::ImageData;
 use shared_stuff::SingleTokenResponse;
+use shared_stuff::TokenResponse;
 
-pub async fn request_authorize_refresh(refresh_token: String) -> Result<SingleTokenResponse> {
+pub async fn request_authorize_refresh(refresh_token: String) -> Result<TokenResponse> {
     let storage = LocalStorage::raw();
     let resp = Request::post(&REFRESH_URL)
         .mode(RequestMode::Cors)
         .header("authorization", &refresh_token)
         .send()
         .await?;
-    let single_token: SingleTokenResponse = resp.json().await?;
+    let token_resp: TokenResponse = resp.json().await?;
     storage
-        .set("access_token", &single_token.access_token)
+        .set("access_token", &token_resp.access_token)
         .expect("storage error");
 
     //log::info!("{:?}", &access_token);
-    Ok(single_token)
+    Ok(token_resp)
 }
 pub async fn request_authorize_access(access_token: String) -> Result<Claims> {
     let resp = Request::post(&ACCESS_URL)
