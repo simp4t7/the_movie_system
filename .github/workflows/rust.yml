@@ -16,7 +16,9 @@ jobs:
 
     steps:
     - name: Startup Script
-      run: ./gh_actions_init.sh
+      run: |
+          chmod +x ./gh_actions_init.sh
+          ./gh_actions_init.sh
       shell: bash
     - uses: actions/checkout@v2
     - name: Build
