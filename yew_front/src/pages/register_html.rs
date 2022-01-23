@@ -1,7 +1,7 @@
 use crate::pages::register::{Register, RegisterMsg};
-use anyhow::Result;
-use reqwasm::http::{Request, RequestMode};
-use shared_stuff::UserInfo;
+
+
+
 use yew::prelude::*;
 use zxcvbn::zxcvbn;
 

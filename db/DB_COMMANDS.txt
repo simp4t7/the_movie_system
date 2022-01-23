@@ -4,7 +4,7 @@ clear db
 sqlite3 db/movie_site.db < db/clear_table.sql
 
 setup db
-sqlite3 db/movie_site.db < db/setup_db.sql
+sqlite3 db/movie_site.db < db/db_setup.sql
 
 select all from db
 sqlite3 db/movie_site.db

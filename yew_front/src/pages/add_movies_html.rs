@@ -1,7 +1,7 @@
 use crate::pages::add_movies::{AddMovies, AddMoviesMsg};
-use anyhow::Result;
-use reqwasm::http::{Request, RequestMode};
-use shared_stuff::{ImageData, ImdbQuery, MovieDisplay};
+
+
+use shared_stuff::{ImageData};
 use yew::prelude::*;
 
 pub fn image_processing(image: Option<&ImageData>) -> String {

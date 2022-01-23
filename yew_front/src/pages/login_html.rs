@@ -1,7 +1,7 @@
 use crate::pages::login::{Login, LoginMsg};
-use anyhow::Result;
-use reqwasm::http::{Request, RequestMode};
-use shared_stuff::{DoubleTokenResponse, UserInfo};
+
+
+
 use yew::prelude::*;
 
 impl Login {

@@ -5,7 +5,7 @@ pub use serde::{Deserialize, Serialize};
 pub use serde_json::Value;
 use std::fmt;
 use validator::Validate;
-use validator::ValidationError;
+
 
 //WHICH STUFF NEEDS TO BE SERIALIZE / DESERIALIZE? ¯\_(-_-)_/¯
 
