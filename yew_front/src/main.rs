@@ -18,6 +18,7 @@ pub mod utils;
 
 use pages::add_movies::AddMovies;
 use pages::groups::Groups;
+use pages::group::Group;
 use pages::home::Home;
 use pages::login::Login;
 use pages::register::Register;
@@ -57,6 +58,8 @@ pub enum Route {
     TheSystem,
     #[at("/user/:username")]
     User { username: String },
+    #[at("/group/:group_id")]
+    Group { group_id: String },
     #[at("/404")]
     NotFound,
 }
@@ -187,6 +190,7 @@ fn switch(routes: &Route) -> Html {
         Route::AddMovies => html!{<AddMovies />},
         Route::TheSystem => html!{<TheSystem />},
         Route::User { username: _ }=> html!{<Groups />},
+        Route::Group { group_id } => html!{<Group id={group_id.clone()}/>},
         //TODO! something for bad urls?
         Route::NotFound => html!{},
     }}
