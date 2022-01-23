@@ -6,7 +6,7 @@ use crate::LOGIN_URL;
 use anyhow::Result;
 use gloo_storage::{LocalStorage, Storage};
 use shared_stuff::TokenResponse;
-use shared_stuff::{DoubleTokenResponse, UserInfo};
+use shared_stuff::UserInfo;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 

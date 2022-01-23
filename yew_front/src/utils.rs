@@ -9,7 +9,6 @@ use reqwasm::http::Response;
 use shared_stuff::Claims;
 
 use shared_stuff::ImageData;
-use shared_stuff::SingleTokenResponse;
 use shared_stuff::TokenResponse;
 
 pub async fn request_authorize_refresh(refresh_token: String) -> Result<TokenResponse> {
