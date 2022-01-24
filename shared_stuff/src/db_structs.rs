@@ -25,7 +25,7 @@ pub struct DBGroup {
     pub data: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct GroupData {
     pub group_name: String,
     pub members: HashSet<String>,
@@ -34,5 +34,19 @@ pub struct GroupData {
     pub turn: String,
     pub date_created: i64,
     pub date_modified: i64,
+}
+
+impl GroupData {
+    pub fn new_empty() -> GroupData {
+        GroupData {
+            group_name: String::from(""),
+            members: HashSet::new(),
+            movies_watched: HashSet::new(),
+            current_movies: HashSet::new(),
+            turn: String::from(""),
+            date_created: 0,
+            date_modified: 0,
+        }
+    }
 }
 
