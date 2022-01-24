@@ -3,10 +3,12 @@ use crate::utils::post_route_with_auth;
 use crate::{ADD_USER_URL, CREATE_GROUP_URL, GET_ALL_GROUPS_URL, LEAVE_GROUP_URL, GET_GROUP_DATA_URL};
 use anyhow::Result;
 use gloo_storage::{LocalStorage, Storage};
+use serde_json::to_string;
 use shared_stuff::db_structs::GroupData;
 use shared_stuff::groups_stuff::{AddUser, BasicUsername, GroupForm, GroupInfo, UserGroupsJson};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use web_sys::{HtmlElement, HtmlInputElement};
+use shared_stuff::{ImdbQuery, MovieDisplay, YewMovieDisplay};
 use yew::prelude::*;
 
 
@@ -25,12 +27,15 @@ pub struct Props {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Group {
-    pub group_data: GroupData,
     pub group_id: String,
+    pub group_data: Option<GroupData>,
+    pub autocomplete_movies: HashMap<String, MovieDisplay>,
 }
 pub enum GroupMsg {
     Noop,
     GetGroupData,
+    UpdateGroupData(GroupData),
+    Error(String),
 }
 
 impl Component for Group {
@@ -40,8 +45,9 @@ impl Component for Group {
         ctx.link().send_message(GroupMsg::GetGroupData);
         let id = &ctx.props().id;
         Self {
-            group_data: GroupData::new_empty(),
             group_id: id.to_string(),
+            group_data: None,
+            autocomplete_movies: HashMap::new(),
         }
     }
 
@@ -53,13 +59,21 @@ impl Component for Group {
         let id = self.group_id.clone();
         use GroupMsg::*;
         match msg {
-            Noop => {}
+            Noop => {},
+
             GetGroupData => link_clone.send_future(async move {
-                let _groups = request_get_all_group_movies(id)
-                    .await
-                    .expect("problem getting groups");
-                GroupMsg::Noop
+                let group_data_resp = request_get_all_group_movies(id).await;
+                match group_data_resp {
+                    Ok(group_data) => GroupMsg::UpdateGroupData(group_data),
+                    Err(e) => GroupMsg::Error(e.to_string()),
+                }
             }),
+
+            UpdateGroupData(group_data) => self.group_data = Some(group_data),
+
+            Error(err_msg) => {
+                log::info!("{:?}", &err_msg);
+            },
         }
         true
     }
@@ -70,8 +84,35 @@ impl Component for Group {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         html! {
+            <div>
+            { self.view_group_id(ctx) }
+            { self.view_group_data(ctx) }
+            </div>
+
+        }
+
+    }
+}
+
+impl Group {
+    fn view_group_id(&self, ctx: &Context<Self>) -> Html {
+        html! {
             <h3>{format!("group id is: {}", &ctx.props().id )}</h3>
-                
+        }
+    }
+
+    fn view_group_data(&self, ctx: &Context<Self>) -> Html {
+        match &self.group_data {
+            Some(group_data) => {
+                html! {
+                    <p>{format!("group data is: {:?}", group_data)}</p>
+                }
+            },
+            None => {
+                html! {
+                    <p>{format!("No group data")}</p>
+                }
+            }
         }
     }
 }
