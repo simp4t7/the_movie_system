@@ -3,41 +3,6 @@ use crate::{Deserialize, Serialize, YewMovieDisplay};
 use std::collections::HashSet;
 use uuid::Uuid;
 
-//impl GroupData {
-//pub fn new(input: GroupForm) -> Self {
-//let mut members_hash = HashSet::new();
-//members_hash.insert(input.username);
-//let now = chrono::Utc::now().timestamp();
-//let turn = String::from("");
-//Self {
-//group_name: input.group_name,
-//members: members_hash,
-//movies_watched: HashSet::new(),
-//current_movies: HashSet::new(),
-//turn,
-//date_created: now,
-//date_modified: now,
-//}
-//}
-//}
-
-//impl UserData {
-//pub async fn new(input: UserInfo) -> Result<Self> {
-//let id = Uuid::new_v4();
-//let (hashed_password, salt) = hasher(&input.password).await?;
-//let groups = HashSet::new();
-//let now = chrono::Utc::now().timestamp();
-//Ok(Self {
-//id,
-//hashed_password,
-//salt,
-//groups,
-//date_created: now,
-//date_modified: now,
-//})
-//}
-//}
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DBUser {
     pub username: String,
@@ -60,7 +25,7 @@ pub struct DBGroup {
     pub data: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct GroupData {
     pub group_name: String,
     pub members: HashSet<String>,
@@ -69,4 +34,18 @@ pub struct GroupData {
     pub turn: String,
     pub date_created: i64,
     pub date_modified: i64,
+}
+
+impl GroupData {
+    pub fn new_empty() -> GroupData {
+        GroupData {
+            group_name: String::from(""),
+            members: HashSet::new(),
+            movies_watched: HashSet::new(),
+            current_movies: HashSet::new(),
+            turn: String::from(""),
+            date_created: 0,
+            date_modified: 0,
+        }
+    }
 }
