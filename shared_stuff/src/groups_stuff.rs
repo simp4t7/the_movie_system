@@ -1,5 +1,5 @@
+use crate::YewMovieDisplay;
 use crate::{Deserialize, Serialize};
-use crate::{YewMovieDisplay};
 use std::collections::HashSet;
 use std::fmt;
 

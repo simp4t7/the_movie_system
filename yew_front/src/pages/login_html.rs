@@ -1,7 +1,5 @@
 use crate::pages::login::{Login, LoginMsg};
 
-
-
 use yew::prelude::*;
 
 impl Login {

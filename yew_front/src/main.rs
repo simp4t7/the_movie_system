@@ -17,8 +17,8 @@ pub mod pages;
 pub mod utils;
 
 use pages::add_movies::AddMovies;
-use pages::groups::Groups;
 use pages::group::Group;
+use pages::groups::Groups;
 use pages::home::Home;
 use pages::login::Login;
 use pages::register::Register;

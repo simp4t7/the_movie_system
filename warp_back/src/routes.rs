@@ -21,9 +21,9 @@ use warp::reply::json;
 use warp::Filter;
 
 use crate::new_db_stuff::{
-    db_add_group_to_user, db_add_user_to_group, db_get_all_group_names, db_get_group_movies,
-    db_get_user, db_get_user_groups, db_insert_group, db_insert_user, db_save_group_movies,
-    db_user_leave_group, GroupData, UserData,
+    db_add_group_to_user, db_add_user_to_group, db_get_all_group_names,
+    db_get_group_movies, db_get_user, db_get_user_groups, db_insert_group, db_insert_user,
+    db_save_group_movies, db_user_leave_group, create_user_data, create_group_data
 };
 
 pub fn get_group_movies(
@@ -133,7 +133,8 @@ pub fn create_group(
             |group_form: GroupForm, _username: String, db: SqlitePool| async move {
                 let uuid = Uuid::new_v4();
                 let uuid_string = uuid.to_string();
-                let group_data = GroupData::new(group_form.clone());
+                // let group_data = GroupData::new(group_form.clone());
+                let group_data = create_group_data(group_form.clone());
                 match db_insert_group(&db, &uuid_string, group_data).await {
                     Ok(_) => {
                         let user_data = db_get_user(&db, &group_form.username).await?;
@@ -230,7 +231,8 @@ pub fn register(
         .and(warp::body::json())
         .and(with_db(state.db.clone()))
         .and_then(|user_info: UserInfo, db: SqlitePool| async move {
-            let user_data = UserData::new(user_info.clone()).await?;
+            // let user_data = UserData::new(user_info.clone()).await?;
+            let user_data = create_user_data(user_info.clone()).await?;
             match db_insert_user(&db, &user_info.username, user_data).await {
                 Ok(_e) => Ok(warp::reply()),
                 Err(e) => Err(e),

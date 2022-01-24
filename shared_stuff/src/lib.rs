@@ -1,3 +1,4 @@
+pub mod db_structs;
 pub mod groups_stuff;
 pub mod omdb_structs;
 pub mod utils;
