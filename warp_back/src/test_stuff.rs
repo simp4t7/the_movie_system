@@ -19,11 +19,11 @@ impl State {
 
 pub fn delete_db(db_name: &str) -> Result<()> {
     let db_str = get_db_url(db_name)?;
-    remove_file(&db_str).map_err(|e| custom(WarpRejections::Other(e.to_string())))?;
+    remove_file(&db_str).map_err(|_| custom(WarpRejections::Other(err_info!())))?;
     remove_file(format!("{}-shm", &db_str))
-        .map_err(|e| custom(WarpRejections::Other(e.to_string())))?;
+        .map_err(|_| custom(WarpRejections::Other(err_info!())))?;
     remove_file(format!("{}-wal", &db_str))
-        .map_err(|e| custom(WarpRejections::Other(e.to_string())))?;
+        .map_err(|_| custom(WarpRejections::Other(err_info!())))?;
     Ok(())
 }
 
@@ -36,7 +36,7 @@ pub async fn init_db(db: &SqlitePool) -> Result<()> {
         r#"
             CREATE TABLE users
         (
-            id TEXT NOT NULL,
+            username TEXT NOT NULL,
             data TEXT NOT NULL
         );
 "#,
@@ -50,12 +50,12 @@ pub async fn init_db(db: &SqlitePool) -> Result<()> {
 
 pub fn get_db_url(db_name: &str) -> Result<String> {
     let mut current_dir =
-        std::env::current_dir().map_err(|e| custom(WarpRejections::Other(e.to_string())))?;
+        std::env::current_dir().map_err(|_| custom(WarpRejections::Other(err_info!())))?;
     current_dir.push(db_name);
     let db_url = current_dir.into_os_string();
     let db_str = db_url
         .into_string()
-        .map_err(|e| custom(WarpRejections::Other(format!("{:?}", e))))?;
+        .map_err(|_| custom(WarpRejections::Other(err_info!())))?;
     Ok(db_str)
 }
 
