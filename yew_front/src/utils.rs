@@ -165,6 +165,7 @@ pub fn make_post_request(url: &str, json_body: &str, token: &str) -> Request {
         .mode(RequestMode::Cors)
         .header("authorization", token)
         .header("content-type", "application/json; charset=UTF-8")
+        .body(json_body)
 }
 
 //Need something if there's no picture or poster...
