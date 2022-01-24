@@ -3,9 +3,9 @@ use crate::auth::{hasher, verify_pass};
 use crate::err_info;
 use crate::error_handling::{Result, WarpRejections};
 use shared_stuff::groups_stuff::{AddUser, GroupForm, GroupMoviesForm, GroupInfo};
+use shared_stuff::db_structs::{DBUser, UserData, DBGroup, GroupData};
 use shared_stuff::UserInfo;
 use shared_stuff::YewMovieDisplay;
-use shared_stuff::{Deserialize, Serialize};
 use sqlx::pool::PoolConnection;
 use sqlx::Sqlite;
 use sqlx::{query, query_as, SqlitePool};
@@ -13,6 +13,7 @@ use std::collections::HashSet;
 use uuid::Uuid;
 use warp::reject::custom;
 
+/*
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DBUser {
     username: String,
@@ -45,7 +46,24 @@ impl UserData {
         })
     }
 }
+*/
 
+pub async fn create_user_data(input: UserInfo) -> Result<UserData> {
+        let id = Uuid::new_v4();
+        let (hashed_password, salt) = hasher(&input.password).await?;
+        let groups = HashSet::new();
+        let now = chrono::Utc::now().timestamp();
+        Ok(UserData {
+            id,
+            hashed_password,
+            salt,
+            groups,
+            date_created: now,
+            date_modified: now,
+        })
+}
+
+/*
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DBGroup {
     id: String,
@@ -79,6 +97,23 @@ impl GroupData {
             date_modified: now,
         }
     }
+}
+*/
+
+pub fn create_group_data(input: GroupForm) -> GroupData {
+        let mut members_hash = HashSet::new();
+        members_hash.insert(input.username);
+        let now = chrono::Utc::now().timestamp();
+        let turn = String::from("");
+        GroupData {
+            group_name: input.group_name,
+            members: members_hash,
+            movies_watched: HashSet::new(),
+            current_movies: HashSet::new(),
+            turn,
+            date_created: now,
+            date_modified: now,
+        }
 }
 
 pub async fn acquire_db(db: &SqlitePool) -> Result<PoolConnection<Sqlite>> {

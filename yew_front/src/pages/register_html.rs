@@ -1,7 +1,5 @@
 use crate::pages::register::{Register, RegisterMsg};
 
-
-
 use yew::prelude::*;
 use zxcvbn::zxcvbn;
 

@@ -2,7 +2,7 @@ use ctor::ctor;
 use imdb_autocomplete::req::build_url;
 use reqwest::Url;
 
-use log::{info};
+use log::info;
 
 #[ctor]
 fn load_logger() {
