@@ -4,9 +4,10 @@ use sqlx::Sqlite;
 use validator::validate_email;
 use validator::Validate;
 
+use shared_stuff::db_structs::UserData;
 use warp_back::error_handling::Result;
 use warp_back::error_handling::WarpRejections;
-use warp_back::new_db_stuff::UserData;
+use warp_back::new_db_stuff::{create_group_data, create_user_data};
 use warp_back::new_db_stuff::{db_get_user, db_insert_user};
 use warp_back::test_stuff::{delete_db, get_db_url, setup_new_db};
 
@@ -47,7 +48,7 @@ async fn insert_new_user() -> Result<()> {
         username: "Indiana".to_string(),
         password: "password123".to_string(),
     };
-    let user_data = UserData::new(new_user.clone()).await?;
+    let user_data = create_user_data(new_user.clone()).await?;
     db_insert_user(&new_db, &new_user.username, user_data).await?;
     log::info!("inserted");
     let check_user_data = db_get_user(&new_db, &new_user.username).await?;

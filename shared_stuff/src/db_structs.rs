@@ -1,7 +1,42 @@
+use crate::groups_stuff::{GroupForm, GroupInfo};
+use crate::{Deserialize, Serialize, YewMovieDisplay};
 use std::collections::HashSet;
 use uuid::Uuid;
-use crate::groups_stuff::GroupInfo;
-use crate::{YewMovieDisplay, Deserialize, Serialize};
+
+//impl GroupData {
+//pub fn new(input: GroupForm) -> Self {
+//let mut members_hash = HashSet::new();
+//members_hash.insert(input.username);
+//let now = chrono::Utc::now().timestamp();
+//let turn = String::from("");
+//Self {
+//group_name: input.group_name,
+//members: members_hash,
+//movies_watched: HashSet::new(),
+//current_movies: HashSet::new(),
+//turn,
+//date_created: now,
+//date_modified: now,
+//}
+//}
+//}
+
+//impl UserData {
+//pub async fn new(input: UserInfo) -> Result<Self> {
+//let id = Uuid::new_v4();
+//let (hashed_password, salt) = hasher(&input.password).await?;
+//let groups = HashSet::new();
+//let now = chrono::Utc::now().timestamp();
+//Ok(Self {
+//id,
+//hashed_password,
+//salt,
+//groups,
+//date_created: now,
+//date_modified: now,
+//})
+//}
+//}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DBUser {
@@ -35,4 +70,3 @@ pub struct GroupData {
     pub date_created: i64,
     pub date_modified: i64,
 }
-

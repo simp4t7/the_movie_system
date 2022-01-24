@@ -2,8 +2,8 @@ use crate::auth::{hasher, verify_pass};
 
 use crate::err_info;
 use crate::error_handling::{Result, WarpRejections};
-use shared_stuff::groups_stuff::{AddUser, GroupForm, GroupMoviesForm, GroupInfo};
-use shared_stuff::db_structs::{DBUser, UserData, DBGroup, GroupData};
+use shared_stuff::db_structs::{DBGroup, DBUser, GroupData, UserData};
+use shared_stuff::groups_stuff::{AddUser, GroupForm, GroupInfo, GroupMoviesForm};
 use shared_stuff::UserInfo;
 use shared_stuff::YewMovieDisplay;
 use sqlx::pool::PoolConnection;
@@ -13,107 +13,70 @@ use std::collections::HashSet;
 use uuid::Uuid;
 use warp::reject::custom;
 
-/*
-#[derive(Debug, Serialize, Deserialize)]
-pub struct DBUser {
-    username: String,
-    data: String,
-}
+//impl GroupData {
+//pub fn new(input: GroupForm) -> Self {
+//let mut members_hash = HashSet::new();
+//members_hash.insert(input.username);
+//let now = chrono::Utc::now().timestamp();
+//let turn = String::from("");
+//Self {
+//group_name: input.group_name,
+//members: members_hash,
+//movies_watched: HashSet::new(),
+//current_movies: HashSet::new(),
+//turn,
+//date_created: now,
+//date_modified: now,
+//}
+//}
+//}
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct UserData {
-    pub id: Uuid,
-    pub hashed_password: String,
-    pub salt: String,
-    pub groups: HashSet<GroupInfo>,
-    pub date_created: i64,
-    pub date_modified: i64,
-}
-
-impl UserData {
-    pub async fn new(input: UserInfo) -> Result<Self> {
-        let id = Uuid::new_v4();
-        let (hashed_password, salt) = hasher(&input.password).await?;
-        let groups = HashSet::new();
-        let now = chrono::Utc::now().timestamp();
-        Ok(Self {
-            id,
-            hashed_password,
-            salt,
-            groups,
-            date_created: now,
-            date_modified: now,
-        })
-    }
-}
-*/
+//impl UserData {
+//pub async fn new(input: UserInfo) -> Result<Self> {
+//let id = Uuid::new_v4();
+//let (hashed_password, salt) = hasher(&input.password).await?;
+//let groups = HashSet::new();
+//let now = chrono::Utc::now().timestamp();
+//Ok(Self {
+//id,
+//hashed_password,
+//salt,
+//groups,
+//date_created: now,
+//date_modified: now,
+//})
+//}
+//}
 
 pub async fn create_user_data(input: UserInfo) -> Result<UserData> {
-        let id = Uuid::new_v4();
-        let (hashed_password, salt) = hasher(&input.password).await?;
-        let groups = HashSet::new();
-        let now = chrono::Utc::now().timestamp();
-        Ok(UserData {
-            id,
-            hashed_password,
-            salt,
-            groups,
-            date_created: now,
-            date_modified: now,
-        })
+    let id = Uuid::new_v4();
+    let (hashed_password, salt) = hasher(&input.password).await?;
+    let groups = HashSet::new();
+    let now = chrono::Utc::now().timestamp();
+    Ok(UserData {
+        id,
+        hashed_password,
+        salt,
+        groups,
+        date_created: now,
+        date_modified: now,
+    })
 }
-
-/*
-#[derive(Debug, Serialize, Deserialize)]
-pub struct DBGroup {
-    id: String,
-    data: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct GroupData {
-    group_name: String,
-    members: HashSet<String>,
-    movies_watched: HashSet<String>,
-    current_movies: HashSet<YewMovieDisplay>,
-    turn: String,
-    date_created: i64,
-    date_modified: i64,
-}
-
-impl GroupData {
-    pub fn new(input: GroupForm) -> Self {
-        let mut members_hash = HashSet::new();
-        members_hash.insert(input.username);
-        let now = chrono::Utc::now().timestamp();
-        let turn = String::from("");
-        Self {
-            group_name: input.group_name,
-            members: members_hash,
-            movies_watched: HashSet::new(),
-            current_movies: HashSet::new(),
-            turn,
-            date_created: now,
-            date_modified: now,
-        }
-    }
-}
-*/
 
 pub fn create_group_data(input: GroupForm) -> GroupData {
-        let mut members_hash = HashSet::new();
-        members_hash.insert(input.username);
-        let now = chrono::Utc::now().timestamp();
-        let turn = String::from("");
-        GroupData {
-            group_name: input.group_name,
-            members: members_hash,
-            movies_watched: HashSet::new(),
-            current_movies: HashSet::new(),
-            turn,
-            date_created: now,
-            date_modified: now,
-        }
+    let mut members_hash = HashSet::new();
+    members_hash.insert(input.username);
+    let now = chrono::Utc::now().timestamp();
+    let turn = String::from("");
+    GroupData {
+        group_name: input.group_name,
+        members: members_hash,
+        movies_watched: HashSet::new(),
+        current_movies: HashSet::new(),
+        turn,
+        date_created: now,
+        date_modified: now,
+    }
 }
 
 pub async fn acquire_db(db: &SqlitePool) -> Result<PoolConnection<Sqlite>> {
@@ -292,10 +255,7 @@ pub async fn db_get_group_members(db: &SqlitePool, group_id: &str) -> Result<Has
     Ok(members)
 }
 
-pub async fn db_get_user_groups(
-    db: &SqlitePool,
-    username: &str,
-) -> Result<HashSet<GroupInfo>> {
+pub async fn db_get_user_groups(db: &SqlitePool, username: &str) -> Result<HashSet<GroupInfo>> {
     let db_user_data = db_get_user(db, username).await?;
     let user_groups = db_user_data.1.groups;
     Ok(user_groups)
@@ -308,7 +268,11 @@ pub async fn db_get_all_group_names(db: &SqlitePool, username: &str) -> Result<H
 }
 
 pub async fn db_get_group_id(db: &SqlitePool, group_name: &str, username: &str) -> Result<String> {
-    log::info!("db_get_group_id group_name: {:?}, username: {:?}", &group_name, &username);
+    log::info!(
+        "db_get_group_id group_name: {:?}, username: {:?}",
+        &group_name,
+        &username
+    );
     let db_user_data = db_get_user(db, username).await?;
     let user_groups = db_user_data.1.groups;
     let option_group_info = user_groups.iter().find(|group_info| {
@@ -335,11 +299,11 @@ pub async fn db_add_user_to_group(db: &SqlitePool, add_user: &AddUser) -> Result
     let mut user_info = db_get_user(db, &add_user.new_member).await?;
     let group_uuid =
         Uuid::parse_str(&group_id).map_err(|_e| custom(WarpRejections::UuidError(err_info!())))?;
-    let group_info = GroupInfo { uuid: group_uuid.to_string(), name: add_user.group_name.clone() };
-    user_info
-        .1
-        .groups
-        .insert(group_info);
+    let group_info = GroupInfo {
+        uuid: group_uuid.to_string(),
+        name: add_user.group_name.clone(),
+    };
+    user_info.1.groups.insert(group_info);
     db_update_user(db, user_info).await?;
     Ok(())
 }
@@ -371,7 +335,7 @@ pub async fn db_get_group_movies(
 pub async fn db_add_group_to_user(
     db: &SqlitePool,
     mut user_data: (String, UserData),
-    group: GroupInfo
+    group: GroupInfo,
 ) -> Result<()> {
     let mut new_groups = user_data.1.groups;
     new_groups.insert(group);
@@ -391,7 +355,10 @@ pub async fn db_group_add_new_user(db: &SqlitePool, user_struct: &AddUser) -> Re
     match db_get_user(db, new_member).await {
         Ok(user_data) => {
             log::info!("in here");
-            let group_info = GroupInfo { uuid: group_uuid.to_string(), name: group_name.clone() };
+            let group_info = GroupInfo {
+                uuid: group_uuid.to_string(),
+                name: group_name.clone(),
+            };
             db_add_group_to_user(db, user_data.clone(), group_info).await?;
             db_add_user_to_group(db, user_struct).await?;
         }
