@@ -155,9 +155,11 @@ pub async fn get_route_with_auth(url: &str) -> Result<Response> {
 }
 
 pub fn make_get_request(url: &str, token: &str) -> Request {
-    Request::get(url)
+    let request = Request::get(url)
         .mode(RequestMode::Cors)
-        .header("authorization", token)
+        .header("authorization", token);
+    log::info!("get request: {:?}", request);
+    request
 }
 
 pub fn make_post_request(url: &str, json_body: &str, token: &str) -> Request {

@@ -13,6 +13,7 @@ pub mod auth;
 pub mod error_handling;
 pub mod new_db_stuff;
 pub mod routes;
+pub mod routes1;
 pub mod test_stuff;
 
 lazy_static! {
