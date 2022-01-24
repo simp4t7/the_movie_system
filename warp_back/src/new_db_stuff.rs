@@ -167,6 +167,28 @@ pub async fn db_delete_user(db: &SqlitePool, username: &str) -> Result<()> {
     Ok(())
 }
 
+pub async fn db_get_group1(db: &SqlitePool, group_id: &str) -> Result<GroupData> {
+    log::info!("inside db_get_group");
+    log::info!("group_id is: {:?}", &group_id);
+    let mut conn = acquire_db(db).await?;
+    let db_group = query_as!(
+        DBGroup,
+        r#"
+            select *
+            from groups
+            where id = $1
+        "#,
+        group_id
+    )
+    .fetch_one(&mut conn)
+    .await
+    .map_err(|_| custom(WarpRejections::SqlxError(err_info!())))?;
+
+    let (_, group_data) = db_get_group_data(db_group)?;
+
+    Ok(group_data)
+}
+
 pub async fn db_get_group(db: &SqlitePool, group_id: &str) -> Result<(String, GroupData)> {
     log::info!("inside db_get_group");
     log::info!("group_id is: {:?}", &group_id);
