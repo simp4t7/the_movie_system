@@ -1,3 +1,4 @@
+use scopeguard::defer;
 use shared_stuff::UserInfo;
 use sqlx::migrate::MigrateDatabase;
 use sqlx::Sqlite;
@@ -40,6 +41,7 @@ async fn create_db() -> Result<()> {
 // Check the DB still exists, and insert a user and check it was successful.
 async fn insert_new_user() -> Result<()> {
     let db_name = "test_db_2";
+    defer!(delete_db(db_name););
     let new_db = setup_new_db(db_name).await?;
     assert!(Sqlite::database_exists(&get_db_url(db_name)?)
         .await
@@ -49,11 +51,11 @@ async fn insert_new_user() -> Result<()> {
         password: "password123".to_string(),
     };
     let user_data = create_user_data(new_user.clone()).await?;
+    log::info!("user_data: {:?}", &user_data);
     db_insert_user(&new_db, &new_user.username, user_data).await?;
     log::info!("inserted");
     let check_user_data = db_get_user(&new_db, &new_user.username).await?;
     assert!(check_user_data.0 == "Indiana".to_string());
-    delete_db(db_name)?;
 
     Ok(())
 }
