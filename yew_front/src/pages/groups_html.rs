@@ -73,17 +73,10 @@ impl Groups {
             current_groups
                 .iter()
                 .map(|group| {
-                    let group_url = format!("http://0.0.0.0:8080/group/{}", &group.uuid);
                     html! {
-                        <div>
-                            <li onclick={callback.clone()}>
-                                {group}
-                            </li>
-                            <p>
-                            {"group url: "}
-                            <a href= {group_url.clone()}>{group_url}</a>
-                            </p>
-                        </div>
+                    <li onclick={callback.clone()}>
+                        {group}
+                    </li>
                     }
                 })
                 .collect::<Html>()
