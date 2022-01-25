@@ -1,6 +1,6 @@
 use crate::utils::get_route_with_auth;
 use crate::utils::post_route_with_auth;
-use crate::{ADD_USER_URL, CREATE_GROUP_URL, GET_ALL_GROUPS_URL, LEAVE_GROUP_URL, GET_GROUP_DATA_URL};
+use crate::{ADD_USER_URL, CREATE_GROUP_URL, GET_ALL_GROUPS_URL, LEAVE_GROUP_URL, GET_GROUP_DATA_URL, ROOT_URL};
 use anyhow::Result;
 use gloo_storage::{LocalStorage, Storage};
 use serde_json::to_string;
@@ -99,6 +99,10 @@ impl Component for Group {
 }
 
 impl Group {
+    fn get_group_url(&self) -> String {
+        format!("{:?}/group/{:?}", ROOT_URL.to_owned(), self.group_id)
+    }
+
     fn view_group_id(&self, ctx: &Context<Self>) -> Html {
         html! {
             <h3>{format!("group id is: {}", &ctx.props().id )}</h3>
