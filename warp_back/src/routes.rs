@@ -1,6 +1,4 @@
-use crate::auth::verify_pass;
-use crate::auth::verify_token;
-use crate::auth::with_auth;
+use crate::auth::{verify_pass, verify_token, with_auth, with_group_auth};
 use crate::err_info;
 use crate::error_handling::WarpRejections;
 use crate::State;
@@ -28,6 +26,26 @@ use crate::new_db_stuff::{
 };
 
 pub fn get_group_data(
+    state: &State,
+) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+    warp::path("get_group_data")
+        .and(warp::path::param())
+        .and(with_db(state.db.clone()))
+        .and_then(|group_id: String, db: SqlitePool| async move {
+            log::info!("group_id: {:?}", &group_id);
+            match db_get_group1(&db, &group_id).await {
+                Ok(group_data) => {
+                    let json_resp = serde_json::to_string(&group_data)
+                        .map_err(|_| custom(WarpRejections::SerializationError(err_info!())))?;
+                    Ok(json_resp)
+                },
+                Err(e) => Err(e),
+            }
+
+        })
+}
+
+pub fn get_group_data_auth(
     state: &State,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path("get_group_data")
