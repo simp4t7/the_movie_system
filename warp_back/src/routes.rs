@@ -4,10 +4,8 @@ use crate::error_handling::WarpRejections;
 use crate::State;
 use http::status::StatusCode;
 use imdb_autocomplete::autocomplete_func;
-use shared_stuff::db_structs::GroupData;
-use shared_stuff::groups_stuff::{
-    AddUser, BasicUsername, GroupForm, GroupInfo, GroupMoviesForm, UserGroupsJson,
-};
+use shared_stuff::db_structs::DBGroupStruct;
+use shared_stuff::groups_stuff::{AddUser, BasicUsername, GroupForm, GroupInfo, UserGroupsJson};
 use shared_stuff::{ErrorMessage, ImdbQuery, UserInfo};
 use sqlx::SqlitePool;
 use warp::reject::custom;
@@ -20,10 +18,10 @@ use warp::reply::json;
 use warp::Filter;
 
 use crate::new_db_stuff::{
-    db_add_group_to_user, db_add_user_to_group, db_get_all_group_names,
-    db_get_group_movies, db_get_user, db_get_user_groups, db_insert_group, db_insert_user,
-    db_save_group_movies, db_user_leave_group, db_user_leave_group1, create_user_data, create_group_data,
-    db_get_group, db_get_group1, verify_group_member, db_add_user_to_group1,
+    create_group_data, create_user_data, db_add_group_to_user, db_add_user_to_group,
+    db_add_user_to_group1, db_get_all_group_names, db_get_group_movies, db_get_user,
+    db_get_user_groups, db_insert_group, db_insert_user, db_save_group_movies,
+    db_user_leave_group1, verify_group_member,
 };
 
 pub fn get_group_data(
@@ -33,18 +31,19 @@ pub fn get_group_data(
         .and(warp::path::param())
         .and(with_auth())
         .and(with_db(state.db.clone()))
-        .and_then(|group_id: String, username: String, db: SqlitePool| async move {
-            log::info!("group_id: {:?}", &group_id);
-            match verify_group_member(group_id, username, &db).await {
-                Ok(group_data) => {
-                    let json_resp = serde_json::to_string(&group_data)
-                        .map_err(|_| custom(WarpRejections::SerializationError(err_info!())))?;
-                    Ok(json_resp)
-                },
-                Err(e) => Err(e),
-            }
-
-        })
+        .and_then(
+            |group_id: String, username: String, db: SqlitePool| async move {
+                log::info!("group_id: {:?}", &group_id);
+                match verify_group_member(group_id, username, &db).await {
+                    Ok(group_data) => {
+                        let json_resp = serde_json::to_string(&group_data)
+                            .map_err(|_| custom(WarpRejections::SerializationError(err_info!())))?;
+                        Ok(json_resp)
+                    }
+                    Err(e) => Err(e),
+                }
+            },
+        )
 }
 
 pub fn add_user_to_group_param(
@@ -74,7 +73,7 @@ pub fn leave_group1(
         .and(with_auth())
         .and(with_db(state.db.clone()))
         .and_then(
-            |group_id:String, username: String, db: SqlitePool| async move {
+            |group_id: String, username: String, db: SqlitePool| async move {
                 match db_user_leave_group1(&db, username, &group_id).await {
                     Ok(_) => Ok(warp::reply()),
                     Err(e) => Err(e),
@@ -125,8 +124,8 @@ pub fn save_group_movies(
     warp::path("save_group_movies")
         .and(warp::body::json())
         .and(with_db(state.db.clone()))
-        .and_then(|group_movies: GroupMoviesForm, db: SqlitePool| async move {
-            match db_save_group_movies(&db, &group_movies).await {
+        .and_then(|group_struct: DBGroupStruct, db: SqlitePool| async move {
+            match db_save_group_movies(&db, &group_struct).await {
                 Ok(_) => Ok(warp::reply()),
                 Err(e) => {
                     log::info!("error is: {:?}", &e);
@@ -135,7 +134,6 @@ pub fn save_group_movies(
             }
         })
 }
-
 
 pub fn get_groups(
     state: &State,
@@ -176,7 +174,11 @@ pub fn create_group(
                 let uuid_string = uuid.to_string();
                 // let group_data = GroupData::new(group_form.clone());
                 let group_data = create_group_data(group_form.clone());
-                match db_insert_group(&db, &uuid_string, group_data).await {
+                let group_struct = DBGroupStruct {
+                    id: uuid_string,
+                    group_data,
+                };
+                match db_insert_group(&db, group_struct).await {
                     Ok(_) => {
                         let user_data = db_get_user(&db, &group_form.username).await?;
                         let group_info = GroupInfo {

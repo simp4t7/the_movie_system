@@ -23,7 +23,6 @@ use pages::home::Home;
 use pages::login::Login;
 use pages::register::Register;
 use pages::system::System;
-use pages::the_system::TheSystem;
 
 lazy_static! {
     pub static ref ROOT_URL: &'static str = {
@@ -60,8 +59,6 @@ pub enum Route {
     AddMovies,
     #[at("groups")]
     Groups,
-    #[at("the_system")]
-    TheSystem,
     #[at("/user/:username")]
     User { username: String },
     #[at("/group/:group_id")]
@@ -196,7 +193,6 @@ fn switch(routes: &Route) -> Html {
         Route::Groups => html!{<Groups />},
         Route::Register => html!{<Register />},
         Route::AddMovies => html!{<AddMovies />},
-        Route::TheSystem => html!{<TheSystem />},
         Route::User { username: _ }=> html!{<Groups />},
         Route::Group { group_id } => html!{<Group id={group_id.clone()}/>},
         Route::System { group_id } => html!{<System id={group_id.clone()}/>},

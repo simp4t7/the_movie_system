@@ -12,7 +12,7 @@ pub struct GroupForm {
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct GroupMoviesForm {
     pub username: String,
-    pub group_name: String,
+    pub group_id: String,
     pub current_movies: HashSet<YewMovieDisplay>,
 }
 

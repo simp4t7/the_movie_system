@@ -1,23 +1,47 @@
-use crate::pages::add_movies::{AddMovies, AddMoviesMsg};
+use crate::pages::system::{System, SystemMsg};
+use shared_stuff::db_structs::GroupData;
 
 use shared_stuff::ImageData;
 use yew::prelude::*;
 
-pub fn image_processing(image: Option<&ImageData>) -> String {
-    if let Some(image) = image {
-        let mut image_url = image.url.to_owned();
-        assert!(&image_url[image_url.len() - 4..] == ".jpg");
-        image_url.truncate(image_url.len() - 4);
-        image_url.push_str("._V1_QL75_UY74_CR30,0,50,74_.jpg");
-        image_url
-    } else {
-        "need to get a decent no pic available pic".to_string()
+impl System {
+    pub fn view_group_id(&self, ctx: &Context<Self>) -> Html {
+        html! {
+            <h3>{format!("group id is: {}", &ctx.props().id )}</h3>
+        }
     }
-}
 
-impl AddMovies {
+    pub fn user_customized_view(&self, ctx: &Context<Self>) -> Html {
+        match &self.group_data {
+            Some(group_data) => {
+                html! {
+                    <div>
+                    { self.view_group_data(ctx, &group_data) }
+                    </div>
+                }
+            }
+            None => {
+                html! {
+                    <p>{format!("This group doesn't exist or you don't have the access to it.")}</p>
+                }
+            }
+        }
+    }
+
+    fn view_group_data(&self, _ctx: &Context<Self>, group_data: &GroupData) -> Html {
+        html! {
+            <div>
+                <p>{format!("group data is:")}</p>
+                <li>{format!("Name: {}", group_data.group_name)}</li>
+                <li>{format!("Members: {:?}", group_data.members)}</li>
+                <li>{format!("Date created: {:?}", group_data.date_created)}</li>
+                <li>{format!("Movies watched: {:?}", group_data.movies_watched)}</li>
+            </div>
+        }
+    }
+
     pub fn search_results(&self, ctx: &Context<Self>) -> Html {
-        let callback = ctx.link().callback(AddMoviesMsg::AddMovie);
+        let callback = ctx.link().callback(SystemMsg::AddMovie);
         {
             log::info!("autocomplete_movies: {:?}", &self.autocomplete_movies);
             self.autocomplete_movies
@@ -68,7 +92,7 @@ impl AddMovies {
                         maxlength=50
                         oninput={
 
-                            ctx.link().callback(AddMoviesMsg::QueryAutocomplete)
+                            ctx.link().callback(SystemMsg::QueryAutocomplete)
                         }
                         />
                     <div class="search_results">
@@ -111,7 +135,7 @@ impl AddMovies {
                         </ul>
                     <button
                         class="delete entry" title = {movie.movie_title.clone()}
-                        onclick={&ctx.link().callback(AddMoviesMsg::DeleteEntry)}>
+                        onclick={&ctx.link().callback(SystemMsg::DeleteEntry)}>
                         { "delete entry" }
                     </button>
                         </div>
@@ -127,11 +151,23 @@ impl AddMovies {
             <div>
                 <button
                     class="save_movies"
-                    onclick={&ctx.link().callback(|_| AddMoviesMsg::SaveMovies)}>
+                    onclick={&ctx.link().callback(|_| SystemMsg::SaveMovies)}>
                     { "Save Movies" }
                 </button>
             </div>
 
         }
+    }
+}
+
+pub fn image_processing(image: Option<&ImageData>) -> String {
+    if let Some(image) = image {
+        let mut image_url = image.url.to_owned();
+        assert!(&image_url[image_url.len() - 4..] == ".jpg");
+        image_url.truncate(image_url.len() - 4);
+        image_url.push_str("._V1_QL75_UY74_CR30,0,50,74_.jpg");
+        image_url
+    } else {
+        "need to get a decent no pic available pic".to_string()
     }
 }

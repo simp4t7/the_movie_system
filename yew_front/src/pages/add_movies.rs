@@ -1,6 +1,7 @@
 use crate::{GET_GROUP_MOVIES_URL, SAVE_GROUP_MOVIES_URL, SEARCH_URL};
 use anyhow::{anyhow, Result};
 use gloo_storage::{LocalStorage, Storage};
+use gloo_timers::future::TimeoutFuture;
 use reqwasm::http::{Request, RequestMode};
 use shared_stuff::groups_stuff::{GroupForm, GroupInfo, GroupMoviesForm, UserGroupsJson};
 use shared_stuff::{ImdbQuery, MovieDisplay, YewMovieDisplay};
@@ -227,7 +228,7 @@ pub async fn request_save_movies_request(
     if let (Some(username), Some(group_name)) = (username, group_name) {
         let json_body = serde_json::to_string(&GroupMoviesForm {
             username,
-            group_name,
+            group_id: group_name,
             current_movies,
         })?;
         let _resp = Request::post(&SAVE_GROUP_MOVIES_URL)

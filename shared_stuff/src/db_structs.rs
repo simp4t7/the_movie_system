@@ -25,6 +25,12 @@ pub struct DBGroup {
     pub data: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DBGroupStruct {
+    pub id: String,
+    pub group_data: GroupData,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct GroupData {
     pub group_name: String,
