@@ -21,6 +21,8 @@ pub enum WarpRejections {
     AutocompleteError(String),
     AuthError(String),
     SqlxError(String),
+    GroupNotExist(String),
+    UserNotInGroup(String),
     Other(String),
 }
 

@@ -6,9 +6,8 @@ use argon2::{
     Argon2,
 };
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
-use shared_stuff::TokenResponse;
-use shared_stuff::{Claims, Token};
-//use shared_stuff::{DoubleTokenResponse, SingleTokenResponse};
+use shared_stuff::{Claims, Token, TokenResponse};
+use shared_stuff::db_structs::GroupData;
 use warp::reject::custom;
 use warp::{
     filters::header::headers_cloned,
@@ -25,6 +24,16 @@ pub fn with_auth() -> impl Filter<Extract = (String,), Error = Rejection> + Clon
         .map(move |headers: HeaderMap<HeaderValue>| headers)
         .and_then(authorize)
 }
+
+/*
+pub fn with_group_auth() -> impl Filter<Extract = (GroupData,), Error = Rejection> + Clone {
+    headers_cloned()
+        .map(move |headers: HeaderMap<HeaderValue>| headers)
+        .and_then(authorize);
+    let group_data = GroupData::new_empty();
+    Ok(group_data)
+}
+*/
 
 async fn authorize(headers: HeaderMap<HeaderValue>) -> Result<String> {
     match jwt_from_header(&headers) {

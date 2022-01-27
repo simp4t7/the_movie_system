@@ -13,41 +13,6 @@ use std::collections::HashSet;
 use uuid::Uuid;
 use warp::reject::custom;
 
-//impl GroupData {
-//pub fn new(input: GroupForm) -> Self {
-//let mut members_hash = HashSet::new();
-//members_hash.insert(input.username);
-//let now = chrono::Utc::now().timestamp();
-//let turn = String::from("");
-//Self {
-//group_name: input.group_name,
-//members: members_hash,
-//movies_watched: HashSet::new(),
-//current_movies: HashSet::new(),
-//turn,
-//date_created: now,
-//date_modified: now,
-//}
-//}
-//}
-
-//impl UserData {
-//pub async fn new(input: UserInfo) -> Result<Self> {
-//let id = Uuid::new_v4();
-//let (hashed_password, salt) = hasher(&input.password).await?;
-//let groups = HashSet::new();
-//let now = chrono::Utc::now().timestamp();
-//Ok(Self {
-//id,
-//hashed_password,
-//salt,
-//groups,
-//date_created: now,
-//date_modified: now,
-//})
-//}
-//}
-
 pub async fn create_user_data(input: UserInfo) -> Result<UserData> {
     let id = Uuid::new_v4();
     let (hashed_password, salt) = hasher(&input.password).await?;
@@ -167,9 +132,20 @@ pub async fn db_delete_user(db: &SqlitePool, username: &str) -> Result<()> {
     Ok(())
 }
 
+pub async fn verify_group_member(group_id: String, username: String, db: &SqlitePool) -> Result<GroupData> {
+    let group_data = db_get_group1(db, &group_id).await?;
+
+    let members = &group_data.members;
+    if members.contains(&username) {
+        Ok(group_data)
+    } else {
+        Err(custom(WarpRejections::UserNotInGroup(err_info!())))
+    }
+
+}
+
 pub async fn db_get_group1(db: &SqlitePool, group_id: &str) -> Result<GroupData> {
-    log::info!("inside db_get_group");
-    log::info!("group_id is: {:?}", &group_id);
+    log::info!("inside db_get_group1. group_id is: {:?}", &group_id);
     let mut conn = acquire_db(db).await?;
     let db_group = query_as!(
         DBGroup,
@@ -181,17 +157,62 @@ pub async fn db_get_group1(db: &SqlitePool, group_id: &str) -> Result<GroupData>
         group_id
     )
     .fetch_one(&mut conn)
+    .await;
+
+    match db_group {
+        Ok(db_group) => {
+            let group_data: GroupData = serde_json::from_str(&db_group.data)
+                .map_err(|_| custom(WarpRejections::SerializationError(err_info!())))?;
+            Ok(group_data)
+        },
+        Err(_) => {
+            log::info!("Cannot find group_id {} in db", &group_id);
+            Err(custom(WarpRejections::GroupNotExist(err_info!())))?
+        }
+    }
+
+}
+
+pub async fn db_add_user_to_group1(group_id: &str, new_member: String, db: &SqlitePool) -> Result<()> {
+    let mut group_data = db_get_group1(db, group_id).await?;
+    let mut group_members = group_data.members;
+
+    group_members.insert(new_member.clone());
+    group_data.members = group_members;
+    db_update_group1(db, group_id, group_data.clone()).await?;
+    log::info!("group_data members updated");
+
+    let mut user_info = db_get_user(db, &new_member).await?;
+    let group_uuid = Uuid::parse_str(&group_id)
+        .map_err(|_e| custom(WarpRejections::UuidError(err_info!())))?;
+    let group_info = GroupInfo {
+        uuid: group_uuid.to_string(),
+        name: group_data.group_name.clone(),
+    };
+    user_info.1.groups.insert(group_info);
+    db_update_user(db, user_info).await?;
+    log::info!("user group_info updated");
+    Ok(())
+}
+
+pub async fn db_update_group1(db: &SqlitePool, group_id: &str, new_group_data: GroupData) -> Result<()> {
+    let mut conn = acquire_db(db).await?;
+    let serialized_group_data = serde_json::to_string(&new_group_data).expect("serialization error");
+    query!(
+        r#"
+            update groups set data=$1 where id=$2
+        "#,
+        serialized_group_data,
+        group_id,
+    )
+    .execute(&mut conn)
     .await
     .map_err(|_| custom(WarpRejections::SqlxError(err_info!())))?;
 
-    let (_, group_data) = db_get_group_data(db_group)?;
-
-    Ok(group_data)
+    Ok(())
 }
-
 pub async fn db_get_group(db: &SqlitePool, group_id: &str) -> Result<(String, GroupData)> {
-    log::info!("inside db_get_group");
-    log::info!("group_id is: {:?}", &group_id);
+    log::info!("inside db_get_group. group_id is: {:?}", &group_id);
     let mut conn = acquire_db(db).await?;
     let db_group = query_as!(
         DBGroup,
@@ -207,7 +228,6 @@ pub async fn db_get_group(db: &SqlitePool, group_id: &str) -> Result<(String, Gr
     .map_err(|_| custom(WarpRejections::SqlxError(err_info!())))?;
 
     let group_data = db_get_group_data(db_group)?;
-
     Ok(group_data)
 }
 
@@ -271,8 +291,8 @@ pub async fn db_delete_group(db: &SqlitePool, group_id: &str) -> Result<()> {
 
 pub async fn db_get_group_members(db: &SqlitePool, group_id: &str) -> Result<HashSet<String>> {
     log::info!("inside db_get_group_members");
-    let db_group_data = db_get_group(db, group_id).await?;
-    let members = db_group_data.1.members;
+    let db_group_data = db_get_group1(db, group_id).await?;
+    let members = db_group_data.members;
     log::info!("members are: {:?}", &members);
     Ok(members)
 }
