@@ -23,7 +23,7 @@ use crate::new_db_stuff::{
     db_add_group_to_user, db_add_user_to_group, db_get_all_group_names,
     db_get_group_movies, db_get_user, db_get_user_groups, db_insert_group, db_insert_user,
     db_save_group_movies, db_user_leave_group, create_user_data, create_group_data,
-    db_get_group, db_get_group1, verify_group_member,
+    db_get_group, db_get_group1, verify_group_member, db_add_user_to_group1,
 };
 
 pub fn get_group_data(
@@ -47,23 +47,39 @@ pub fn get_group_data(
         })
 }
 
-pub fn get_group_data_auth(
+pub fn add_user_to_group_param(
     state: &State,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
-    warp::path("get_group_data")
+    warp::path("add_user")
         .and(warp::path::param())
+        .and(warp::body::json())
         .and(with_auth())
         .and(with_db(state.db.clone()))
-        .and_then(|group_id: String, username: String, db: SqlitePool| async move {
-            match verify_group_member(group_id, username, &db).await {
-                Ok(group_data) => {
-                    let json_resp = serde_json::to_string(&group_data)
-                        .map_err(|_| custom(WarpRejections::SerializationError(err_info!())))?;
-                    Ok(json_resp)
-                },
-                Err(e) => Err(e),
-            }
-        }
+        .and_then(
+            |group_id: String, add_user: BasicUsername, _username: String, db: SqlitePool| async move {
+                let add_username = add_user.username;
+                match db_add_user_to_group1(&group_id, add_username, &db).await {
+                    Ok(_) => Ok(warp::reply()),
+                    Err(e) => Err(e),
+                }
+            },
+        )
+}
+
+pub fn add_user_to_group(
+    state: &State,
+) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+    warp::path("add_user")
+        .and(warp::body::json())
+        .and(with_auth())
+        .and(with_db(state.db.clone()))
+        .and_then(
+            |user: AddUser, _username: String, db: SqlitePool| async move {
+                match db_add_user_to_group(&db, &user).await {
+                    Ok(_) => Ok(warp::reply()),
+                    Err(e) => Err(e),
+                }
+            },
         )
 }
 
@@ -103,22 +119,6 @@ pub fn save_group_movies(
         })
 }
 
-pub fn add_user_to_group(
-    state: &State,
-) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
-    warp::path("add_user")
-        .and(warp::body::json())
-        .and(with_auth())
-        .and(with_db(state.db.clone()))
-        .and_then(
-            |user: AddUser, _username: String, db: SqlitePool| async move {
-                match db_add_user_to_group(&db, &user).await {
-                    Ok(_) => Ok(warp::reply()),
-                    Err(e) => Err(e),
-                }
-            },
-        )
-}
 
 pub fn get_groups(
     state: &State,

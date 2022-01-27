@@ -5,6 +5,7 @@ use warp_back::error_handling::Result;
 
 use warp_back::routes::{
     add_user_to_group, create_group, get_group_movies, get_groups, leave_group, save_group_movies, get_group_data,
+    add_user_to_group_param,
 };
 use warp_back::routes::{authorize_access, authorize_refresh, login, register, search};
 use warp_back::State;
@@ -29,7 +30,7 @@ async fn main() -> Result<()> {
         .or(create_group(&state))
         .or(leave_group(&state))
         .or(get_groups(&state))
-        .or(add_user_to_group(&state))
+        .or(add_user_to_group_param(&state))
         .or(get_group_movies(&state))
         .or(save_group_movies(&state))
         .or(get_group_data(&state))

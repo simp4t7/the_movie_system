@@ -15,12 +15,22 @@ use yew::prelude::*;
 pub async fn request_get_all_group_movies(group_id: String) -> Result<GroupData> {
     let uri = GET_GROUP_DATA_URL.to_string();
     let url = format!("{}/{}", uri, group_id);
-    log::info!("request_get_all_group_movies url: {:?}", &url);
     let resp = get_route_with_auth(&url).await?;
     log::info!("request_get_all_group_movies resp: {:?}", &resp);
     let group_data: GroupData = resp.json().await?;
     log::info!("request_get_all_group_movies group_data: {:?}", &group_data);
     Ok(group_data)
+}
+
+pub async fn request_add_new_user(group_id: String, add_user: String) -> Result<()> {
+    let uri = ADD_USER_URL.to_string();
+    let url = format!("{}/{}", uri, group_id);
+    let json_body = serde_json::to_string(
+        &BasicUsername { username: add_user }
+        )?;
+    let resp = post_route_with_auth(&url, json_body).await?;
+    log::info!("request_add_new_user resp: {:?}", &resp);
+    Ok(())
 }
 
 #[derive(Properties, Debug, PartialEq, Clone)]
@@ -33,11 +43,14 @@ pub struct Group {
     pub group_id: String,
     pub group_data: Option<GroupData>,
     pub autocomplete_movies: HashMap<String, MovieDisplay>,
+    pub add_user: String,
 }
 pub enum GroupMsg {
     Noop,
     GetGroupData,
     UpdateGroupData(GroupData),
+    SetAddUser(InputEvent),
+    AddUser,
     Error(String),
 }
 
@@ -51,6 +64,7 @@ impl Component for Group {
             group_id: id.to_string(),
             group_data: None,
             autocomplete_movies: HashMap::new(),
+            add_user: String::from(""),
         }
     }
 
@@ -75,6 +89,22 @@ impl Component for Group {
 
             UpdateGroupData(group_data) => self.group_data = Some(group_data),
 
+            AddUser => {
+                let add_user = self.add_user.clone();
+                link_clone.send_future(async move {
+                    let resp = request_add_new_user(id, add_user).await;
+                    log::info!("{:?}", &resp);
+                    GroupMsg::Noop
+                })
+            }
+
+            SetAddUser(text) => {
+                if let Some(elem) = text.target_dyn_into::<HtmlInputElement>() {
+                    log::info!("add_user value: {:?}", &elem.value());
+                    self.add_user = elem.value();
+                }
+            }
+
             Error(err_msg) => {
                 log::info!("{:?}", &err_msg);
             },
@@ -91,6 +121,7 @@ impl Component for Group {
             <div>
             { self.view_group_id(ctx) }
             { self.view_group_data(ctx) }
+            { self.view_add_user_to_group(ctx) }
             </div>
 
         }
@@ -105,7 +136,7 @@ impl Group {
         }
     }
 
-    fn view_group_data(&self, ctx: &Context<Self>) -> Html {
+    fn view_group_data(&self, _ctx: &Context<Self>) -> Html {
         match &self.group_data {
             Some(group_data) => {
                 html! {
@@ -117,6 +148,25 @@ impl Group {
                     <p>{format!("No group data")}</p>
                 }
             }
+        }
+    }
+
+    fn view_add_user_to_group(&self, ctx: &Context<Self>) -> Html {
+        html! {
+        <div>
+            <h1> {"Add User"} </h1>
+            <input
+                class="add_user"
+                placeholder="username"
+                maxlength=50
+                oninput={ctx.link().callback(GroupMsg::SetAddUser)}
+            />
+            <button
+                class="create_group_button"
+                onclick={&ctx.link().callback(|_| GroupMsg::AddUser)}>
+                { "Add User" }
+            </button>
+        </div>
         }
     }
 }

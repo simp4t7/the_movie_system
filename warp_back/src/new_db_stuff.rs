@@ -173,6 +173,44 @@ pub async fn db_get_group1(db: &SqlitePool, group_id: &str) -> Result<GroupData>
 
 }
 
+pub async fn db_add_user_to_group1(group_id: &str, new_member: String, db: &SqlitePool) -> Result<()> {
+    let mut group_data = db_get_group1(db, group_id).await?;
+    let mut group_members = group_data.members;
+
+    group_members.insert(new_member.clone());
+    group_data.members = group_members;
+    db_update_group1(db, group_id, group_data.clone()).await?;
+    log::info!("group_data members updated");
+
+    let mut user_info = db_get_user(db, &new_member).await?;
+    let group_uuid = Uuid::parse_str(&group_id)
+        .map_err(|_e| custom(WarpRejections::UuidError(err_info!())))?;
+    let group_info = GroupInfo {
+        uuid: group_uuid.to_string(),
+        name: group_data.group_name.clone(),
+    };
+    user_info.1.groups.insert(group_info);
+    db_update_user(db, user_info).await?;
+    log::info!("user group_info updated");
+    Ok(())
+}
+
+pub async fn db_update_group1(db: &SqlitePool, group_id: &str, new_group_data: GroupData) -> Result<()> {
+    let mut conn = acquire_db(db).await?;
+    let serialized_group_data = serde_json::to_string(&new_group_data).expect("serialization error");
+    query!(
+        r#"
+            update groups set data=$1 where id=$2
+        "#,
+        serialized_group_data,
+        group_id,
+    )
+    .execute(&mut conn)
+    .await
+    .map_err(|_| custom(WarpRejections::SqlxError(err_info!())))?;
+
+    Ok(())
+}
 pub async fn db_get_group(db: &SqlitePool, group_id: &str) -> Result<(String, GroupData)> {
     log::info!("inside db_get_group. group_id is: {:?}", &group_id);
     let mut conn = acquire_db(db).await?;
