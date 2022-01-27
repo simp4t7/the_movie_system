@@ -33,6 +33,15 @@ pub async fn request_add_new_user(group_id: String, add_user: String) -> Result<
     Ok(())
 }
 
+pub async fn request_leave_group(group_id: String) -> Result<()> {
+    let uri = LEAVE_GROUP_URL.to_string();
+    let url = format!("{}/{}", uri, group_id);
+    let json_body = String::from("");
+    let resp = post_route_with_auth(&url, json_body).await?;
+    log::info!("request_leave_group resp: {:?}", &resp);
+    Ok(())
+}
+
 #[derive(Properties, Debug, PartialEq, Clone)]
 pub struct Props {
     pub id: String,
@@ -51,6 +60,7 @@ pub enum GroupMsg {
     UpdateGroupData(GroupData),
     SetAddUser(InputEvent),
     AddUser,
+    Leave,
     Error(String),
 }
 
@@ -105,6 +115,14 @@ impl Component for Group {
                 }
             }
 
+            Leave => {
+                ctx.link().send_future(async move {
+                    let resp = request_leave_group(id).await;
+                    log::info!("{:?}", &resp);
+                    GroupMsg::Noop
+                })
+            }
+
             Error(err_msg) => {
                 log::info!("{:?}", &err_msg);
             },
@@ -122,6 +140,7 @@ impl Component for Group {
             { self.view_group_id(ctx) }
             { self.view_group_data(ctx) }
             { self.view_add_user_to_group(ctx) }
+            { self.view_leave_group(ctx) }
             </div>
 
         }
@@ -165,6 +184,19 @@ impl Group {
                 class="create_group_button"
                 onclick={&ctx.link().callback(|_| GroupMsg::AddUser)}>
                 { "Add User" }
+            </button>
+        </div>
+        }
+    }
+
+    pub fn view_leave_group(&self, ctx: &Context<Self>) -> Html {
+        html! {
+        <div>
+            <h1> {"Leave Group"} </h1>
+            <button
+                class="create_group_button"
+                onclick={ctx.link().callback(|_| GroupMsg::Leave)}>
+                { "Leave Group" }
             </button>
         </div>
         }
