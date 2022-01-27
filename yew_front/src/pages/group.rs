@@ -33,6 +33,15 @@ pub async fn request_add_new_user(group_id: String, add_user: String) -> Result<
     Ok(())
 }
 
+pub async fn request_leave_group(group_id: String) -> Result<()> {
+    let uri = LEAVE_GROUP_URL.to_string();
+    let url = format!("{}/{}", uri, group_id);
+    let json_body = String::from("");
+    let resp = post_route_with_auth(&url, json_body).await?;
+    log::info!("request_leave_group resp: {:?}", &resp);
+    Ok(())
+}
+
 #[derive(Properties, Debug, PartialEq, Clone)]
 pub struct Props {
     pub id: String,
@@ -51,6 +60,7 @@ pub enum GroupMsg {
     UpdateGroupData(GroupData),
     SetAddUser(InputEvent),
     AddUser,
+    Leave,
     Error(String),
 }
 
@@ -105,6 +115,14 @@ impl Component for Group {
                 }
             }
 
+            Leave => {
+                ctx.link().send_future(async move {
+                    let resp = request_leave_group(id).await;
+                    log::info!("{:?}", &resp);
+                    GroupMsg::Noop
+                })
+            }
+
             Error(err_msg) => {
                 log::info!("{:?}", &err_msg);
             },
@@ -122,6 +140,7 @@ impl Component for Group {
             { self.view_group_id(ctx) }
             { self.view_group_data(ctx) }
             { self.view_add_user_to_group(ctx) }
+            { self.view_leave_group(ctx) }
             </div>
 
         }
@@ -169,76 +188,18 @@ impl Group {
         </div>
         }
     }
-}
 
-/*
-use shared_stuff::{ImdbQuery, MovieDisplay, YewMovieDisplay, db_structs::GroupData};
-use std::collections::{HashMap, HashSet};
-use crate::GET_GROUP_DATA_URL;
-use yew::prelude::*;
-use anyhow::Result;
-use crate::utils::get_route_with_auth;
-
-#[derive(Properties, Debug, PartialEq, Clone)]
-pub struct Props {
-    pub id: String,
-}
-
-pub enum GroupMsg {
-    Noop,
-    GetGroupData,
-    // Error(String),
-}
-
-pub struct Group {
-    pub autocomplete_movies: HashMap<String, MovieDisplay>,
-    pub group_data: GroupData,
-    pub group_id: String,
-}
-
-impl Component for Group {
-    type Message = GroupMsg;
-    type Properties = Props;
-
-    fn create(ctx: &Context<Self>) -> Self {
-        log::info!("creating group page for group_id: {}", &ctx.props().id);
-        let id_ptr = &ctx.props().id.to_string();
-        ctx.link().send_message(GroupMsg::GetGroupData);
-
-        Self {
-            autocomplete_movies: HashMap::new(),
-            group_data: GroupData::new_empty(),
-            group_id: id_ptr.to_owned(),
-        }
-    }
-
-    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
-        use GroupMsg::*;
-        let link_clone = ctx.link().clone();
-        let group_id = &ctx.props().id.clone();
-
-        match msg {
-            GetGroupData => link_clone.send_future(async move {
-                let g = request_group_movie_list(self.group_id).await; 
-                GroupMsg::Noop
-            }),
-            Noop => {}
-        }
-        true
-    }
-
-    fn view(&self, ctx: &Context<Self>) -> Html {
+    pub fn view_leave_group(&self, ctx: &Context<Self>) -> Html {
         html! {
-            <h3>{format!("group id is: {}", &ctx.props().id )}</h3>
+        <div>
+            <h1> {"Leave Group"} </h1>
+            <button
+                class="create_group_button"
+                onclick={ctx.link().callback(|_| GroupMsg::Leave)}>
+                { "Leave Group" }
+            </button>
+        </div>
         }
     }
 }
 
-pub async fn request_group_movie_list(group_id: String) -> Result<GroupData> {
-    let uri = GET_GROUP_DATA_URL.to_string();
-    let url = format!("{:?}/{:?}", uri, group_id);
-    let resp = get_route_with_auth(&url).await?;
-    let group_data: GroupData = resp.json().await?;
-    Ok(group_data)
-}
-*/

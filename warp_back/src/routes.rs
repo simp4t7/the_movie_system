@@ -22,7 +22,7 @@ use warp::Filter;
 use crate::new_db_stuff::{
     db_add_group_to_user, db_add_user_to_group, db_get_all_group_names,
     db_get_group_movies, db_get_user, db_get_user_groups, db_insert_group, db_insert_user,
-    db_save_group_movies, db_user_leave_group, create_user_data, create_group_data,
+    db_save_group_movies, db_user_leave_group, db_user_leave_group1, create_user_data, create_group_data,
     db_get_group, db_get_group1, verify_group_member, db_add_user_to_group1,
 };
 
@@ -59,6 +59,23 @@ pub fn add_user_to_group_param(
             |group_id: String, add_user: BasicUsername, _username: String, db: SqlitePool| async move {
                 let add_username = add_user.username;
                 match db_add_user_to_group1(&group_id, add_username, &db).await {
+                    Ok(_) => Ok(warp::reply()),
+                    Err(e) => Err(e),
+                }
+            },
+        )
+}
+
+pub fn leave_group1(
+    state: &State,
+) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+    warp::path("leave_group")
+        .and(warp::path::param())
+        .and(with_auth())
+        .and(with_db(state.db.clone()))
+        .and_then(
+            |group_id:String, username: String, db: SqlitePool| async move {
+                match db_user_leave_group1(&db, username, &group_id).await {
                     Ok(_) => Ok(warp::reply()),
                     Err(e) => Err(e),
                 }

@@ -211,6 +211,46 @@ pub async fn db_update_group1(db: &SqlitePool, group_id: &str, new_group_data: G
 
     Ok(())
 }
+
+pub async fn db_user_leave_group1(db: &SqlitePool, username: String, group_id: &str) -> Result<()> {
+    let mut group_data = db_get_group1(db, group_id).await?;
+    let group_name = &group_data.group_name;
+    let group_members = group_data.members;
+    let mut user_name_and_data = db_get_user(db, &username).await?;
+    let user_groups = user_name_and_data.1.groups;
+
+    let user_groups = user_groups
+        .iter()
+        .filter(|group_info| !group_info.name.eq(group_name))
+        .cloned()
+        .collect::<HashSet<GroupInfo>>();
+    user_name_and_data.1.groups = user_groups;
+    db_update_user(db, user_name_and_data).await?;
+    log::info!("db_user_leave_group1 - User GroupInfo updated");
+
+    let updated_group_members = group_members
+        .iter()
+        .filter(|name| !username.eq(*name))
+        .map(|name| name.to_owned())
+        .collect::<HashSet<String>>();
+    log::info!("group_members is: {:?}", &group_members);
+    group_data.members = updated_group_members.clone();
+
+    match updated_group_members.is_empty() {
+        true => {
+            log::info!("no members. deleting group");
+            db_delete_group(db, &group_id).await?
+        }
+        false => {
+            log::info!("updating group info");
+            db_update_group1(db, &group_id, group_data).await?
+        }
+    }
+    log::info!("db_user_leave_group1 - GroupData updated");
+
+    Ok(())
+}
+
 pub async fn db_get_group(db: &SqlitePool, group_id: &str) -> Result<(String, GroupData)> {
     log::info!("inside db_get_group. group_id is: {:?}", &group_id);
     let mut conn = acquire_db(db).await?;
