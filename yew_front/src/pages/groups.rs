@@ -59,15 +59,10 @@ pub struct Groups {
 }
 pub enum GroupsMsg {
     Noop,
-    GroupAdd(InputEvent),
     UpdateGroups(HashSet<GroupInfo>),
     CreateGroup,
-    LeaveGroup,
     CreateGroupName(InputEvent),
-    LeaveGroupName(InputEvent),
-    AddUser(InputEvent),
-    SetCurrentGroup(MouseEvent),
-    AddNewUser,
+    // SetCurrentGroup(MouseEvent),
     GetAllGroups,
 }
 
@@ -99,14 +94,6 @@ impl Component for Groups {
         use GroupsMsg::*;
         match msg {
             Noop => {}
-            SetCurrentGroup(group) => {
-                if let Some(elem) = group.target_dyn_into::<HtmlElement>() {
-                    log::info!("inside set current group");
-                    storage
-                        .set("current_group", &elem.inner_text())
-                        .expect("storage issue");
-                }
-            }
             UpdateGroups(groups_vec) => {
                 storage
                     .set(
@@ -125,45 +112,10 @@ impl Component for Groups {
                     .expect("problem getting groups");
                 GroupsMsg::UpdateGroups(groups)
             }),
-            GroupAdd(text) => {
-                if let Some(elem) = text.target_dyn_into::<HtmlInputElement>() {
-                    self.group_add = elem.value();
-                }
-            }
-            LeaveGroup => {
-                let group_name = self.leave_group_name.clone();
-                log::info!("username: {:?}, group_name: {:?}", &username, &group_name);
-                ctx.link().send_future(async move {
-                    let resp = request_leave_group(username, group_name).await;
-                    log::info!("{:?}", &resp);
-                    GroupsMsg::Noop
-                })
-            }
             CreateGroupName(text) => {
                 if let Some(elem) = text.target_dyn_into::<HtmlInputElement>() {
                     log::info!("group_name value: {:?}", &elem.value());
                     self.create_group_name = elem.value();
-                }
-            }
-            LeaveGroupName(text) => {
-                if let Some(elem) = text.target_dyn_into::<HtmlInputElement>() {
-                    log::info!("group_name value: {:?}", &elem.value());
-                    self.leave_group_name = elem.value();
-                }
-            }
-            AddNewUser => {
-                let add_user = self.add_user.clone();
-                let group_add = self.group_add.clone();
-                ctx.link().send_future(async move {
-                    let resp = request_add_user(username, add_user, group_add).await;
-                    log::info!("{:?}", &resp);
-                    GroupsMsg::Noop
-                })
-            }
-            AddUser(text) => {
-                if let Some(elem) = text.target_dyn_into::<HtmlInputElement>() {
-                    log::info!("add_user value: {:?}", &elem.value());
-                    self.add_user = elem.value();
                 }
             }
             CreateGroup => {
@@ -175,6 +127,16 @@ impl Component for Groups {
                     GroupsMsg::GetAllGroups
                 })
             }
+            /*
+            SetCurrentGroup(group) => {
+                if let Some(elem) = group.target_dyn_into::<HtmlElement>() {
+                    log::info!("inside set current group");
+                    storage
+                        .set("current_group", &elem.inner_text())
+                        .expect("storage issue");
+                }
+            }
+            */
         }
         true
     }
@@ -187,8 +149,6 @@ impl Component for Groups {
         html! {
         <div>
         { self.create_group(ctx) }
-        { self.leave_group(ctx) }
-        { self.add_user_to_group(ctx) }
          <h1> {"Current Groups"} </h1>
         { self.display_current_groups(ctx) }
         </div> }
