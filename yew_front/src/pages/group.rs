@@ -138,9 +138,7 @@ impl Component for Group {
         html! {
             <div>
             { self.view_group_id(ctx) }
-            { self.view_group_data(ctx) }
-            { self.view_add_user_to_group(ctx) }
-            { self.view_leave_group(ctx) }
+            { self.user_customized_view(ctx) }
             </div>
 
         }
@@ -155,18 +153,34 @@ impl Group {
         }
     }
 
-    fn view_group_data(&self, _ctx: &Context<Self>) -> Html {
+    fn user_customized_view(&self, ctx: &Context<Self>) -> Html {
         match &self.group_data {
             Some(group_data) => {
                 html! {
-                    <p>{format!("group data is: {:?}", group_data)}</p>
+                    <div>
+                    { self.view_group_data(ctx, &group_data) }
+                    { self.view_add_user_to_group(ctx) }
+                    { self.view_leave_group(ctx) }
+                    </div>
                 }
             },
             None => {
                 html! {
-                    <p>{format!("No group data")}</p>
+                    <p>{format!("This group doesn't exist or you don't have the access to it.")}</p>
                 }
             }
+        }
+    }
+
+    fn view_group_data(&self, _ctx: &Context<Self>, group_data: &GroupData) -> Html {
+        html! {
+            <div>
+                <p>{format!("group data is:")}</p>
+                <li>{format!("Name: {}", group_data.group_name)}</li>
+                <li>{format!("Members: {:?}", group_data.members)}</li>
+                <li>{format!("Date created: {:?}", group_data.date_created)}</li>
+                <li>{format!("Movies watched: {:?}", group_data.movies_watched)}</li>
+            </div>
         }
     }
 

@@ -29,6 +29,10 @@ lazy_static! {
         load_dotenv!();
         env!("ROOT_URL")
     };
+    pub static ref CORS_ORIGIN: &'static str = {
+        load_dotenv!();
+        env!("CORS_ORIGIN")
+    };
     pub static ref SEARCH_URL: String = format!("{}/search", *ROOT_URL);
     pub static ref LOGIN_URL: String = format!("{}/login", *ROOT_URL);
     pub static ref REGISTER_URL: String = format!("{}/register", *ROOT_URL);
