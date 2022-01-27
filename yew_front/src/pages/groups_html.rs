@@ -31,6 +31,7 @@ impl Groups {
                 .iter()
                 .map(|group| {
                     let group_url = format!("{}/group/{}", CORS_ORIGIN.to_string(), &group.uuid);
+                    let system_url = format!("{}/system/{}", CORS_ORIGIN.to_string(), &group.uuid);
                     html! {
                         <div>
                             <li>
@@ -39,6 +40,10 @@ impl Groups {
                             <p>
                                 {"group url: "}
                                 <a href= {group_url.clone()}>{group_url}</a>
+                            </p>
+                            <p>
+                                {"system url: "}
+                                <a href= {system_url.clone()}>{system_url}</a>
                             </p>
                         </div>
                     }

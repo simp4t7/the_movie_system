@@ -22,6 +22,7 @@ use pages::groups::Groups;
 use pages::home::Home;
 use pages::login::Login;
 use pages::register::Register;
+use pages::system::System;
 use pages::the_system::TheSystem;
 
 lazy_static! {
@@ -65,6 +66,8 @@ pub enum Route {
     User { username: String },
     #[at("/group/:group_id")]
     Group { group_id: String },
+    #[at("/system/:group_id")]
+    System { group_id: String },
     #[at("/404")]
     NotFound,
 }
@@ -196,6 +199,7 @@ fn switch(routes: &Route) -> Html {
         Route::TheSystem => html!{<TheSystem />},
         Route::User { username: _ }=> html!{<Groups />},
         Route::Group { group_id } => html!{<Group id={group_id.clone()}/>},
+        Route::System { group_id } => html!{<System id={group_id.clone()}/>},
         //TODO! something for bad urls?
         Route::NotFound => html!{},
     }}
