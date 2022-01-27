@@ -1,6 +1,6 @@
 use crate::utils::get_route_with_auth;
 use crate::utils::post_route_with_auth;
-use crate::{ADD_USER_URL, CREATE_GROUP_URL, GET_ALL_GROUPS_URL, LEAVE_GROUP_URL, GET_GROUP_DATA_URL};
+use crate::{CORS_ORIGIN, ADD_USER_URL, CREATE_GROUP_URL, GET_ALL_GROUPS_URL, LEAVE_GROUP_URL, GET_GROUP_DATA_URL};
 use anyhow::Result;
 use gloo_storage::{LocalStorage, Storage};
 use serde_json::to_string;
@@ -173,6 +173,7 @@ impl Group {
     }
 
     fn view_group_data(&self, _ctx: &Context<Self>, group_data: &GroupData) -> Html {
+        let system_url = format!("{}/system/{}", CORS_ORIGIN.to_string(), self.group_id);
         html! {
             <div>
                 <p>{format!("group data is:")}</p>
@@ -180,6 +181,10 @@ impl Group {
                 <li>{format!("Members: {:?}", group_data.members)}</li>
                 <li>{format!("Date created: {:?}", group_data.date_created)}</li>
                 <li>{format!("Movies watched: {:?}", group_data.movies_watched)}</li>
+                <li>
+                    {"system url: "}
+                    <a href= {system_url.clone()}>{system_url}</a>
+                </li>
             </div>
         }
     }
