@@ -125,6 +125,7 @@ pub fn save_group_movies(
         .and(warp::body::json())
         .and(with_db(state.db.clone()))
         .and_then(|group_struct: DBGroupStruct, db: SqlitePool| async move {
+            log::info!("save_group_movies -> group_struct: {:?}", &group_struct);
             match db_save_group_movies(&db, &group_struct).await {
                 Ok(_) => Ok(warp::reply()),
                 Err(e) => {

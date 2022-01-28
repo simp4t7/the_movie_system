@@ -1,5 +1,6 @@
 use crate::pages::system::{System, SystemMsg};
-use shared_stuff::db_structs::GroupData;
+use shared_stuff::db_structs::{GroupData, SystemState};
+use shared_stuff::YewMovieDisplay;
 
 use shared_stuff::ImageData;
 use yew::prelude::*;
@@ -116,31 +117,64 @@ impl System {
         }
     }
 
+    pub fn ready_status_buttons(&self, ctx: &Context<Self>) -> Html {
+        html! {
+            <div>
+            <button
+                class="ready_status"
+                onclick={&ctx.link().callback(|_|SystemMsg::SetReady)}>
+                { "I'm ready!" }
+            </button>
+            <button
+                class="ready_status"
+                onclick={&ctx.link().callback(|_|SystemMsg::UnsetReady)}>
+                { "Nah, not ready" }
+            </button>
+            </div>
+
+        }
+    }
+
+    pub fn delete_movie_button(&self, ctx: &Context<Self>, movie: YewMovieDisplay) -> Html {
+        if let Some(data) = self.group_data.clone() {
+            if data.system_state == SystemState::AddingMovies && self.username == movie.added_by {
+                html! {
+                <button
+                    class="delete entry" title = {movie.movie_title.clone()}
+                    onclick={&ctx.link().callback(move|_| SystemMsg::DeleteEntry(movie.clone()))}>
+                    { "delete entry" }
+                </button>  }
+            } else {
+                html! {}
+            }
+        } else {
+            html! {}
+        }
+    }
+
     pub fn added_movies(&self, ctx: &Context<Self>) -> Html {
         {
-            self.added_movies
-                .values()
+            log::info!("self.current_movies: {:?}", &self.current_movies);
+            let current = self.current_movies.clone();
+            current
+                .iter()
+                .cloned()
                 .map(|movie| {
                     let _formatted =
                         format!("{} {}", &movie.movie_title, &movie.movie_year.unwrap());
                     html! {
-                        <div class="temp_movies">
-                        <img class="search_results_image"
-                            src={image_processing(movie.movie_images.as_ref())}/>
-                        <ul>
-                        <li> {&movie.movie_title} </li>
-                        <li> {&movie.movie_year.unwrap()} </li>
-                        <li> {format!("added by: {}", &movie.added_by)} </li>
+                            <div class="temp_movies">
+                            <img class="search_results_image"
+                                src={image_processing(movie.movie_images.as_ref())}/>
+                            <ul>
+                            <li> {&movie.movie_title} </li>
+                            <li> {&movie.movie_year.unwrap()} </li>
+                            <li> {format!("added by: {}", &movie.added_by)} </li>
+                            </ul>
+                            {   self.delete_movie_button(ctx, movie) }
+                            </div>
 
-                        </ul>
-                    <button
-                        class="delete entry" title = {movie.movie_title.clone()}
-                        onclick={&ctx.link().callback(SystemMsg::DeleteEntry)}>
-                        { "delete entry" }
-                    </button>
-                        </div>
-
-                            }
+                    }
                 })
                 .collect::<Html>()
         }

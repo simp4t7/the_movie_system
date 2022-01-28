@@ -23,7 +23,7 @@ pub struct System {
     pub group_id: String,
     pub group_data: Option<GroupData>,
     pub autocomplete_movies: HashMap<String, MovieDisplay>,
-    pub added_movies: HashMap<String, YewMovieDisplay>,
+    pub current_movies: HashSet<YewMovieDisplay>,
 }
 pub enum SystemMsg {
     Noop,
@@ -31,11 +31,12 @@ pub enum SystemMsg {
     UpdateGroupData(GroupData),
     Error(String),
     SaveMovies,
-    DeleteEntry(MouseEvent),
-    UpdateCurrentMovies(Vec<YewMovieDisplay>),
+    DeleteEntry(YewMovieDisplay),
     QueryAutocomplete(InputEvent),
     UpdateAutocomplete(Vec<MovieDisplay>),
     AddMovie(MouseEvent),
+    SetReady,
+    UnsetReady,
 }
 
 impl Component for System {
@@ -46,7 +47,7 @@ impl Component for System {
         let storage = LocalStorage::raw();
         let id = &ctx.props().id;
         let mut username = String::from("");
-        let added_movies = HashMap::new();
+        let current_movies = HashSet::new();
         if let Some(user) = storage.get("username").expect("storage error") {
             username = user;
         }
@@ -55,34 +56,28 @@ impl Component for System {
             group_id: id.to_string(),
             group_data: None,
             autocomplete_movies: HashMap::new(),
-            added_movies,
+            current_movies,
         }
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         let link_clone = ctx.link().clone();
         let id = self.group_id.clone();
-        let storage = LocalStorage::raw();
+        if let Some(data) = self.group_data.clone() {
+            self.current_movies = data.current_movies;
+        }
         use SystemMsg::*;
         match msg {
             Noop => {}
-            UpdateCurrentMovies(movies) => {
-                log::info!("inside update current movies");
-                let movie_string = serde_json::to_string(&movies).expect("serialization error");
-                storage
-                    .set("added_movies", &movie_string)
-                    .expect("storage problem");
-                log::info!("inside update: {:?}", &movies);
-                for i in movies {
-                    self.added_movies.insert(i.movie_id.clone(), i);
-                }
-                log::info!("added_movies: {:?}", &self.added_movies);
-            }
+            SetReady => {}
+            UnsetReady => {}
             SaveMovies => {
                 log::info!("inside save movies");
                 let group_id = self.group_id.clone();
                 let data = self.group_data.clone();
-                if let Some(group_data) = data {
+                if let Some(mut group_data) = data {
+                    log::info!("inside SaveMovies, group_data: {:?}", &group_data);
+                    group_data.current_movies = self.current_movies.clone();
                     link_clone.send_future(async move {
                         let resp = new_request_save_movies_request(group_id, group_data).await;
                         log::info!("resp is: {:?}", &resp);
@@ -92,15 +87,15 @@ impl Component for System {
             }
 
             DeleteEntry(movie) => {
-                if let Some(elem) = movie.target_dyn_into::<HtmlElement>() {
-                    log::trace!("inside AddMovie");
-                    log::trace!("{:?}", &elem.title());
-                    log::trace!("checking added movies: {:?}", &self.added_movies);
-                    self.added_movies.remove(&elem.title());
+                //if let Some(elem) = movie.target_dyn_into::<HtmlElement>() {
+                //}
+                self.current_movies.remove(&movie);
+                if let Some(mut data) = self.group_data.clone() {
+                    data.current_movies = self.current_movies.clone();
+                    self.group_data = Some(data);
                 }
             }
             AddMovie(movie) => {
-                let storage = LocalStorage::raw();
                 if let Some(elem) = movie.target_dyn_into::<HtmlElement>() {
                     log::info!("inside AddMovie");
                     log::info!("checking current movies: {:?}", &self.autocomplete_movies);
@@ -110,15 +105,21 @@ impl Component for System {
                         .autocomplete_movies
                         .get(lookup_title)
                         .expect("not here");
-                    self.added_movies.insert(
-                        lookup_title.clone(),
-                        movie.clone().into_yew_display(self.username.clone()),
-                    );
-                    let movie_vec = self.added_movies.values().collect::<Vec<_>>();
-                    let json_movies = serde_json::to_string(&movie_vec).expect("json issue");
-                    storage
-                        .set("added_movies", &json_movies)
-                        .expect("storage issue");
+                    log::info!("movie is: {:?}", &movie);
+                    self.current_movies
+                        .insert(movie.clone().into_yew_display(self.username.clone()));
+                    if let Some(mut data) = self.group_data.clone() {
+                        data.current_movies
+                            .insert(movie.clone().into_yew_display(self.username.clone()));
+                        self.group_data = Some(data);
+                    }
+                    log::info!("current_movies: {:?}", &self.current_movies);
+
+                    //let movie_set = self.added_movies.values().cloned().collect::<HashSet<_>>();
+                    //let json_movies = serde_json::to_string(&movie_set).expect("json issue");
+                    //storage
+                    //.set("added_movies", &json_movies)
+                    //.expect("storage issue");
                 }
             }
             QueryAutocomplete(text) => {
@@ -163,7 +164,10 @@ impl Component for System {
                 }
             }),
 
-            UpdateGroupData(group_data) => self.group_data = Some(group_data),
+            UpdateGroupData(group_data) => {
+                self.group_data = Some(group_data.clone());
+                self.current_movies = group_data.current_movies;
+            }
 
             Error(err_msg) => {
                 log::info!("{:?}", &err_msg);
@@ -175,6 +179,7 @@ impl Component for System {
     fn view(&self, ctx: &Context<Self>) -> Html {
         html! {
             <div>
+            { self.ready_status_buttons(ctx) }
             { self.view_group_id(ctx) }
             { self.user_customized_view(ctx) }
             { self.search_bar(ctx) }
