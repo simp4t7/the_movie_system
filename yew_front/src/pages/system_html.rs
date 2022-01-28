@@ -60,7 +60,7 @@ impl System {
                         <img class="search_results_image"
                             src={image_processing(movie.movie_images.as_ref())}
                             id = {movie.movie_id.clone()}/>
-                        <ul>
+                        <ul id = {movie.movie_id.clone()}>
                         <li class="search_results_info"
                             id = {movie.movie_id.clone()}>
                         {&movie.movie_title}
@@ -88,23 +88,32 @@ impl System {
         }
     }
     pub fn search_bar(&self, ctx: &Context<Self>) -> Html {
-        html! {
-                    <div class="movie_search_div">
-                        <input
-                        class="movie_search"
-                        placeholder="movie search"
-                        maxlength=50
-                        oninput={
+        if let Some(data) = self.group_data.clone() {
+            match data.system_state {
+                SystemState::AddingMovies => html! {
+                            <div class="movie_search_div">
+                                <input
+                                class="movie_search"
+                                placeholder="movie search"
+                                maxlength=50
+                                oninput={
 
-                            ctx.link().callback(SystemMsg::QueryAutocomplete)
-                        }
-                        />
-                    <div class="search_results">
-                    <ul class = "ul_search">
-                    {self.search_results(ctx)}
-                    </ul>
-                    </div>
-                    </div>
+                                    ctx.link().callback(SystemMsg::QueryAutocomplete)
+                                }
+                                />
+                            <div class="search_results">
+                            <ul class = "ul_search">
+                            {self.search_results(ctx)}
+                            </ul>
+                            </div>
+                            </div>
+                },
+
+                SystemState::SystemStarted => html! {},
+                SystemState::Finished => html! {},
+            }
+        } else {
+            html! {}
         }
     }
 
