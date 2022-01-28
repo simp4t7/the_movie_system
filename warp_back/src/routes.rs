@@ -1,6 +1,7 @@
 use crate::auth::{verify_pass, verify_token, with_auth};
 use crate::err_info;
 use crate::error_handling::WarpRejections;
+use crate::new_db_stuff::db_update_group;
 use crate::State;
 use http::status::StatusCode;
 use imdb_autocomplete::autocomplete_func;
@@ -114,6 +115,23 @@ pub fn get_group_movies(
                     Ok(json_resp)
                 }
                 Err(e) => Err(e),
+            }
+        })
+}
+
+pub fn update_group_data(
+    state: &State,
+) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+    warp::path("update_group_data")
+        .and(warp::body::json())
+        .and(with_db(state.db.clone()))
+        .and_then(|group_struct: DBGroupStruct, db: SqlitePool| async move {
+            match db_update_group(&db, &group_struct).await {
+                Ok(_) => Ok(warp::reply()),
+                Err(e) => {
+                    log::info!("error is: {:?}", &e);
+                    Err(e)
+                }
             }
         })
 }

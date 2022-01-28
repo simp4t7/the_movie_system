@@ -2,6 +2,7 @@ use crate::{SAVE_GROUP_MOVIES_URL, SEARCH_URL};
 use anyhow::Result;
 use gloo_storage::{LocalStorage, Storage};
 use reqwasm::http::{Request, RequestMode};
+use shared_stuff::db_structs::SystemState;
 use shared_stuff::groups_stuff::GroupMoviesForm;
 
 use crate::utils::get_route_with_auth;
@@ -24,6 +25,7 @@ pub struct System {
     pub group_data: Option<GroupData>,
     pub autocomplete_movies: HashMap<String, MovieDisplay>,
     pub current_movies: HashSet<YewMovieDisplay>,
+    pub members_vec: Vec<String>,
 }
 pub enum SystemMsg {
     Noop,
@@ -32,6 +34,7 @@ pub enum SystemMsg {
     Error(String),
     SaveMovies,
     DeleteEntry(YewMovieDisplay),
+    DeleteEntryChangeTurn(YewMovieDisplay),
     QueryAutocomplete(InputEvent),
     UpdateAutocomplete(Vec<MovieDisplay>),
     AddMovie(MouseEvent),
@@ -48,6 +51,7 @@ impl Component for System {
         let id = &ctx.props().id;
         let mut username = String::from("");
         let current_movies = HashSet::new();
+        let members_vec = Vec::new();
         if let Some(user) = storage.get("username").expect("storage error") {
             username = user;
         }
@@ -57,6 +61,7 @@ impl Component for System {
             group_data: None,
             autocomplete_movies: HashMap::new(),
             current_movies,
+            members_vec,
         }
     }
 
@@ -69,8 +74,42 @@ impl Component for System {
         use SystemMsg::*;
         match msg {
             Noop => {}
-            SetReady => {}
-            UnsetReady => {}
+            SetReady => {
+                if let Some(mut data) = self.group_data.clone() {
+                    data.ready_status.insert(self.username.clone(), true);
+                    if data
+                        .members
+                        .iter()
+                        .all(|member| data.ready_status.get(member) == Some(&true))
+                    {
+                        data.system_state = SystemState::SystemStarted;
+                        let current_turn = self.members_vec.remove(0);
+                        data.turn = current_turn.clone();
+                        self.members_vec.push(current_turn);
+                    }
+                    self.group_data = Some(data.clone());
+                    let cloned_data = data.clone();
+                    let cloned_id = self.group_id.clone();
+                    link_clone.send_future(async move {
+                        let resp = request_update_group_data(cloned_id, cloned_data).await;
+                        log::info!("resp is: {:?}", &resp);
+                        SystemMsg::Noop
+                    })
+                }
+            }
+            UnsetReady => {
+                if let Some(mut data) = self.group_data.clone() {
+                    data.ready_status.insert(self.username.clone(), false);
+                    self.group_data = Some(data.clone());
+                    let cloned_data = data.clone();
+                    let cloned_id = self.group_id.clone();
+                    link_clone.send_future(async move {
+                        let resp = request_update_group_data(cloned_id, cloned_data).await;
+                        log::info!("resp is: {:?}", &resp);
+                        SystemMsg::Noop
+                    })
+                }
+            }
             SaveMovies => {
                 log::info!("inside save movies");
                 let group_id = self.group_id.clone();
@@ -79,7 +118,7 @@ impl Component for System {
                     log::info!("inside SaveMovies, group_data: {:?}", &group_data);
                     group_data.current_movies = self.current_movies.clone();
                     link_clone.send_future(async move {
-                        let resp = new_request_save_movies_request(group_id, group_data).await;
+                        let resp = request_update_group_data(group_id, group_data).await;
                         log::info!("resp is: {:?}", &resp);
                         SystemMsg::Noop
                     })
@@ -87,12 +126,36 @@ impl Component for System {
             }
 
             DeleteEntry(movie) => {
-                //if let Some(elem) = movie.target_dyn_into::<HtmlElement>() {
-                //}
                 self.current_movies.remove(&movie);
+                let group_id = self.group_id.clone();
                 if let Some(mut data) = self.group_data.clone() {
                     data.current_movies = self.current_movies.clone();
-                    self.group_data = Some(data);
+                    self.group_data = Some(data.clone());
+                    link_clone.send_future(async move {
+                        let resp = request_update_group_data(group_id, data.clone()).await;
+                        log::info!("resp is: {:?}", &resp);
+                        SystemMsg::Noop
+                    })
+                }
+            }
+
+            DeleteEntryChangeTurn(movie) => {
+                self.current_movies.remove(&movie);
+                let group_id = self.group_id.clone();
+                if let Some(mut data) = self.group_data.clone() {
+                    data.current_movies = self.current_movies.clone();
+                    let current_turn = self.members_vec.remove(0);
+                    data.turn = current_turn.clone();
+                    self.members_vec.push(current_turn);
+                    self.group_data = Some(data.clone());
+                    if self.current_movies.len() == 1 {
+                        data.system_state = SystemState::Finished;
+                    }
+                    link_clone.send_future(async move {
+                        let resp = request_update_group_data(group_id, data.clone()).await;
+                        log::info!("resp is: {:?}", &resp);
+                        SystemMsg::Noop
+                    })
                 }
             }
             AddMovie(movie) => {
@@ -167,6 +230,7 @@ impl Component for System {
             UpdateGroupData(group_data) => {
                 self.group_data = Some(group_data.clone());
                 self.current_movies = group_data.current_movies;
+                self.members_vec = group_data.members.iter().cloned().collect::<Vec<String>>();
             }
 
             Error(err_msg) => {
@@ -191,10 +255,7 @@ impl Component for System {
 
 use shared_stuff::db_structs::DBGroupStruct;
 
-pub async fn new_request_save_movies_request(
-    group_id: String,
-    group_data: GroupData,
-) -> Result<()> {
+pub async fn request_update_group_data(group_id: String, group_data: GroupData) -> Result<()> {
     let db_group = DBGroupStruct {
         id: group_id,
         group_data,
@@ -209,24 +270,24 @@ pub async fn new_request_save_movies_request(
     Ok(())
 }
 
-pub async fn request_save_movies_request(
-    username: String,
-    group_id: String,
-    current_movies: HashSet<YewMovieDisplay>,
-) -> Result<()> {
-    let json_body = serde_json::to_string(&GroupMoviesForm {
-        username,
-        group_id,
-        current_movies,
-    })?;
-    let _resp = Request::post(&SAVE_GROUP_MOVIES_URL)
-        .header("content-type", "application/json; charset=UTF-8")
-        .mode(RequestMode::Cors)
-        .body(json_body)
-        .send()
-        .await?;
-    Ok(())
-}
+//pub async fn request_save_movies_request(
+//username: String,
+//group_id: String,
+//current_movies: HashSet<YewMovieDisplay>,
+//) -> Result<()> {
+//let json_body = serde_json::to_string(&GroupMoviesForm {
+//username,
+//group_id,
+//current_movies,
+//})?;
+//let _resp = Request::post(&SAVE_GROUP_MOVIES_URL)
+//.header("content-type", "application/json; charset=UTF-8")
+//.mode(RequestMode::Cors)
+//.body(json_body)
+//.send()
+//.await?;
+//Ok(())
+//}
 
 pub async fn request_get_all_group_movies(group_id: String) -> Result<GroupData> {
     let uri = GET_GROUP_DATA_URL.to_string();

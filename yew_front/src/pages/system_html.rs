@@ -37,6 +37,10 @@ impl System {
                 <li>{format!("Members: {:?}", group_data.members)}</li>
                 <li>{format!("Date created: {:?}", group_data.date_created)}</li>
                 <li>{format!("Movies watched: {:?}", group_data.movies_watched)}</li>
+                <li>{format!("system status: {:?}", group_data.system_state)}</li>
+                <li>{format!("ready status: {:?}", group_data.ready_status)}</li>
+                <li>{format!("current turn: {:?}", group_data.turn)}</li>
+                <li>{format!("member_vec: {:?}", &self.members_vec)}</li>
             </div>
         }
     }
@@ -144,6 +148,16 @@ impl System {
                     onclick={&ctx.link().callback(move|_| SystemMsg::DeleteEntry(movie.clone()))}>
                     { "delete entry" }
                 </button>  }
+            } else if data.system_state == SystemState::SystemStarted && data.turn == self.username
+            {
+                html! {
+                <button
+                    class="delete entry" title = {movie.movie_title.clone()}
+                    onclick={&ctx.link().callback(move|_| SystemMsg::DeleteEntryChangeTurn(movie.clone()))}>
+                    { "delete entry" }
+                </button>  }
+            } else if data.system_state == SystemState::Finished {
+                html! {}
             } else {
                 html! {}
             }
