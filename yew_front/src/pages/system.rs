@@ -148,6 +148,7 @@ impl Component for System {
                     if self.current_movies.len() == 1 {
                         data.system_state = SystemState::Finished;
                     }
+                    link_clone.send_message(SystemMsg::UpdateGroupData(data.clone()));
                     link_clone.send_future(async move {
                         let resp = request_update_group_data(group_id, data.clone()).await;
                         log::info!("resp is: {:?}", &resp);
