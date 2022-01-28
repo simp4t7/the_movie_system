@@ -40,7 +40,6 @@ impl System {
                 <li>{format!("system status: {:?}", group_data.system_state)}</li>
                 <li>{format!("ready status: {:?}", group_data.ready_status)}</li>
                 <li>{format!("current turn: {:?}", group_data.turn)}</li>
-                <li>{format!("member_vec: {:?}", &self.members_vec)}</li>
             </div>
         }
     }
@@ -141,7 +140,10 @@ impl System {
 
     pub fn delete_movie_button(&self, ctx: &Context<Self>, movie: YewMovieDisplay) -> Html {
         if let Some(data) = self.group_data.clone() {
-            if data.system_state == SystemState::AddingMovies && self.username == movie.added_by {
+            if data.system_state == SystemState::AddingMovies
+                && self.username == movie.added_by
+                && data.ready_status.get(&self.username) != Some(&true)
+            {
                 html! {
                 <button
                     class="delete entry" title = {movie.movie_title.clone()}

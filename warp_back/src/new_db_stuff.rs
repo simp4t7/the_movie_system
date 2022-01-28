@@ -10,7 +10,7 @@ use shared_stuff::YewMovieDisplay;
 use sqlx::pool::PoolConnection;
 use sqlx::Sqlite;
 use sqlx::{query, query_as, SqlitePool};
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 use uuid::Uuid;
 use warp::reject::custom;
 
@@ -30,13 +30,13 @@ pub async fn create_user_data(input: UserInfo) -> Result<UserData> {
 }
 
 pub fn create_group_data(input: GroupForm) -> GroupData {
-    let mut members_hash = HashSet::new();
-    members_hash.insert(input.username);
+    let mut members_vec = VecDeque::new();
+    members_vec.push_back(input.username);
     let now = chrono::Utc::now().timestamp();
     let turn = String::from("");
     GroupData {
         group_name: input.group_name,
-        members: members_hash,
+        members: members_vec,
         movies_watched: HashSet::new(),
         current_movies: HashSet::new(),
         ready_status: HashMap::new(),
@@ -186,7 +186,7 @@ pub async fn db_add_user_to_group1(
     let mut group_data = db_get_group1(db, group_id).await?;
     let mut group_members = group_data.members;
 
-    group_members.insert(new_member.clone());
+    group_members.push_back(new_member.clone());
     group_data.members = group_members;
     let group_struct = DBGroupStruct {
         id: group_id.to_string(),
@@ -214,8 +214,8 @@ pub async fn db_update_group1(db: &SqlitePool, group_struct: &DBGroupStruct) -> 
         serde_json::to_string(&group_struct.group_data).expect("serialization error");
     query!(
         r#"
-            update groups set data=$1 where id=$2
-        "#,
+update groups set data=$1 where id=$2
+"#,
         serialized_group_data,
         group_struct.id,
     )
@@ -246,7 +246,7 @@ pub async fn db_user_leave_group1(db: &SqlitePool, username: String, group_id: &
         .iter()
         .filter(|name| !username.eq(*name))
         .map(|name| name.to_owned())
-        .collect::<HashSet<String>>();
+        .collect::<VecDeque<String>>();
     log::info!("group_members is: {:?}", &group_members);
     group_data.members = updated_group_members.clone();
 
@@ -353,7 +353,7 @@ pub async fn db_delete_group(db: &SqlitePool, group_id: &str) -> Result<()> {
     Ok(())
 }
 
-pub async fn db_get_group_members(db: &SqlitePool, group_id: &str) -> Result<HashSet<String>> {
+pub async fn db_get_group_members(db: &SqlitePool, group_id: &str) -> Result<VecDeque<String>> {
     log::info!("inside db_get_group_members");
     let db_group_data = db_get_group1(db, group_id).await?;
     let members = db_group_data.members;
@@ -397,7 +397,7 @@ pub async fn db_add_user_to_group(db: &SqlitePool, add_user: &AddUser) -> Result
     let group_id = db_get_group_id(db, &add_user.group_name, &add_user.username).await?;
     let mut group_struct = db_get_group(db, &group_id).await?;
     let mut db_group_members = group_struct.group_data.members;
-    db_group_members.insert(add_user.new_member.to_string());
+    db_group_members.push_back(add_user.new_member.to_string());
     log::info!("db_group_members: {:?}", &db_group_members);
     group_struct.group_data.members = db_group_members;
     db_update_group(db, &group_struct).await?;
@@ -495,7 +495,7 @@ pub async fn db_user_leave_group(db: &SqlitePool, group_form: &GroupForm) -> Res
         .iter()
         .filter(|name| *name != username)
         .map(|name| name.to_owned())
-        .collect::<HashSet<String>>();
+        .collect::<VecDeque<String>>();
     log::info!("group_members is: {:?}", &group_members);
     group_struct.group_data.members = group_members.clone();
 

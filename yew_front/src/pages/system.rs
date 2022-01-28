@@ -25,7 +25,6 @@ pub struct System {
     pub group_data: Option<GroupData>,
     pub autocomplete_movies: HashMap<String, MovieDisplay>,
     pub current_movies: HashSet<YewMovieDisplay>,
-    pub members_vec: Vec<String>,
 }
 pub enum SystemMsg {
     Noop,
@@ -51,7 +50,6 @@ impl Component for System {
         let id = &ctx.props().id;
         let mut username = String::from("");
         let current_movies = HashSet::new();
-        let members_vec = Vec::new();
         if let Some(user) = storage.get("username").expect("storage error") {
             username = user;
         }
@@ -61,7 +59,6 @@ impl Component for System {
             group_data: None,
             autocomplete_movies: HashMap::new(),
             current_movies,
-            members_vec,
         }
     }
 
@@ -83,9 +80,9 @@ impl Component for System {
                         .all(|member| data.ready_status.get(member) == Some(&true))
                     {
                         data.system_state = SystemState::SystemStarted;
-                        let current_turn = self.members_vec.remove(0);
+                        let current_turn = data.members.pop_front().expect("no members?");
                         data.turn = current_turn.clone();
-                        self.members_vec.push(current_turn);
+                        data.members.push_back(current_turn);
                     }
                     self.group_data = Some(data.clone());
                     let cloned_data = data.clone();
@@ -144,9 +141,9 @@ impl Component for System {
                 let group_id = self.group_id.clone();
                 if let Some(mut data) = self.group_data.clone() {
                     data.current_movies = self.current_movies.clone();
-                    let current_turn = self.members_vec.remove(0);
+                    let current_turn = data.members.pop_front().expect("members empty?");
                     data.turn = current_turn.clone();
-                    self.members_vec.push(current_turn);
+                    data.members.push_back(current_turn);
                     self.group_data = Some(data.clone());
                     if self.current_movies.len() == 1 {
                         data.system_state = SystemState::Finished;
@@ -230,7 +227,6 @@ impl Component for System {
             UpdateGroupData(group_data) => {
                 self.group_data = Some(group_data.clone());
                 self.current_movies = group_data.current_movies;
-                self.members_vec = group_data.members.iter().cloned().collect::<Vec<String>>();
             }
 
             Error(err_msg) => {
