@@ -16,17 +16,6 @@ pub struct Claims {
     pub token: Token,
 }
 
-//#[derive(Debug, Serialize, Deserialize)]
-//pub struct DoubleTokenResponse {
-//pub access_token: String,
-//pub refresh_token: String,
-//}
-
-//#[derive(Debug, Serialize, Deserialize)]
-//pub struct SingleTokenResponse {
-//pub access_token: String,
-//}
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TokenResponse {
     pub access_token: String,
@@ -43,8 +32,8 @@ pub struct ErrorMessage {
 pub struct MovieDisplay {
     pub movie_id: String,
     pub movie_title: String,
-    pub movie_year: Option<u32>,
-    pub movie_images: Option<ImageData>,
+    pub movie_year: u32,
+    pub movie_images: ImageData,
     pub movie_stars: String,
     //pub media_type: MediaType,
 }
@@ -53,8 +42,8 @@ pub struct MovieDisplay {
 pub struct YewMovieDisplay {
     pub movie_id: String,
     pub movie_title: String,
-    pub movie_year: Option<u32>,
-    pub movie_images: Option<ImageData>,
+    pub movie_year: u32,
+    pub movie_images: ImageData,
     pub movie_stars: String,
     pub added_by: String,
     //pub media_type: MediaType,

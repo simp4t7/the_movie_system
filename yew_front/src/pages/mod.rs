@@ -1,5 +1,3 @@
-pub mod add_movies;
-pub mod add_movies_html;
 pub mod group;
 pub mod groups;
 pub mod groups_html;

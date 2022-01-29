@@ -16,7 +16,6 @@ pub mod error;
 pub mod pages;
 pub mod utils;
 
-use pages::add_movies::AddMovies;
 use pages::group::Group;
 use pages::groups::Groups;
 use pages::home::Home;
@@ -55,8 +54,6 @@ pub enum Route {
     Home,
     #[at("register")]
     Register,
-    #[at("add_movies")]
-    AddMovies,
     #[at("groups")]
     Groups,
     #[at("/user/:username")]
@@ -192,7 +189,6 @@ fn switch(routes: &Route) -> Html {
         Route::Login => html!{<Login />},
         Route::Groups => html!{<Groups />},
         Route::Register => html!{<Register />},
-        Route::AddMovies => html!{<AddMovies />},
         Route::User { username: _ }=> html!{<Groups />},
         Route::Group { group_id } => html!{<Group id={group_id.clone()}/>},
         Route::System { group_id } => html!{<System id={group_id.clone()}/>},

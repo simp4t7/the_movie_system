@@ -1,6 +1,7 @@
 use crate::pages::system::{System, SystemMsg};
 use shared_stuff::db_structs::{GroupData, SystemState};
-use shared_stuff::YewMovieDisplay;
+use shared_stuff::{MovieDisplay, YewMovieDisplay};
+use yew::html::IntoEventCallback;
 
 use shared_stuff::ImageData;
 use yew::prelude::*;
@@ -45,44 +46,32 @@ impl System {
     }
 
     pub fn search_results(&self, ctx: &Context<Self>) -> Html {
-        let callback = ctx.link().callback(SystemMsg::AddMovie);
+        //let callback = ctx.link().callback(SystemMsg::AddMovie);
         {
             log::info!("autocomplete_movies: {:?}", &self.autocomplete_movies);
             self.autocomplete_movies
-                .values()
+                .iter()
                 // Still not handling the no images nicely?
                 .map(|movie| {
-                    if movie.movie_images.is_some() {
+                    let movie_clone = movie.clone();
                         html! {
                         <div class="search_results_div"
-                            id = {movie.movie_id.clone()}
-                            onclick={callback.clone()}>
+                            onclick={&ctx.link().callback(move |_| SystemMsg::AddMovie(movie_clone.clone()))}>
                         <img class="search_results_image"
-                            src={image_processing(movie.movie_images.as_ref())}
-                            id = {movie.movie_id.clone()}/>
+                            src={image_processing(&movie.movie_images)}/>
                         <ul id = {movie.movie_id.clone()}>
-                        <li class="search_results_info"
-                            id = {movie.movie_id.clone()}>
+                        <li class="search_results_info">
                         {&movie.movie_title}
                         </li>
-                        <li class="search_results_info"
-                            id = {movie.movie_id.clone()}>
-                        {&movie.movie_year.unwrap()}
+                        <li class="search_results_info">
+                        {&movie.movie_year}
                         </li>
-                        <li class="search_results_info"
-                            id = {movie.movie_id.clone()}>
+                        <li class="search_results_info">
                         {&movie.movie_stars}
                         </li>
                         </ul>
                         </div>
-                        }
-                    } else {
-                        html! {
-                        <li>
-                            {&movie.movie_title}
-                            {&movie.movie_year.unwrap()}
-                        </li>}
-                    }
+                    } 
                 })
                 .collect::<Html>()
         }
@@ -185,15 +174,14 @@ impl System {
                 .iter()
                 .cloned()
                 .map(|movie| {
-                    let _formatted =
-                        format!("{} {}", &movie.movie_title, &movie.movie_year.unwrap());
+                    let _formatted = format!("{} {}", &movie.movie_title, &movie.movie_year);
                     html! {
                             <div class="temp_movies">
                             <img class="search_results_image"
-                                src={image_processing(movie.movie_images.as_ref())}/>
+                                src={image_processing(&movie.movie_images)}/>
                             <ul>
                             <li> {&movie.movie_title} </li>
-                            <li> {&movie.movie_year.unwrap()} </li>
+                            <li> {&movie.movie_year} </li>
                             <li> {format!("added by: {}", &movie.added_by)} </li>
                             </ul>
                             {   self.delete_movie_button(ctx, movie) }
@@ -219,14 +207,10 @@ impl System {
     }
 }
 
-pub fn image_processing(image: Option<&ImageData>) -> String {
-    if let Some(image) = image {
-        let mut image_url = image.url.to_owned();
-        assert!(&image_url[image_url.len() - 4..] == ".jpg");
-        image_url.truncate(image_url.len() - 4);
-        image_url.push_str("._V1_QL75_UY74_CR30,0,50,74_.jpg");
-        image_url
-    } else {
-        "need to get a decent no pic available pic".to_string()
-    }
+pub fn image_processing(image: &ImageData) -> String {
+    let mut image_url = image.url.to_owned();
+    assert!(&image_url[image_url.len() - 4..] == ".jpg");
+    image_url.truncate(image_url.len() - 4);
+    image_url.push_str("._V1_QL75_UY74_CR30,0,50,74_.jpg");
+    image_url
 }

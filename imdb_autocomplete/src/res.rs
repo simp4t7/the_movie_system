@@ -1,4 +1,4 @@
-use shared_stuff::{JsonQuery, MediaType, MovieDisplay, MovieInfo};
+use shared_stuff::{ImageData, JsonQuery, MediaType, MovieDisplay, MovieInfo};
 use uuid::Uuid;
 
 use log::trace;
@@ -28,21 +28,24 @@ fn serialize_raw_json(input: String) -> Result<Vec<MovieDisplay>, Box<dyn std::e
             trace!("{:?}", &media_type);
             match media_type {
                 MediaType::Movie | MediaType::MiniSeries | MediaType::TV => {
-                    let movie_images = match movie.i {
-                        Some(image_data) => serde_json::from_value(image_data).unwrap(),
-                        None => None,
-                    };
+                    let movie_images = serde_json::from_value(movie.i.expect("no image"))?;
+                    let movie_year = movie.y.expect("no year");
+
+                    //let movie_images: ImageData = match movie.i {
+                    //Some(image_data) => serde_json::from_value(image_data).unwrap(),
+                    //None => None,
+                    //};
                     let movie_id = Uuid::new_v4().to_string();
 
-                    if movie_images.is_some() && movie.y.is_some() {
-                        result_vec.push(MovieDisplay {
-                            movie_id,
-                            movie_title: movie.l.unwrap(),
-                            movie_year: movie.y,
-                            movie_stars,
-                            movie_images,
-                        });
-                    }
+                    //if movie_images.is_some() && movie.y.is_some() {
+                    result_vec.push(MovieDisplay {
+                        movie_id,
+                        movie_title: movie.l.unwrap(),
+                        movie_year,
+                        movie_stars,
+                        movie_images,
+                    });
+                    //}
                 }
                 _ => {}
             }

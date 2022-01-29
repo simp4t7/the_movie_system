@@ -23,7 +23,7 @@ pub struct System {
     pub username: String,
     pub group_id: String,
     pub group_data: Option<GroupData>,
-    pub autocomplete_movies: HashMap<String, MovieDisplay>,
+    pub autocomplete_movies: HashSet<MovieDisplay>,
     pub current_movies: HashSet<YewMovieDisplay>,
 }
 pub enum SystemMsg {
@@ -36,7 +36,7 @@ pub enum SystemMsg {
     DeleteEntryChangeTurn(YewMovieDisplay),
     QueryAutocomplete(InputEvent),
     UpdateAutocomplete(Vec<MovieDisplay>),
-    AddMovie(MouseEvent),
+    AddMovie(MovieDisplay),
     SetReady,
     UnsetReady,
 }
@@ -57,7 +57,7 @@ impl Component for System {
             username,
             group_id: id.to_string(),
             group_data: None,
-            autocomplete_movies: HashMap::new(),
+            autocomplete_movies: HashSet::new(),
             current_movies,
         }
     }
@@ -157,31 +157,14 @@ impl Component for System {
                 }
             }
             AddMovie(movie) => {
-                if let Some(elem) = movie.target_dyn_into::<HtmlElement>() {
-                    log::info!("inside AddMovie");
-                    log::info!("checking current movies: {:?}", &self.autocomplete_movies);
-                    log::info!("current element: {:?}", &elem.title());
-                    let lookup_title = &elem.id();
-                    let movie = self
-                        .autocomplete_movies
-                        .get(lookup_title)
-                        .expect("not here");
-                    log::info!("movie is: {:?}", &movie);
-                    self.current_movies
+                self.current_movies
+                    .insert(movie.clone().into_yew_display(self.username.clone()));
+                if let Some(mut data) = self.group_data.clone() {
+                    data.current_movies
                         .insert(movie.clone().into_yew_display(self.username.clone()));
-                    if let Some(mut data) = self.group_data.clone() {
-                        data.current_movies
-                            .insert(movie.clone().into_yew_display(self.username.clone()));
-                        self.group_data = Some(data);
-                    }
-                    log::info!("current_movies: {:?}", &self.current_movies);
-
-                    //let movie_set = self.added_movies.values().cloned().collect::<HashSet<_>>();
-                    //let json_movies = serde_json::to_string(&movie_set).expect("json issue");
-                    //storage
-                    //.set("added_movies", &json_movies)
-                    //.expect("storage issue");
+                    self.group_data = Some(data);
                 }
+                log::info!("current_movies: {:?}", &self.current_movies);
             }
             QueryAutocomplete(text) => {
                 // Shouldn't do it if the text is empty, but handle this better probably...
@@ -210,7 +193,7 @@ impl Component for System {
                 log::info!("{:?}", &movies);
                 self.autocomplete_movies.clear();
                 for i in movies {
-                    self.autocomplete_movies.insert(i.movie_id.clone(), i);
+                    self.autocomplete_movies.insert(i);
                 }
 
                 //self.autocomplete_movies = movies;
