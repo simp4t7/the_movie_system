@@ -1,7 +1,6 @@
 use crate::pages::groups::{Groups, GroupsMsg};
-use gloo_storage::{LocalStorage, Storage};
-use yew::prelude::*;
 use crate::CORS_ORIGIN;
+use yew::prelude::*;
 
 impl Groups {
     pub fn create_group(&self, ctx: &Context<Self>) -> Html {

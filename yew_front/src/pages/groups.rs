@@ -1,10 +1,10 @@
 use crate::utils::post_route_with_auth;
-use crate::{ADD_USER_URL, CREATE_GROUP_URL, GET_ALL_GROUPS_URL, LEAVE_GROUP_URL};
+use crate::{CREATE_GROUP_URL, GET_ALL_GROUPS_URL, LEAVE_GROUP_URL};
 use anyhow::Result;
 use gloo_storage::{LocalStorage, Storage};
-use shared_stuff::groups_stuff::{AddUser, BasicUsername, GroupForm, GroupInfo, UserGroupsJson};
+use shared_stuff::groups_stuff::{GroupForm, GroupInfo, UserGroupsJson};
 use std::collections::HashSet;
-use web_sys::{HtmlElement, HtmlInputElement};
+use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
 pub async fn request_leave_group(username: String, group_name: String) -> Result<()> {
@@ -17,23 +17,24 @@ pub async fn request_leave_group(username: String, group_name: String) -> Result
     Ok(())
 }
 
-pub async fn request_add_user(
-    username: String,
-    new_member: String,
-    group_name: String,
-) -> Result<()> {
-    let json_body = serde_json::to_string(&AddUser {
-        username,
-        new_member,
-        group_name,
-    })?;
-    let resp = post_route_with_auth(&ADD_USER_URL, json_body.clone()).await?;
-    log::info!("add user resp: {:?}", &resp);
-    Ok(())
-}
+//pub async fn request_add_user(
+//username: String,
+//new_member: String,
+//group_name: String,
+//) -> Result<()> {
+//let json_body = serde_json::to_string(&AddUser {
+//username,
+//new_member,
+//group_name,
+//})?;
+//let resp = post_route_with_auth(&ADD_USER_URL, json_body.clone()).await?;
+//log::info!("add user resp: {:?}", &resp);
+//Ok(())
+//}
 
-pub async fn request_get_all_groups(username: String) -> Result<HashSet<GroupInfo>> {
-    let json_body = serde_json::to_string(&BasicUsername { username })?;
+pub async fn request_get_all_groups() -> Result<HashSet<GroupInfo>> {
+    //let json_body = serde_json::to_string(&Add { username })?;
+    let json_body = String::from("");
     let resp = post_route_with_auth(&GET_ALL_GROUPS_URL, json_body.clone()).await?;
     let groups: UserGroupsJson = resp.json().await?;
     Ok(groups.groups)
@@ -107,7 +108,7 @@ impl Component for Groups {
                 self.current_groups = new_hash;
             }
             GetAllGroups => link_clone.send_future(async move {
-                let groups = request_get_all_groups(username)
+                let groups = request_get_all_groups()
                     .await
                     .expect("problem getting groups");
                 GroupsMsg::UpdateGroups(groups)
@@ -126,17 +127,16 @@ impl Component for Groups {
                     log::info!("{:?}", &resp);
                     GroupsMsg::GetAllGroups
                 })
-            }
-            /*
-            SetCurrentGroup(group) => {
-                if let Some(elem) = group.target_dyn_into::<HtmlElement>() {
-                    log::info!("inside set current group");
-                    storage
-                        .set("current_group", &elem.inner_text())
-                        .expect("storage issue");
-                }
-            }
-            */
+            } /*
+              SetCurrentGroup(group) => {
+                  if let Some(elem) = group.target_dyn_into::<HtmlElement>() {
+                      log::info!("inside set current group");
+                      storage
+                          .set("current_group", &elem.inner_text())
+                          .expect("storage issue");
+                  }
+              }
+              */
         }
         true
     }

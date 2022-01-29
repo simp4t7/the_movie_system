@@ -3,14 +3,13 @@ use anyhow::Result;
 use gloo_storage::{LocalStorage, Storage};
 use reqwasm::http::{Request, RequestMode};
 use shared_stuff::db_structs::SystemState;
-use shared_stuff::groups_stuff::GroupMoviesForm;
 
 use crate::utils::get_route_with_auth;
 use crate::GET_GROUP_DATA_URL;
 use shared_stuff::db_structs::GroupData;
 use shared_stuff::{ImdbQuery, MovieDisplay, YewMovieDisplay};
-use std::collections::{HashMap, HashSet};
-use web_sys::{HtmlElement, HtmlInputElement};
+use std::collections::HashSet;
+use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
 #[derive(Properties, Debug, PartialEq, Clone)]

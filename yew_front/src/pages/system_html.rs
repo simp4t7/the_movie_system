@@ -1,7 +1,6 @@
 use crate::pages::system::{System, SystemMsg};
 use shared_stuff::db_structs::{GroupData, SystemState};
-use shared_stuff::{MovieDisplay, YewMovieDisplay};
-use yew::html::IntoEventCallback;
+use shared_stuff::YewMovieDisplay;
 
 use shared_stuff::ImageData;
 use yew::prelude::*;

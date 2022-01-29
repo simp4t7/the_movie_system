@@ -393,25 +393,25 @@ pub async fn db_get_group_id(db: &SqlitePool, group_name: &str, username: &str) 
     }
 }
 
-pub async fn db_add_user_to_group(db: &SqlitePool, add_user: &AddUser) -> Result<()> {
-    let group_id = db_get_group_id(db, &add_user.group_name, &add_user.username).await?;
-    let mut group_struct = db_get_group(db, &group_id).await?;
-    let mut db_group_members = group_struct.group_data.members;
-    db_group_members.push_back(add_user.new_member.to_string());
-    log::info!("db_group_members: {:?}", &db_group_members);
-    group_struct.group_data.members = db_group_members;
-    db_update_group(db, &group_struct).await?;
-    let mut user_info = db_get_user(db, &add_user.new_member).await?;
-    let group_uuid =
-        Uuid::parse_str(&group_id).map_err(|_e| custom(WarpRejections::UuidError(err_info!())))?;
-    let group_info = GroupInfo {
-        uuid: group_uuid.to_string(),
-        name: add_user.group_name.clone(),
-    };
-    user_info.1.groups.insert(group_info);
-    db_update_user(db, user_info).await?;
-    Ok(())
-}
+//pub async fn db_add_user_to_group(db: &SqlitePool, add_user: &AddUser) -> Result<()> {
+//let group_id = db_get_group_id(db, &add_user.group_name, &add_user.username).await?;
+//let mut group_struct = db_get_group(db, &group_id).await?;
+//let mut db_group_members = group_struct.group_data.members;
+//db_group_members.push_back(add_user.new_member.to_string());
+//log::info!("db_group_members: {:?}", &db_group_members);
+//group_struct.group_data.members = db_group_members;
+//db_update_group(db, &group_struct).await?;
+//let mut user_info = db_get_user(db, &add_user.new_member).await?;
+//let group_uuid =
+//Uuid::parse_str(&group_id).map_err(|_e| custom(WarpRejections::UuidError(err_info!())))?;
+//let group_info = GroupInfo {
+//uuid: group_uuid.to_string(),
+//name: add_user.group_name.clone(),
+//};
+//user_info.1.groups.insert(group_info);
+//db_update_user(db, user_info).await?;
+//Ok(())
+//}
 
 pub async fn db_save_group_movies(db: &SqlitePool, db_struct: &DBGroupStruct) -> Result<()> {
     log::info!("db_struct: {:?}", &db_struct);
@@ -443,29 +443,29 @@ pub async fn db_add_group_to_user(
     Ok(())
 }
 
-pub async fn db_group_add_new_user(db: &SqlitePool, user_struct: &AddUser) -> Result<()> {
-    let username = &user_struct.username;
-    let new_member = &user_struct.new_member;
-    let group_name = &user_struct.group_name;
-    let group_id = db_get_group_id(db, group_name, username).await?;
-    let group_uuid =
-        Uuid::parse_str(&group_id).map_err(|_e| custom(WarpRejections::UuidError(err_info!())))?;
+//pub async fn db_group_add_new_user(db: &SqlitePool, user_struct: &AddUser) -> Result<()> {
+//let username = &user_struct.username;
+//let new_member = &user_struct.new_member;
+//let group_name = &user_struct.group_name;
+//let group_id = db_get_group_id(db, group_name, username).await?;
+//let group_uuid =
+//Uuid::parse_str(&group_id).map_err(|_e| custom(WarpRejections::UuidError(err_info!())))?;
 
-    match db_get_user(db, new_member).await {
-        Ok(user_data) => {
-            log::info!("in here");
-            let group_info = GroupInfo {
-                uuid: group_uuid.to_string(),
-                name: group_name.clone(),
-            };
-            db_add_group_to_user(db, user_data.clone(), group_info).await?;
-            db_add_user_to_group(db, user_struct).await?;
-        }
-        Err(e) => return Err(e),
-    }
+//match db_get_user(db, new_member).await {
+//Ok(user_data) => {
+//log::info!("in here");
+//let group_info = GroupInfo {
+//uuid: group_uuid.to_string(),
+//name: group_name.clone(),
+//};
+//db_add_group_to_user(db, user_data.clone(), group_info).await?;
+//db_add_user_to_group(db, user_struct).await?;
+//}
+//Err(e) => return Err(e),
+//}
 
-    Ok(())
-}
+//Ok(())
+//}
 
 pub async fn db_user_leave_group(db: &SqlitePool, group_form: &GroupForm) -> Result<()> {
     log::info!("group_form is: {:?}", &group_form,);

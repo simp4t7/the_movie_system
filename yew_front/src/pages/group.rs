@@ -1,18 +1,15 @@
 use crate::utils::get_route_with_auth;
 use crate::utils::post_route_with_auth;
-use crate::{CORS_ORIGIN, ADD_USER_URL, CREATE_GROUP_URL, GET_ALL_GROUPS_URL, LEAVE_GROUP_URL, GET_GROUP_DATA_URL};
+use shared_stuff::groups_stuff::AddUser;
+use crate::{ADD_USER_URL, CORS_ORIGIN, GET_GROUP_DATA_URL, LEAVE_GROUP_URL};
 use anyhow::Result;
-use gloo_storage::{LocalStorage, Storage};
-use serde_json::to_string;
 use shared_stuff::db_structs::GroupData;
-use shared_stuff::groups_stuff::{AddUser, BasicUsername, GroupForm, GroupInfo, UserGroupsJson};
-use std::collections::{HashMap, HashSet};
-use web_sys::{HtmlElement, HtmlInputElement};
-use shared_stuff::{ImdbQuery, MovieDisplay, YewMovieDisplay};
+use shared_stuff::MovieDisplay;
+use std::collections::HashMap;
+use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
-
-pub async fn request_get_all_group_movies(group_id: String) -> Result<GroupData> {
+pub async fn request_get_group_data(group_id: String) -> Result<GroupData> {
     let uri = GET_GROUP_DATA_URL.to_string();
     let url = format!("{}/{}", uri, group_id);
     let resp = get_route_with_auth(&url).await?;
@@ -25,9 +22,8 @@ pub async fn request_get_all_group_movies(group_id: String) -> Result<GroupData>
 pub async fn request_add_new_user(group_id: String, add_user: String) -> Result<()> {
     let uri = ADD_USER_URL.to_string();
     let url = format!("{}/{}", uri, group_id);
-    let json_body = serde_json::to_string(
-        &BasicUsername { username: add_user }
-        )?;
+    let json_body = serde_json::to_string(&AddUser { username: add_user })?;
+    //let json_body = String::from("");
     let resp = post_route_with_auth(&url, json_body).await?;
     log::info!("request_add_new_user resp: {:?}", &resp);
     Ok(())
@@ -80,16 +76,13 @@ impl Component for Group {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         let link_clone = ctx.link().clone();
-        // let storage = LocalStorage::raw();
-        // let username_option = storage.get("username").expect("problem getting username");
-        // let username = username_option.expect("username is empty?");
         let id = self.group_id.clone();
         use GroupMsg::*;
         match msg {
-            Noop => {},
+            Noop => {}
 
             GetGroupData => link_clone.send_future(async move {
-                let group_data_resp = request_get_all_group_movies(id).await;
+                let group_data_resp = request_get_group_data(id).await;
                 log::info!("group_data_resp: {:?}", &group_data_resp);
                 match group_data_resp {
                     Ok(group_data) => GroupMsg::UpdateGroupData(group_data),
@@ -115,17 +108,15 @@ impl Component for Group {
                 }
             }
 
-            Leave => {
-                ctx.link().send_future(async move {
-                    let resp = request_leave_group(id).await;
-                    log::info!("{:?}", &resp);
-                    GroupMsg::Noop
-                })
-            }
+            Leave => ctx.link().send_future(async move {
+                let resp = request_leave_group(id).await;
+                log::info!("{:?}", &resp);
+                GroupMsg::Noop
+            }),
 
             Error(err_msg) => {
                 log::info!("{:?}", &err_msg);
-            },
+            }
         }
         true
     }
@@ -142,7 +133,6 @@ impl Component for Group {
             </div>
 
         }
-
     }
 }
 
@@ -163,7 +153,7 @@ impl Group {
                     { self.view_leave_group(ctx) }
                     </div>
                 }
-            },
+            }
             None => {
                 html! {
                     <p>{format!("This group doesn't exist or you don't have the access to it.")}</p>
@@ -221,4 +211,3 @@ impl Group {
         }
     }
 }
-

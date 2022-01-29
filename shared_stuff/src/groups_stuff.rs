@@ -32,16 +32,16 @@ pub struct GroupsId {
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct BasicUsername {
+pub struct AddUser {
     pub username: String,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct AddUser {
-    pub username: String,
-    pub new_member: String,
-    pub group_name: String,
-}
+//#[derive(Clone, Serialize, Deserialize, Debug)]
+//pub struct AddUser {
+//pub username: String,
+//pub new_member: String,
+//pub group_name: String,
+//}
 
 #[derive(Clone, Serialize, Deserialize, Debug, Hash, PartialEq, Eq)]
 pub struct GroupInfo {

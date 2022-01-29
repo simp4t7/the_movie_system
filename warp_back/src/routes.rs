@@ -6,7 +6,7 @@ use crate::State;
 use http::status::StatusCode;
 use imdb_autocomplete::autocomplete_func;
 use shared_stuff::db_structs::DBGroupStruct;
-use shared_stuff::groups_stuff::{AddUser, BasicUsername, GroupForm, GroupInfo, UserGroupsJson};
+use shared_stuff::groups_stuff::{AddUser, GroupForm, GroupInfo, UserGroupsJson};
 use shared_stuff::{ErrorMessage, ImdbQuery, UserInfo};
 use sqlx::SqlitePool;
 use warp::reject::custom;
@@ -19,10 +19,9 @@ use warp::reply::json;
 use warp::Filter;
 
 use crate::new_db_stuff::{
-    create_group_data, create_user_data, db_add_group_to_user, db_add_user_to_group,
-    db_add_user_to_group1, db_get_all_group_names, db_get_group_movies, db_get_user,
-    db_get_user_groups, db_insert_group, db_insert_user, db_save_group_movies,
-    db_user_leave_group1, verify_group_member,
+    create_group_data, create_user_data, db_add_group_to_user, db_add_user_to_group1,
+    db_get_all_group_names, db_get_group_movies, db_get_user, db_get_user_groups, db_insert_group,
+    db_insert_user, db_save_group_movies, db_user_leave_group1, verify_group_member,
 };
 
 pub fn get_group_data(
@@ -56,7 +55,7 @@ pub fn add_user_to_group_param(
         .and(with_auth())
         .and(with_db(state.db.clone()))
         .and_then(
-            |group_id: String, add_user: BasicUsername, _username: String, db: SqlitePool| async move {
+            |group_id: String, add_user: AddUser, _username: String, db: SqlitePool| async move {
                 let add_username = add_user.username;
                 match db_add_user_to_group1(&group_id, add_username, &db).await {
                     Ok(_) => Ok(warp::reply()),
@@ -83,22 +82,22 @@ pub fn leave_group1(
         )
 }
 
-pub fn add_user_to_group(
-    state: &State,
-) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
-    warp::path("add_user")
-        .and(warp::body::json())
-        .and(with_auth())
-        .and(with_db(state.db.clone()))
-        .and_then(
-            |user: AddUser, _username: String, db: SqlitePool| async move {
-                match db_add_user_to_group(&db, &user).await {
-                    Ok(_) => Ok(warp::reply()),
-                    Err(e) => Err(e),
-                }
-            },
-        )
-}
+//pub fn add_user_to_group(
+//state: &State,
+//) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+//warp::path("add_user")
+//.and(warp::body::json())
+//.and(with_auth())
+//.and(with_db(state.db.clone()))
+//.and_then(
+//|user: AddUser, _username: String, db: SqlitePool| async move {
+//match db_add_user_to_group(&db, &user).await {
+//Ok(_) => Ok(warp::reply()),
+//Err(e) => Err(e),
+//}
+//},
+//)
+//}
 
 pub fn get_group_movies(
     state: &State,
@@ -158,26 +157,23 @@ pub fn get_groups(
     state: &State,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path("get_groups")
-        .and(warp::body::json())
         .and(with_auth())
         .and(with_db(state.db.clone()))
-        .and_then(
-            |user: BasicUsername, _username: String, db: SqlitePool| async move {
-                match db_get_user_groups(&db, &user.username).await {
-                    Ok(groups) => {
-                        log::info!("okay, got the groups: {:?}", &groups);
-                        let group_names = db_get_all_group_names(&db, &user.username).await?;
-                        let groups_struct = UserGroupsJson {
-                            groups: group_names,
-                        };
-                        let json_resp = serde_json::to_string(&groups_struct)
-                            .map_err(|_| custom(WarpRejections::SerializationError(err_info!())))?;
-                        Ok(json_resp)
-                    }
-                    Err(_e) => Err(custom(WarpRejections::SqlxError(err_info!()))),
+        .and_then(|username: String, db: SqlitePool| async move {
+            match db_get_user_groups(&db, &username).await {
+                Ok(groups) => {
+                    log::info!("okay, got the groups: {:?}", &groups);
+                    let group_names = db_get_all_group_names(&db, &username).await?;
+                    let groups_struct = UserGroupsJson {
+                        groups: group_names,
+                    };
+                    let json_resp = serde_json::to_string(&groups_struct)
+                        .map_err(|_| custom(WarpRejections::SerializationError(err_info!())))?;
+                    Ok(json_resp)
                 }
-            },
-        )
+                Err(_e) => Err(custom(WarpRejections::SqlxError(err_info!()))),
+            }
+        })
 }
 
 pub fn create_group(
