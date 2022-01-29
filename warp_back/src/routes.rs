@@ -19,9 +19,9 @@ use warp::reply::json;
 use warp::Filter;
 
 use crate::new_db_stuff::{
-    create_group_data, create_user_data, db_add_group_to_user, db_add_user_to_group1,
+    create_group_data, create_user_data, db_add_group_to_user, db_add_user_to_group,
     db_get_all_group_names, db_get_group_movies, db_get_user, db_get_user_groups, db_insert_group,
-    db_insert_user, db_save_group_movies, db_user_leave_group1, verify_group_member,
+    db_insert_user, db_save_group_movies, db_user_leave_group1, db_verify_group_member,
 };
 
 pub fn get_group_data(
@@ -34,7 +34,7 @@ pub fn get_group_data(
         .and_then(
             |group_id: String, username: String, db: SqlitePool| async move {
                 log::info!("group_id: {:?}", &group_id);
-                match verify_group_member(group_id, username, &db).await {
+                match db_verify_group_member(group_id, username, &db).await {
                     Ok(group_data) => {
                         let json_resp = serde_json::to_string(&group_data)
                             .map_err(|_| custom(WarpRejections::SerializationError(err_info!())))?;
@@ -46,7 +46,7 @@ pub fn get_group_data(
         )
 }
 
-pub fn add_user_to_group_param(
+pub fn add_user_to_group(
     state: &State,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path("add_user")
@@ -57,7 +57,7 @@ pub fn add_user_to_group_param(
         .and_then(
             |group_id: String, add_user: AddUser, _username: String, db: SqlitePool| async move {
                 let add_username = add_user.username;
-                match db_add_user_to_group1(&group_id, add_username, &db).await {
+                match db_add_user_to_group(&group_id, &add_username, &db).await {
                     Ok(_) => Ok(warp::reply()),
                     Err(e) => Err(e),
                 }

@@ -4,7 +4,7 @@ use shared_stuff::db_structs::{DBGroupStruct, SystemState};
 use crate::err_info;
 use crate::error_handling::{Result, WarpRejections};
 use shared_stuff::db_structs::{DBGroup, DBUser, GroupData, UserData};
-use shared_stuff::groups_stuff::{AddUser, GroupForm, GroupInfo};
+use shared_stuff::groups_stuff::{GroupForm, GroupInfo};
 use shared_stuff::UserInfo;
 use shared_stuff::YewMovieDisplay;
 use sqlx::pool::PoolConnection;
@@ -135,13 +135,12 @@ pub async fn db_delete_user(db: &SqlitePool, username: &str) -> Result<()> {
     Ok(())
 }
 
-pub async fn verify_group_member(
+pub async fn db_verify_group_member(
     group_id: String,
     username: String,
     db: &SqlitePool,
 ) -> Result<GroupData> {
-    let group_data = db_get_group1(db, &group_id).await?;
-
+    let group_data = db_get_group(db, &group_id).await?;
     let members = &group_data.members;
     if members.contains(&username) {
         Ok(group_data)
@@ -150,7 +149,27 @@ pub async fn verify_group_member(
     }
 }
 
-pub async fn db_get_group1(db: &SqlitePool, group_id: &str) -> Result<GroupData> {
+//pub async fn db_get_group(db: &SqlitePool, group_id: &str) -> Result<DBGroupStruct> {
+//log::info!("inside db_get_group. group_id is: {:?}", &group_id);
+//let mut conn = acquire_db(db).await?;
+//let db_group = query_as!(
+//DBGroup,
+//r#"
+//select *
+//from groups
+//where id = $1
+//"#,
+//group_id
+//)
+//.fetch_one(&mut conn)
+//.await
+//.map_err(|_| custom(WarpRejections::SqlxError(err_info!())))?;
+
+//let group_data = db_get_group_data(db_group)?;
+//Ok(group_data)
+//}
+
+pub async fn db_get_group(db: &SqlitePool, group_id: &str) -> Result<GroupData> {
     log::info!("inside db_get_group1. group_id is: {:?}", &group_id);
     let mut conn = acquire_db(db).await?;
     let db_group = query_as!(
@@ -178,21 +197,15 @@ pub async fn db_get_group1(db: &SqlitePool, group_id: &str) -> Result<GroupData>
     }
 }
 
-pub async fn db_add_user_to_group1(
-    group_id: &str,
-    new_member: String,
-    db: &SqlitePool,
-) -> Result<()> {
-    let mut group_data = db_get_group1(db, group_id).await?;
-    let mut group_members = group_data.members;
+pub async fn db_add_user_to_group(group_id: &str, new_member: &str, db: &SqlitePool) -> Result<()> {
+    let mut group_data = db_get_group(db, group_id).await?;
+    group_data.members.push_back(new_member.to_string());
 
-    group_members.push_back(new_member.clone());
-    group_data.members = group_members;
     let group_struct = DBGroupStruct {
         id: group_id.to_string(),
         group_data: group_data.clone(),
     };
-    db_update_group1(db, &group_struct).await?;
+    db_update_group(db, &group_struct).await?;
     log::info!("group_data members updated");
 
     let mut user_info = db_get_user(db, &new_member).await?;
@@ -208,14 +221,14 @@ pub async fn db_add_user_to_group1(
     Ok(())
 }
 
-pub async fn db_update_group1(db: &SqlitePool, group_struct: &DBGroupStruct) -> Result<()> {
+pub async fn db_update_group(db: &SqlitePool, group_struct: &DBGroupStruct) -> Result<()> {
     let mut conn = acquire_db(db).await?;
     let serialized_group_data =
         serde_json::to_string(&group_struct.group_data).expect("serialization error");
     query!(
         r#"
-update groups set data=$1 where id=$2
-"#,
+            update groups set data=$1 where id=$2
+        "#,
         serialized_group_data,
         group_struct.id,
     )
@@ -227,7 +240,7 @@ update groups set data=$1 where id=$2
 }
 
 pub async fn db_user_leave_group1(db: &SqlitePool, username: String, group_id: &str) -> Result<()> {
-    let mut group_data = db_get_group1(db, group_id).await?;
+    let mut group_data = db_get_group(db, group_id).await?;
     let group_name = &group_data.group_name;
     let group_members = group_data.members;
     let mut user_name_and_data = db_get_user(db, &username).await?;
@@ -261,32 +274,12 @@ pub async fn db_user_leave_group1(db: &SqlitePool, username: String, group_id: &
                 id: group_id.to_string(),
                 group_data,
             };
-            db_update_group1(db, &group_struct).await?
+            db_update_group(db, &group_struct).await?
         }
     }
     log::info!("db_user_leave_group1 - GroupData updated");
 
     Ok(())
-}
-
-pub async fn db_get_group(db: &SqlitePool, group_id: &str) -> Result<DBGroupStruct> {
-    log::info!("inside db_get_group. group_id is: {:?}", &group_id);
-    let mut conn = acquire_db(db).await?;
-    let db_group = query_as!(
-        DBGroup,
-        r#"
-            select *
-            from groups
-            where id = $1
-        "#,
-        group_id
-    )
-    .fetch_one(&mut conn)
-    .await
-    .map_err(|_| custom(WarpRejections::SqlxError(err_info!())))?;
-
-    let group_data = db_get_group_data(db_group)?;
-    Ok(group_data)
 }
 
 pub fn db_get_group_data(db_group: DBGroup) -> Result<DBGroupStruct> {
@@ -299,24 +292,6 @@ pub fn db_get_group_data(db_group: DBGroup) -> Result<DBGroupStruct> {
         group_data,
     };
     Ok(group_struct)
-}
-
-pub async fn db_update_group(db: &SqlitePool, group_struct: &DBGroupStruct) -> Result<()> {
-    let mut conn = acquire_db(db).await?;
-    let serialized_group_data =
-        serde_json::to_string(&group_struct.group_data).expect("serialization error");
-    query!(
-        r#"
-            update groups set data=$1 where id=$2
-        "#,
-        serialized_group_data,
-        group_struct.id,
-    )
-    .execute(&mut conn)
-    .await
-    .map_err(|_| custom(WarpRejections::SqlxError(err_info!())))?;
-
-    Ok(())
 }
 
 pub async fn db_insert_group(db: &SqlitePool, group_struct: DBGroupStruct) -> Result<()> {
@@ -355,7 +330,7 @@ pub async fn db_delete_group(db: &SqlitePool, group_id: &str) -> Result<()> {
 
 pub async fn db_get_group_members(db: &SqlitePool, group_id: &str) -> Result<VecDeque<String>> {
     log::info!("inside db_get_group_members");
-    let db_group_data = db_get_group1(db, group_id).await?;
+    let db_group_data = db_get_group(db, group_id).await?;
     let members = db_group_data.members;
     log::info!("members are: {:?}", &members);
     Ok(members)
@@ -427,8 +402,8 @@ pub async fn db_get_group_movies(
     let username = &group_form.username;
     let group_name = &group_form.group_name;
     let group_id = db_get_group_id(db, group_name, username).await?;
-    let group_struct: DBGroupStruct = db_get_group(db, &group_id).await?;
-    Ok(group_struct.group_data.current_movies)
+    let group_data: GroupData = db_get_group(db, &group_id).await?;
+    Ok(group_data.current_movies)
 }
 
 pub async fn db_add_group_to_user(
@@ -476,7 +451,7 @@ pub async fn db_user_leave_group(db: &SqlitePool, group_form: &GroupForm) -> Res
 
     let group_id = db_get_group_id(db, group_name, username).await?;
     log::info!("group_id is: {:?}", &group_id);
-    let mut group_struct = db_get_group(db, &group_id).await?;
+    let mut group_data = db_get_group(db, &group_id).await?;
     let mut user_data = db_get_user(db, username).await?;
     log::info!("user_data is: {:?}", &user_data);
     let user_groups = db_get_user_groups(db, username)
@@ -497,7 +472,7 @@ pub async fn db_user_leave_group(db: &SqlitePool, group_form: &GroupForm) -> Res
         .map(|name| name.to_owned())
         .collect::<VecDeque<String>>();
     log::info!("group_members is: {:?}", &group_members);
-    group_struct.group_data.members = group_members.clone();
+    group_data.members = group_members.clone();
 
     match group_members.is_empty() {
         true => {
@@ -506,6 +481,10 @@ pub async fn db_user_leave_group(db: &SqlitePool, group_form: &GroupForm) -> Res
         }
         false => {
             log::info!("inside false");
+            let group_struct = DBGroupStruct {
+                id: group_id,
+                group_data,
+            };
             db_update_group(db, &group_struct).await?
         }
     }
