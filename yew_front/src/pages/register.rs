@@ -4,7 +4,7 @@ use crate::error::Error;
 use crate::REGISTER_URL;
 use anyhow::Result;
 use reqwasm::http::{Request, RequestMode};
-use shared_stuff::UserInfo;
+use shared_stuff::auth_structs::UserInfo;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 

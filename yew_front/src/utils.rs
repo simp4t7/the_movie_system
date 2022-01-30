@@ -1,4 +1,4 @@
-use shared_stuff::ImageData;
+use shared_stuff::imdb_structs::ImageData;
 
 //Need something if there's no picture or poster...
 //There's a lot more processing to be done for different size images, but

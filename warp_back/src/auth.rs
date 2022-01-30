@@ -6,7 +6,7 @@ use argon2::{
     Argon2,
 };
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
-use shared_stuff::{Claims, Token, TokenResponse};
+use shared_stuff::auth_structs::{Claims, Token, TokenResponse};
 use warp::reject::custom;
 use warp::{
     filters::header::headers_cloned,

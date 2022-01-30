@@ -2,7 +2,7 @@ use crate::auth_requests::post_route_with_auth;
 use crate::{CREATE_GROUP_URL, GET_ALL_GROUPS_URL};
 use anyhow::Result;
 use gloo_storage::{LocalStorage, Storage};
-use shared_stuff::groups_stuff::{GroupForm, GroupInfo, UserGroupsJson};
+use shared_stuff::group_structs::{GroupForm, GroupInfo};
 use std::collections::HashSet;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
@@ -10,8 +10,8 @@ use yew::prelude::*;
 pub async fn request_get_all_groups() -> Result<HashSet<GroupInfo>> {
     let json_body = String::from("");
     let resp = post_route_with_auth(&GET_ALL_GROUPS_URL, json_body.clone()).await?;
-    let groups: UserGroupsJson = resp.json().await?;
-    Ok(groups.groups)
+    let groups: HashSet<GroupInfo> = resp.json().await?;
+    Ok(groups)
 }
 
 pub async fn request_create_group(username: String, group_name: String) -> Result<()> {
@@ -70,14 +70,6 @@ impl Component for Groups {
         match msg {
             Noop => {}
             UpdateGroups(groups_vec) => {
-                storage
-                    .set(
-                        "all_groups",
-                        serde_json::to_string(&groups_vec)
-                            .expect("serde error")
-                            .as_str(),
-                    )
-                    .expect("storage problem");
                 let new_hash: HashSet<GroupInfo> = HashSet::from_iter(groups_vec.iter().cloned());
                 self.current_groups = new_hash;
             }

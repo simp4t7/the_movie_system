@@ -1,5 +1,5 @@
-use shared_stuff::ImdbQuery;
-use shared_stuff::MovieDisplay;
+use shared_stuff::imdb_structs::ImdbQuery;
+use shared_stuff::shared_structs::MovieDisplay;
 use std::io::ErrorKind;
 
 pub mod req;

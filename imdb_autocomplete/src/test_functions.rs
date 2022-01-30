@@ -1,6 +1,6 @@
 use crate::req;
 use reqwest::header::HeaderValue;
-use shared_stuff::ImdbQuery;
+use shared_stuff::imdb_structs::ImdbQuery;
 
 use log::info;
 

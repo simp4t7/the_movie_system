@@ -1,5 +1,5 @@
 use reqwest::Url;
-use shared_stuff::ImdbQuery;
+use shared_stuff::imdb_structs::ImdbQuery;
 
 const IMDB_URL: &str = "https://sg.media-imdb.com/suggests";
 

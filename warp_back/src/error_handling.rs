@@ -1,5 +1,5 @@
 use http::status::StatusCode;
-use shared_stuff::ErrorMessage;
+use shared_stuff::auth_structs::ErrorMessage;
 
 use warp::reject::Rejection;
 use warp::reply::Reply;

@@ -4,8 +4,7 @@ use warp_back::error_handling::handle_rejection;
 use warp_back::error_handling::Result;
 
 use warp_back::routes::{
-    add_user_to_group, create_group, get_all_groups, get_group_data, leave_group1,
-    save_group_movies, update_group_data,
+    add_user_to_group, create_group, get_all_groups, get_group_data, leave_group, update_group_data,
 };
 use warp_back::routes::{authorize_access, authorize_refresh, login, register, search};
 use warp_back::State;
@@ -28,11 +27,11 @@ async fn main() -> Result<()> {
         .or(authorize_access(&state))
         .or(authorize_refresh(&state))
         .or(create_group(&state))
-        .or(leave_group1(&state))
+        .or(leave_group(&state))
         .or(get_all_groups(&state))
         .or(add_user_to_group(&state))
         //.or(get_group_movies(&state))
-        .or(save_group_movies(&state))
+        //.or(save_group_movies(&state))
         .or(get_group_data(&state))
         .or(update_group_data(&state))
         .recover(handle_rejection)

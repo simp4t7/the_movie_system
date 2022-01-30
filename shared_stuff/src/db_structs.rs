@@ -1,5 +1,6 @@
-use crate::groups_stuff::GroupInfo;
-use crate::{Deserialize, Serialize, YewMovieDisplay};
+use crate::group_structs::GroupInfo;
+use crate::shared_structs::{SystemState, YewMovieDisplay};
+use crate::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet, VecDeque};
 use uuid::Uuid;
 
@@ -38,16 +39,10 @@ pub struct DBGroupStruct {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-pub enum SystemState {
-    AddingMovies,
-    SystemStarted,
-    Finished,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct GroupData {
     pub group_name: String,
-    pub members: VecDeque<String>,
+    pub members: HashSet<String>,
+    pub system_order: VecDeque<String>,
     pub movies_watched: HashSet<String>,
     pub current_movies: HashSet<YewMovieDisplay>,
     pub ready_status: HashMap<String, bool>,
@@ -61,7 +56,8 @@ impl GroupData {
     pub fn new_empty() -> GroupData {
         GroupData {
             group_name: String::from(""),
-            members: VecDeque::new(),
+            members: HashSet::new(),
+            system_order: VecDeque::new(),
             movies_watched: HashSet::new(),
             current_movies: HashSet::new(),
             ready_status: HashMap::new(),

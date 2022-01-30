@@ -1,8 +1,8 @@
 use crate::pages::system::{System, SystemMsg};
-use shared_stuff::db_structs::{GroupData, SystemState};
-use shared_stuff::YewMovieDisplay;
+use shared_stuff::db_structs::GroupData;
+use shared_stuff::shared_structs::{SystemState, YewMovieDisplay};
 
-use shared_stuff::ImageData;
+use shared_stuff::imdb_structs::ImageData;
 use yew::prelude::*;
 
 impl System {

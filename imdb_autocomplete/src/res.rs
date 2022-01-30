@@ -1,4 +1,5 @@
-use shared_stuff::{ImageData, JsonQuery, MediaType, MovieDisplay, MovieInfo};
+use shared_stuff::imdb_structs::{JsonQuery, MediaType, MovieInfo};
+use shared_stuff::shared_structs::MovieDisplay;
 use uuid::Uuid;
 
 use log::trace;

@@ -5,8 +5,7 @@ use reqwasm::http::{Request, RequestMode};
 use crate::LOGIN_URL;
 use anyhow::Result;
 use gloo_storage::{LocalStorage, Storage};
-use shared_stuff::TokenResponse;
-use shared_stuff::UserInfo;
+use shared_stuff::auth_structs::{TokenResponse, UserInfo};
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 

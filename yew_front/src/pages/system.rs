@@ -3,12 +3,12 @@ use crate::UPDATE_GROUP_DATA_URL;
 use anyhow::Result;
 use gloo_storage::{LocalStorage, Storage};
 use reqwasm::http::{Request, RequestMode};
-use shared_stuff::db_structs::SystemState;
 
 use crate::shared_requests::request_get_group_data;
 use shared_stuff::db_structs::GroupData;
-use shared_stuff::{ImdbQuery, MovieDisplay, YewMovieDisplay};
-use std::collections::HashSet;
+use shared_stuff::imdb_structs::ImdbQuery;
+use shared_stuff::shared_structs::{MovieDisplay, SystemState, YewMovieDisplay};
+use std::collections::{HashSet, VecDeque};
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
@@ -81,9 +81,19 @@ impl Component for System {
                     .all(|member| self.group_data.ready_status.get(member) == Some(&true))
                 {
                     self.group_data.system_state = SystemState::SystemStarted;
-                    let current_turn = self.group_data.members.pop_front().expect("no members?");
+                    self.group_data.system_order = self
+                        .group_data
+                        .members
+                        .iter()
+                        .cloned()
+                        .collect::<VecDeque<String>>();
+                    let current_turn = self
+                        .group_data
+                        .system_order
+                        .pop_front()
+                        .expect("no members?");
                     self.group_data.turn = current_turn.clone();
-                    self.group_data.members.push_back(current_turn);
+                    self.group_data.system_order.push_back(current_turn);
                 }
                 let cloned_data = self.group_data.clone();
                 let cloned_id = self.group_id.clone();
@@ -133,9 +143,13 @@ impl Component for System {
             DeleteEntryChangeTurn(movie) => {
                 self.current_movies.remove(&movie);
                 self.group_data.current_movies = self.current_movies.clone();
-                let current_turn = self.group_data.members.pop_front().expect("members empty?");
+                let current_turn = self
+                    .group_data
+                    .system_order
+                    .pop_front()
+                    .expect("members empty?");
                 self.group_data.turn = current_turn.clone();
-                self.group_data.members.push_back(current_turn);
+                self.group_data.system_order.push_back(current_turn);
                 if self.current_movies.len() == 1 {
                     self.group_data.system_state = SystemState::Finished;
                 }

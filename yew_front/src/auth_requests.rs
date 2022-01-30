@@ -2,8 +2,7 @@ use crate::{ACCESS_URL, REFRESH_URL};
 use anyhow::{anyhow, Result};
 use gloo_storage::{LocalStorage, Storage};
 use reqwasm::http::{Request, RequestMode, Response};
-use shared_stuff::Claims;
-use shared_stuff::TokenResponse;
+use shared_stuff::auth_structs::{Claims, TokenResponse};
 
 pub async fn get_route_with_auth(url: &str) -> Result<Response> {
     let storage = LocalStorage::raw();
