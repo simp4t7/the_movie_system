@@ -2,7 +2,6 @@ use crate::group_structs::GroupInfo;
 use crate::shared_structs::{SystemState, YewMovieDisplay};
 use crate::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet, VecDeque};
-use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DBUser {
@@ -18,7 +17,7 @@ pub struct DBUserStruct {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UserData {
-    pub id: Uuid,
+    pub id: String,
     pub hashed_password: String,
     pub salt: String,
     pub groups: HashSet<GroupInfo>,

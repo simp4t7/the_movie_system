@@ -30,8 +30,6 @@ async fn main() -> Result<()> {
         .or(leave_group(&state))
         .or(get_all_groups(&state))
         .or(add_user_to_group(&state))
-        //.or(get_group_movies(&state))
-        //.or(save_group_movies(&state))
         .or(get_group_data(&state))
         .or(update_group_data(&state))
         .recover(handle_rejection)

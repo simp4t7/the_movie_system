@@ -7,10 +7,11 @@ use shared_stuff::db_structs::{DBGroup, DBGroupStruct, DBUser, DBUserStruct, Gro
 use shared_stuff::group_structs::{GroupForm, GroupInfo};
 use shared_stuff::shared_structs::SystemState;
 use sqlx::pool::PoolConnection;
+use sqlx::types::uuid::Uuid;
 use sqlx::Sqlite;
 use sqlx::{query, query_as, SqlitePool};
 use std::collections::{HashMap, HashSet, VecDeque};
-use uuid::Uuid;
+//use uuid::Uuid;
 use warp::reject::custom;
 
 pub async fn db_verify_group_member(
@@ -70,11 +71,11 @@ pub async fn db_user_leave_group(db: &SqlitePool, username: String, group_id: &s
 }
 
 pub async fn create_user_data(user_info: UserInfo) -> Result<DBUserStruct> {
-    let id = Uuid::new_v4();
+    let id = Uuid::new_v4().to_string();
     let username = user_info.username;
     let (hashed_password, salt) = hasher(&user_info.password).await?;
     let groups = HashSet::new();
-    let now = chrono::Utc::now().timestamp();
+    let now = sqlx::types::chrono::Utc::now().timestamp();
     let user_data = UserData {
         id,
         hashed_password,
@@ -92,7 +93,7 @@ pub async fn create_user_data(user_info: UserInfo) -> Result<DBUserStruct> {
 
 pub fn create_group_data(input: &GroupForm) -> GroupData {
     let members = HashSet::from([input.username.clone()]);
-    let now = chrono::Utc::now().timestamp();
+    let now = sqlx::types::chrono::Utc::now().timestamp();
     let turn = String::from("");
     GroupData {
         group_name: input.group_name.clone(),
@@ -289,24 +290,23 @@ pub async fn db_update_password(
 ) -> Result<()> {
     let now = sqlx::types::chrono::Utc::now().timestamp();
 
-    match db_get_user(db, &old_user.username).await {
-        Ok(mut old_user_struct) => match verify_pass(
-            old_user.password.clone(),
-            old_user_struct.user_data.salt,
-            old_user_struct.user_data.hashed_password,
-        )? {
-            true => {
-                let (new_hashed_password, new_salt) = hasher(&new_user.password).await?;
-                old_user_struct.user_data.salt = new_salt;
-                old_user_struct.user_data.hashed_password = new_hashed_password;
-                old_user_struct.user_data.date_modified = now;
-                db_update_user(db, old_user_struct).await?;
-            }
-            false => {
-                custom(WarpRejections::AuthError(err_info!()));
-            }
-        },
-        Err(_) => return Err(custom(WarpRejections::SqlxError(err_info!()))),
+    let mut old_user_struct = db_get_user(db, &old_user.username).await?;
+
+    match verify_pass(
+        old_user.password.clone(),
+        old_user_struct.user_data.salt,
+        old_user_struct.user_data.hashed_password,
+    )? {
+        true => {
+            let (new_hashed_password, new_salt) = hasher(&new_user.password).await?;
+            old_user_struct.user_data.salt = new_salt;
+            old_user_struct.user_data.hashed_password = new_hashed_password;
+            old_user_struct.user_data.date_modified = now;
+            db_update_user(db, old_user_struct).await?;
+        }
+        false => {
+            custom(WarpRejections::AuthError(err_info!()));
+        }
     }
     Ok(())
 }
@@ -318,21 +318,19 @@ pub async fn db_update_username(
     old_password: String,
 ) -> Result<()> {
     let now = sqlx::types::chrono::Utc::now().timestamp();
-    match db_get_user(db, &old_user.username).await {
-        Ok(mut user_struct) => match verify_pass(
-            old_password,
-            user_struct.user_data.salt.clone(),
-            user_struct.user_data.hashed_password.clone(),
-        )? {
-            true => {
-                user_struct.user_data.date_modified = now;
-                db_update_user(db, user_struct).await?;
-            }
-            false => {
-                custom(WarpRejections::AuthError(err_info!()));
-            }
-        },
-        Err(_) => return Err(custom(WarpRejections::SqlxError(err_info!()))),
+    let mut old_user_struct = db_get_user(db, &old_user.username).await?;
+    match verify_pass(
+        old_password,
+        old_user_struct.user_data.salt.clone(),
+        old_user_struct.user_data.hashed_password.clone(),
+    )? {
+        true => {
+            old_user_struct.user_data.date_modified = now;
+            db_update_user(db, old_user_struct).await?;
+        }
+        false => {
+            custom(WarpRejections::AuthError(err_info!()));
+        }
     }
     Ok(())
 }

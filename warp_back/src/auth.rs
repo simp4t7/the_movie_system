@@ -59,11 +59,11 @@ fn jwt_from_header(headers: &HeaderMap<HeaderValue>) -> Result<String> {
     }
 }
 
-pub async fn auth(token: String) -> Result<String> {
-    let claims = verify_token(token)?;
-    log::info!("auth claims: {:?}", claims);
-    Ok(claims.username)
-}
+//pub async fn auth(token: String) -> Result<String> {
+//let claims = verify_token(token)?;
+//log::info!("auth claims: {:?}", claims);
+//Ok(claims.username)
+//}
 
 pub fn generate_tokens(username: String, token_type: Token) -> Result<TokenResponse> {
     let now = sqlx::types::chrono::Utc::now().timestamp();
@@ -104,66 +104,6 @@ pub fn generate_tokens(username: String, token_type: Token) -> Result<TokenRespo
         }
     }
 }
-
-//pub fn generate_access_token(username: String) -> Result<TokenResponse> {
-//let now = sqlx::types::chrono::Utc::now().timestamp();
-//let token_exp = now + *ACCESS_EXP;
-
-//let token_claims = Claims {
-//username,
-//exp: token_exp,
-//token: Token::Access,
-//};
-//log::info!("past claims inside");
-//let access_token = encode(
-//&Header::new(Algorithm::HS512),
-//&token_claims,
-//&EncodingKey::from_secret(TOKEN_SECRET.as_bytes()),
-//)
-//.map_err(|_| custom(WarpRejections::AuthError(err_info!())))?;
-
-//Ok(TokenResponse {
-//access_token,
-//refresh_token: None,
-//})
-//}
-
-//pub fn generate_double_token(username: String) -> Result<TokenResponse> {
-//let now = sqlx::types::chrono::Utc::now().timestamp();
-//let token_exp = now + *ACCESS_EXP;
-
-//let token_claims = Claims {
-//username: username.clone(),
-//exp: token_exp,
-//token: Token::Access,
-//};
-//log::info!("past claims inside");
-//let access_token = encode(
-//&Header::new(Algorithm::HS512),
-//&token_claims,
-//&EncodingKey::from_secret(TOKEN_SECRET.as_bytes()),
-//)
-//.map_err(|_| custom(WarpRejections::AuthError(err_info!())))?;
-
-//let refresh_exp = now + *REFRESH_EXP;
-//let refresh_claims = Claims {
-//username,
-//exp: refresh_exp,
-//token: Token::Refresh,
-//};
-//let refresh_token = encode(
-//&Header::new(Algorithm::HS512),
-//&refresh_claims,
-//&EncodingKey::from_secret(TOKEN_SECRET.as_bytes()),
-//)
-//.map_err(|_| custom(WarpRejections::AuthError(err_info!())))?;
-//let token_response = TokenResponse {
-//access_token,
-//refresh_token: Some(refresh_token),
-//};
-//log::info!("{:?}", &token_response);
-//Ok(token_response)
-//}
 
 pub fn verify_token(token: String) -> Result<Claims> {
     let token = decode(

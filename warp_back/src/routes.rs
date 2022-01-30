@@ -9,11 +9,11 @@ use shared_stuff::auth_structs::{ErrorMessage, Token, UserInfo};
 use shared_stuff::db_structs::DBGroupStruct;
 use shared_stuff::group_structs::{AddUser, GroupForm, GroupInfo};
 use shared_stuff::imdb_structs::ImdbQuery;
+use sqlx::types::uuid::Uuid;
 use sqlx::SqlitePool;
 use warp::reject::custom;
 
 use crate::auth::generate_tokens;
-use uuid::Uuid;
 
 use warp::reply::json;
 use warp::Filter;

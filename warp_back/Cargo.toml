@@ -6,8 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tokio = {version = "1.13.0", features = ["macros", "rt-multi-thread", "parking_lot"]}
-warp = {version = "0.3.1", features = ["tls"]}
+tokio = {version = "1.13.0", features = ["macros", "rt-multi-thread"]}
+warp = "0.3.1"
 imdb_autocomplete = {path = "../imdb_autocomplete/"}
 log = "0.4.14"
 shared_stuff = {path = "../shared_stuff"}
@@ -15,12 +15,9 @@ http = "0.2.5"
 serde_json = "1.0.70"
 sqlx = {version = "0.5.9", features = ["runtime-tokio-rustls", "sqlite", "uuid", "chrono"]}
 argon2 = "0.3.1"
-uuid = {version = "0.8.2", features = ["v4"]}
 dotenv = "0.15.0"
 lazy_static = "1.4.0"
 jsonwebtoken = "7.2.0"
-serde = {version = "1.0.114", features=["derive"]}
-chrono = "0.4.19"
 
 [dev-dependencies]
 validator = { version = "0.14", features = ["derive"]  }
