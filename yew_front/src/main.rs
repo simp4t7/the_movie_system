@@ -18,7 +18,7 @@ pub mod pages;
 pub mod shared_requests;
 pub mod utils;
 
-use pages::group::Group;
+use pages::all_groups::AllGroups;
 use pages::groups::Groups;
 use pages::home::Home;
 use pages::login::Login;
@@ -62,7 +62,7 @@ pub enum Route {
     #[at("/user/:username")]
     User { username: String },
     #[at("/group/:group_id")]
-    Group { group_id: String },
+    AllGroups { group_id: String },
     #[at("/system/:group_id")]
     System { group_id: String },
     #[at("/404")]
@@ -193,7 +193,7 @@ fn switch(routes: &Route) -> Html {
         Route::Groups => html!{<Groups />},
         Route::Register => html!{<Register />},
         Route::User { username: _ }=> html!{<Groups />},
-        Route::Group { group_id } => html!{<Group id={group_id.clone()}/>},
+        Route::AllGroups { group_id } => html!{<AllGroups id={group_id.clone()}/>},
         Route::System { group_id } => html!{<System id={group_id.clone()}/>},
         //TODO! something for bad urls?
         Route::NotFound => html!{},

@@ -4,8 +4,6 @@ use crate::{ADD_USER_URL, CORS_ORIGIN, LEAVE_GROUP_URL};
 use anyhow::Result;
 use shared_stuff::db_structs::{DBGroupStruct, GroupData};
 use shared_stuff::group_structs::AddUser;
-use shared_stuff::shared_structs::MovieDisplay;
-use std::collections::HashMap;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
@@ -33,13 +31,12 @@ pub struct Props {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct Group {
+pub struct AllGroups {
     pub group_id: String,
     pub group_data: Option<GroupData>,
-    pub autocomplete_movies: HashMap<String, MovieDisplay>,
     pub add_user: String,
 }
-pub enum GroupMsg {
+pub enum AllGroupsMsg {
     Noop,
     GetGroupData,
     UpdateGroupData(DBGroupStruct),
@@ -49,16 +46,15 @@ pub enum GroupMsg {
     Error(String),
 }
 
-impl Component for Group {
-    type Message = GroupMsg;
+impl Component for AllGroups {
+    type Message = AllGroupsMsg;
     type Properties = Props;
     fn create(ctx: &Context<Self>) -> Self {
-        ctx.link().send_message(GroupMsg::GetGroupData);
+        ctx.link().send_message(AllGroupsMsg::GetGroupData);
         let id = &ctx.props().id;
         Self {
             group_id: id.to_string(),
             group_data: None,
-            autocomplete_movies: HashMap::new(),
             add_user: String::from(""),
         }
     }
@@ -66,7 +62,7 @@ impl Component for Group {
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         let link_clone = ctx.link().clone();
         let id = self.group_id.clone();
-        use GroupMsg::*;
+        use AllGroupsMsg::*;
         match msg {
             Noop => {}
 
@@ -74,8 +70,8 @@ impl Component for Group {
                 let group_struct_resp = request_get_group_data(id).await;
                 log::info!("group_data_resp: {:?}", &group_struct_resp);
                 match group_struct_resp {
-                    Ok(group_struct) => GroupMsg::UpdateGroupData(group_struct),
-                    Err(e) => GroupMsg::Error(e.to_string()),
+                    Ok(group_struct) => AllGroupsMsg::UpdateGroupData(group_struct),
+                    Err(e) => AllGroupsMsg::Error(e.to_string()),
                 }
             }),
 
@@ -89,7 +85,7 @@ impl Component for Group {
                 link_clone.send_future(async move {
                     let resp = request_add_new_user(id, add_user).await;
                     log::info!("{:?}", &resp);
-                    GroupMsg::Noop
+                    AllGroupsMsg::Noop
                 })
             }
 
@@ -103,7 +99,7 @@ impl Component for Group {
             Leave => ctx.link().send_future(async move {
                 let resp = request_leave_group(id).await;
                 log::info!("{:?}", &resp);
-                GroupMsg::Noop
+                AllGroupsMsg::Noop
             }),
 
             Error(err_msg) => {
@@ -124,82 +120,6 @@ impl Component for Group {
             { self.user_customized_view(ctx) }
             </div>
 
-        }
-    }
-}
-
-impl Group {
-    fn view_group_id(&self, ctx: &Context<Self>) -> Html {
-        html! {
-            <h3>{format!("group id is: {}", &ctx.props().id )}</h3>
-        }
-    }
-
-    fn user_customized_view(&self, ctx: &Context<Self>) -> Html {
-        match &self.group_data {
-            Some(group_data) => {
-                html! {
-                    <div>
-                    { self.view_group_data(ctx, &group_data) }
-                    { self.view_add_user_to_group(ctx) }
-                    { self.view_leave_group(ctx) }
-                    </div>
-                }
-            }
-            None => {
-                html! {
-                    <p>{format!("This group doesn't exist or you don't have the access to it.")}</p>
-                }
-            }
-        }
-    }
-
-    fn view_group_data(&self, _ctx: &Context<Self>, group_data: &GroupData) -> Html {
-        let system_url = format!("{}/system/{}", CORS_ORIGIN.to_string(), self.group_id);
-        html! {
-            <div>
-                <p>{format!("group data is:")}</p>
-                <li>{format!("Name: {}", group_data.group_name)}</li>
-                <li>{format!("Members: {:?}", group_data.members)}</li>
-                <li>{format!("Date created: {:?}", group_data.date_created)}</li>
-                <li>{format!("Movies watched: {:?}", group_data.movies_watched)}</li>
-                <li>
-                    {"system url: "}
-                    <a href= {system_url.clone()}>{system_url}</a>
-                </li>
-            </div>
-        }
-    }
-
-    fn view_add_user_to_group(&self, ctx: &Context<Self>) -> Html {
-        html! {
-        <div>
-            <h1> {"Add User"} </h1>
-            <input
-                class="add_user"
-                placeholder="username"
-                maxlength=50
-                oninput={ctx.link().callback(GroupMsg::SetAddUser)}
-            />
-            <button
-                class="create_group_button"
-                onclick={&ctx.link().callback(|_| GroupMsg::AddUser)}>
-                { "Add User" }
-            </button>
-        </div>
-        }
-    }
-
-    pub fn view_leave_group(&self, ctx: &Context<Self>) -> Html {
-        html! {
-        <div>
-            <h1> {"Leave Group"} </h1>
-            <button
-                class="create_group_button"
-                onclick={ctx.link().callback(|_| GroupMsg::Leave)}>
-                { "Leave Group" }
-            </button>
-        </div>
         }
     }
 }

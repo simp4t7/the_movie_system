@@ -1,4 +1,5 @@
-pub mod group;
+pub mod all_groups;
+pub mod all_groups_html;
 pub mod groups;
 pub mod groups_html;
 pub mod home;
