@@ -1,5 +1,5 @@
+use crate::auth_requests::request_auth_flow;
 use crate::error::Error;
-use crate::utils::request_auth_flow;
 use reqwasm::http::{Request, RequestMode};
 
 use crate::LOGIN_URL;

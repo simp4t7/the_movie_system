@@ -9,6 +9,12 @@ pub struct DBUser {
     pub data: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DBUserStruct {
+    pub username: String,
+    pub user_data: UserData,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UserData {
     pub id: Uuid,
@@ -63,6 +69,12 @@ impl GroupData {
             turn: String::from(""),
             date_created: 0,
             date_modified: 0,
+        }
+    }
+    pub fn into_db_group_struct(self, id: &str) -> DBGroupStruct {
+        DBGroupStruct {
+            id: id.to_string(),
+            group_data: self,
         }
     }
 }

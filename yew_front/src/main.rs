@@ -1,4 +1,4 @@
-use crate::utils::request_auth_flow;
+use crate::auth_requests::request_auth_flow;
 
 use lazy_static::lazy_static;
 use load_dotenv::load_dotenv;
@@ -12,8 +12,10 @@ use yew_router::prelude::*;
 
 use yew::{html, Component, Context, Html};
 
+pub mod auth_requests;
 pub mod error;
 pub mod pages;
+pub mod shared_requests;
 pub mod utils;
 
 use pages::group::Group;
@@ -37,12 +39,13 @@ lazy_static! {
     pub static ref REGISTER_URL: String = format!("{}/register", *ROOT_URL);
     pub static ref ACCESS_URL: String = format!("{}/access_auth", *ROOT_URL);
     pub static ref REFRESH_URL: String = format!("{}/refresh_auth", *ROOT_URL);
-    pub static ref GET_GROUP_MOVIES_URL: String = format!("{}/get_group_movies", *ROOT_URL);
-    pub static ref SAVE_GROUP_MOVIES_URL: String = format!("{}/save_group_movies", *ROOT_URL);
+    pub static ref UPDATE_GROUP_DATA_URL: String = format!("{}/update_group_data", *ROOT_URL);
+    //pub static ref GET_GROUP_MOVIES_URL: String = format!("{}/get_group_movies", *ROOT_URL);
+    //pub static ref SAVE_GROUP_MOVIES_URL: String = format!("{}/save_group_movies", *ROOT_URL);
     pub static ref CREATE_GROUP_URL: String = format!("{}/create_group", *ROOT_URL);
     pub static ref LEAVE_GROUP_URL: String = format!("{}/leave_group", *ROOT_URL);
     pub static ref ADD_USER_URL: String = format!("{}/add_user", *ROOT_URL);
-    pub static ref GET_ALL_GROUPS_URL: String = format!("{}/get_groups", *ROOT_URL);
+    pub static ref GET_ALL_GROUPS_URL: String = format!("{}/get_all_groups", *ROOT_URL);
     pub static ref GET_GROUP_DATA_URL: String = format!("{}/get_group_data", *ROOT_URL);
 }
 

@@ -1,11 +1,11 @@
-use crate::{SAVE_GROUP_MOVIES_URL, SEARCH_URL};
+use crate::SEARCH_URL;
+use crate::UPDATE_GROUP_DATA_URL;
 use anyhow::Result;
 use gloo_storage::{LocalStorage, Storage};
 use reqwasm::http::{Request, RequestMode};
 use shared_stuff::db_structs::SystemState;
 
-use crate::utils::get_route_with_auth;
-use crate::GET_GROUP_DATA_URL;
+use crate::shared_requests::request_get_group_data;
 use shared_stuff::db_structs::GroupData;
 use shared_stuff::{ImdbQuery, MovieDisplay, YewMovieDisplay};
 use std::collections::HashSet;
@@ -21,14 +21,15 @@ pub struct Props {
 pub struct System {
     pub username: String,
     pub group_id: String,
-    pub group_data: Option<GroupData>,
+    pub group_data: GroupData,
     pub autocomplete_movies: HashSet<MovieDisplay>,
     pub current_movies: HashSet<YewMovieDisplay>,
+    pub loaded: bool,
 }
 pub enum SystemMsg {
     Noop,
     GetGroupData,
-    UpdateGroupData(GroupData),
+    UpdateGroupData(DBGroupStruct),
     Error(String),
     SaveMovies,
     DeleteEntry(YewMovieDisplay),
@@ -55,118 +56,110 @@ impl Component for System {
         Self {
             username,
             group_id: id.to_string(),
-            group_data: None,
+            group_data: GroupData::new_empty(),
             autocomplete_movies: HashSet::new(),
             current_movies,
+            loaded: false,
         }
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         let link_clone = ctx.link().clone();
         let id = self.group_id.clone();
-        if let Some(data) = self.group_data.clone() {
-            self.current_movies = data.current_movies;
-        }
+        self.current_movies = self.group_data.current_movies.clone();
         use SystemMsg::*;
         match msg {
             Noop => {}
             SetReady => {
-                if let Some(mut data) = self.group_data.clone() {
-                    data.ready_status.insert(self.username.clone(), true);
-                    if data
-                        .members
-                        .iter()
-                        .all(|member| data.ready_status.get(member) == Some(&true))
-                    {
-                        data.system_state = SystemState::SystemStarted;
-                        let current_turn = data.members.pop_front().expect("no members?");
-                        data.turn = current_turn.clone();
-                        data.members.push_back(current_turn);
-                    }
-                    self.group_data = Some(data.clone());
-                    let cloned_data = data.clone();
-                    let cloned_id = self.group_id.clone();
-                    link_clone.send_future(async move {
-                        let resp = request_update_group_data(cloned_id, cloned_data).await;
-                        log::info!("resp is: {:?}", &resp);
-                        SystemMsg::Noop
-                    })
+                self.group_data
+                    .ready_status
+                    .insert(self.username.clone(), true);
+                if self
+                    .group_data
+                    .members
+                    .iter()
+                    .all(|member| self.group_data.ready_status.get(member) == Some(&true))
+                {
+                    self.group_data.system_state = SystemState::SystemStarted;
+                    let current_turn = self.group_data.members.pop_front().expect("no members?");
+                    self.group_data.turn = current_turn.clone();
+                    self.group_data.members.push_back(current_turn);
                 }
+                let cloned_data = self.group_data.clone();
+                let cloned_id = self.group_id.clone();
+                link_clone.send_future(async move {
+                    let resp = request_update_group_data(cloned_id, cloned_data).await;
+                    log::info!("resp is: {:?}", &resp);
+                    SystemMsg::Noop
+                })
             }
             UnsetReady => {
-                if let Some(mut data) = self.group_data.clone() {
-                    data.ready_status.insert(self.username.clone(), false);
-                    self.group_data = Some(data.clone());
-                    let cloned_data = data.clone();
-                    let cloned_id = self.group_id.clone();
-                    link_clone.send_future(async move {
-                        let resp = request_update_group_data(cloned_id, cloned_data).await;
-                        log::info!("resp is: {:?}", &resp);
-                        SystemMsg::Noop
-                    })
-                }
+                self.group_data
+                    .ready_status
+                    .insert(self.username.clone(), false);
+                let cloned_data = self.group_data.clone();
+                let cloned_id = self.group_id.clone();
+                link_clone.send_future(async move {
+                    let resp = request_update_group_data(cloned_id, cloned_data).await;
+                    log::info!("resp is: {:?}", &resp);
+                    SystemMsg::Noop
+                })
             }
             SaveMovies => {
                 log::info!("inside save movies");
-                let group_id = self.group_id.clone();
-                let data = self.group_data.clone();
-                if let Some(mut group_data) = data {
-                    log::info!("inside SaveMovies, group_data: {:?}", &group_data);
-                    group_data.current_movies = self.current_movies.clone();
-                    link_clone.send_future(async move {
-                        let resp = request_update_group_data(group_id, group_data).await;
-                        log::info!("resp is: {:?}", &resp);
-                        SystemMsg::Noop
-                    })
-                }
+                self.group_data.current_movies = self.current_movies.clone();
+
+                let cloned_data = self.group_data.clone();
+                let cloned_id = self.group_id.clone();
+                link_clone.send_future(async move {
+                    let resp = request_update_group_data(cloned_id, cloned_data).await;
+                    log::info!("resp is: {:?}", &resp);
+                    SystemMsg::Noop
+                })
             }
 
             DeleteEntry(movie) => {
                 self.current_movies.remove(&movie);
-                let group_id = self.group_id.clone();
-                if let Some(mut data) = self.group_data.clone() {
-                    data.current_movies = self.current_movies.clone();
-                    self.group_data = Some(data.clone());
-                    link_clone.send_future(async move {
-                        let resp = request_update_group_data(group_id, data.clone()).await;
-                        log::info!("resp is: {:?}", &resp);
-                        SystemMsg::Noop
-                    })
-                }
+                self.group_data.current_movies = self.current_movies.clone();
+                let cloned_data = self.group_data.clone();
+                let cloned_id = self.group_id.clone();
+                link_clone.send_future(async move {
+                    let resp = request_update_group_data(cloned_id, cloned_data).await;
+                    log::info!("resp is: {:?}", &resp);
+                    SystemMsg::Noop
+                })
             }
 
             DeleteEntryChangeTurn(movie) => {
                 self.current_movies.remove(&movie);
-                let group_id = self.group_id.clone();
-                if let Some(mut data) = self.group_data.clone() {
-                    data.current_movies = self.current_movies.clone();
-                    let current_turn = data.members.pop_front().expect("members empty?");
-                    data.turn = current_turn.clone();
-                    data.members.push_back(current_turn);
-                    self.group_data = Some(data.clone());
-                    if self.current_movies.len() == 1 {
-                        data.system_state = SystemState::Finished;
-                    }
-                    link_clone.send_message(SystemMsg::UpdateGroupData(data.clone()));
-                    link_clone.send_future(async move {
-                        let resp = request_update_group_data(group_id, data.clone()).await;
-                        log::info!("resp is: {:?}", &resp);
-                        SystemMsg::Noop
-                    })
+                self.group_data.current_movies = self.current_movies.clone();
+                let current_turn = self.group_data.members.pop_front().expect("members empty?");
+                self.group_data.turn = current_turn.clone();
+                self.group_data.members.push_back(current_turn);
+                if self.current_movies.len() == 1 {
+                    self.group_data.system_state = SystemState::Finished;
                 }
+                link_clone.send_message(SystemMsg::UpdateGroupData(
+                    self.group_data.clone().into_db_group_struct(&self.group_id),
+                ));
+                let cloned_data = self.group_data.clone();
+                let cloned_id = self.group_id.clone();
+
+                link_clone.send_future(async move {
+                    let resp = request_update_group_data(cloned_id, cloned_data).await;
+                    log::info!("resp is: {:?}", &resp);
+                    SystemMsg::Noop
+                })
             }
             AddMovie(movie) => {
                 self.current_movies
                     .insert(movie.clone().into_yew_display(self.username.clone()));
-                if let Some(mut data) = self.group_data.clone() {
-                    data.current_movies
-                        .insert(movie.clone().into_yew_display(self.username.clone()));
-                    self.group_data = Some(data);
-                }
+                self.group_data
+                    .current_movies
+                    .insert(movie.clone().into_yew_display(self.username.clone()));
                 log::info!("current_movies: {:?}", &self.current_movies);
             }
             QueryAutocomplete(text) => {
-                // Shouldn't do it if the text is empty, but handle this better probably...
                 if text.current_target().is_some() {
                     link_clone.clone().send_future(async move {
                         if let Some(elem) = text.target_dyn_into::<HtmlInputElement>() {
@@ -194,12 +187,10 @@ impl Component for System {
                 for i in movies {
                     self.autocomplete_movies.insert(i);
                 }
-
-                //self.autocomplete_movies = movies;
             }
 
             GetGroupData => link_clone.send_future(async move {
-                let group_data_resp = request_get_all_group_movies(id).await;
+                let group_data_resp = request_get_group_data(id).await;
                 log::info!("group_data_resp: {:?}", &group_data_resp);
                 match group_data_resp {
                     Ok(group_data) => SystemMsg::UpdateGroupData(group_data),
@@ -207,9 +198,11 @@ impl Component for System {
                 }
             }),
 
-            UpdateGroupData(group_data) => {
-                self.group_data = Some(group_data.clone());
-                self.current_movies = group_data.current_movies;
+            UpdateGroupData(group_struct) => {
+                self.group_data = group_struct.group_data.clone();
+                self.current_movies = group_struct.group_data.current_movies;
+                self.group_id = group_struct.id;
+                self.loaded = true;
             }
 
             Error(err_msg) => {
@@ -240,42 +233,13 @@ pub async fn request_update_group_data(group_id: String, group_data: GroupData) 
         group_data,
     };
     let serialized_db_group = serde_json::to_string(&db_group).expect("serialization error");
-    let _resp = Request::post(&SAVE_GROUP_MOVIES_URL)
+    let _resp = Request::post(&UPDATE_GROUP_DATA_URL)
         .header("content-type", "application/json; charset=UTF-8")
         .mode(RequestMode::Cors)
         .body(serialized_db_group)
         .send()
         .await?;
     Ok(())
-}
-
-//pub async fn request_save_movies_request(
-//username: String,
-//group_id: String,
-//current_movies: HashSet<YewMovieDisplay>,
-//) -> Result<()> {
-//let json_body = serde_json::to_string(&GroupMoviesForm {
-//username,
-//group_id,
-//current_movies,
-//})?;
-//let _resp = Request::post(&SAVE_GROUP_MOVIES_URL)
-//.header("content-type", "application/json; charset=UTF-8")
-//.mode(RequestMode::Cors)
-//.body(json_body)
-//.send()
-//.await?;
-//Ok(())
-//}
-
-pub async fn request_get_all_group_movies(group_id: String) -> Result<GroupData> {
-    let uri = GET_GROUP_DATA_URL.to_string();
-    let url = format!("{}/{}", uri, group_id);
-    let resp = get_route_with_auth(&url).await?;
-    log::info!("request_get_all_group_movies resp: {:?}", &resp);
-    let group_data: GroupData = resp.json().await?;
-    log::info!("request_get_all_group_movies group_data: {:?}", &group_data);
-    Ok(group_data)
 }
 
 pub async fn request_get_search_results(url: &str, body: ImdbQuery) -> Result<Vec<MovieDisplay>> {

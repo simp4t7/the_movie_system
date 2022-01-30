@@ -1,29 +1,19 @@
-use crate::utils::get_route_with_auth;
-use crate::utils::post_route_with_auth;
-use shared_stuff::groups_stuff::AddUser;
-use crate::{ADD_USER_URL, CORS_ORIGIN, GET_GROUP_DATA_URL, LEAVE_GROUP_URL};
+use crate::auth_requests::post_route_with_auth;
+use crate::shared_requests::request_get_group_data;
+use crate::{ADD_USER_URL, CORS_ORIGIN, LEAVE_GROUP_URL};
 use anyhow::Result;
+use shared_stuff::db_structs::DBGroupStruct;
 use shared_stuff::db_structs::GroupData;
+use shared_stuff::groups_stuff::AddUser;
 use shared_stuff::MovieDisplay;
 use std::collections::HashMap;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
-pub async fn request_get_group_data(group_id: String) -> Result<GroupData> {
-    let uri = GET_GROUP_DATA_URL.to_string();
-    let url = format!("{}/{}", uri, group_id);
-    let resp = get_route_with_auth(&url).await?;
-    log::info!("request_get_all_group_movies resp: {:?}", &resp);
-    let group_data: GroupData = resp.json().await?;
-    log::info!("request_get_all_group_movies group_data: {:?}", &group_data);
-    Ok(group_data)
-}
-
 pub async fn request_add_new_user(group_id: String, add_user: String) -> Result<()> {
     let uri = ADD_USER_URL.to_string();
     let url = format!("{}/{}", uri, group_id);
     let json_body = serde_json::to_string(&AddUser { username: add_user })?;
-    //let json_body = String::from("");
     let resp = post_route_with_auth(&url, json_body).await?;
     log::info!("request_add_new_user resp: {:?}", &resp);
     Ok(())
@@ -53,7 +43,7 @@ pub struct Group {
 pub enum GroupMsg {
     Noop,
     GetGroupData,
-    UpdateGroupData(GroupData),
+    UpdateGroupData(DBGroupStruct),
     SetAddUser(InputEvent),
     AddUser,
     Leave,
@@ -82,15 +72,18 @@ impl Component for Group {
             Noop => {}
 
             GetGroupData => link_clone.send_future(async move {
-                let group_data_resp = request_get_group_data(id).await;
-                log::info!("group_data_resp: {:?}", &group_data_resp);
-                match group_data_resp {
-                    Ok(group_data) => GroupMsg::UpdateGroupData(group_data),
+                let group_struct_resp = request_get_group_data(id).await;
+                log::info!("group_data_resp: {:?}", &group_struct_resp);
+                match group_struct_resp {
+                    Ok(group_struct) => GroupMsg::UpdateGroupData(group_struct),
                     Err(e) => GroupMsg::Error(e.to_string()),
                 }
             }),
 
-            UpdateGroupData(group_data) => self.group_data = Some(group_data),
+            UpdateGroupData(group_struct) => {
+                self.group_data = Some(group_struct.group_data);
+                self.group_id = group_struct.id;
+            }
 
             AddUser => {
                 let add_user = self.add_user.clone();

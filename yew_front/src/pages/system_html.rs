@@ -13,15 +13,15 @@ impl System {
     }
 
     pub fn user_customized_view(&self, ctx: &Context<Self>) -> Html {
-        match &self.group_data {
-            Some(group_data) => {
+        match &self.loaded {
+            true => {
                 html! {
                     <div>
-                    { self.view_group_data(ctx, &group_data) }
+                    { self.view_group_data(ctx, &self.group_data) }
                     </div>
                 }
             }
-            None => {
+            false => {
                 html! {
                     <p>{format!("This group doesn't exist or you don't have the access to it.")}</p>
                 }
@@ -76,32 +76,29 @@ impl System {
         }
     }
     pub fn search_bar(&self, ctx: &Context<Self>) -> Html {
-        if let Some(data) = self.group_data.clone() {
-            match data.system_state {
-                SystemState::AddingMovies => html! {
-                            <div class="movie_search_div">
-                                <input
-                                class="movie_search"
-                                placeholder="movie search"
-                                maxlength=50
-                                oninput={
+        //if let Some(data) = self.group_data.clone() {
+        match self.group_data.system_state {
+            SystemState::AddingMovies => html! {
+                        <div class="movie_search_div">
+                            <input
+                            class="movie_search"
+                            placeholder="movie search"
+                            maxlength=50
+                            oninput={
 
-                                    ctx.link().callback(SystemMsg::QueryAutocomplete)
-                                }
-                                />
-                            <div class="search_results">
-                            <ul class = "ul_search">
-                            {self.search_results(ctx)}
-                            </ul>
-                            </div>
-                            </div>
-                },
+                                ctx.link().callback(SystemMsg::QueryAutocomplete)
+                            }
+                            />
+                        <div class="search_results">
+                        <ul class = "ul_search">
+                        {self.search_results(ctx)}
+                        </ul>
+                        </div>
+                        </div>
+            },
 
-                SystemState::SystemStarted => html! {},
-                SystemState::Finished => html! {},
-            }
-        } else {
-            html! {}
+            SystemState::SystemStarted => html! {},
+            SystemState::Finished => html! {},
         }
     }
 
@@ -136,30 +133,27 @@ impl System {
     }
 
     pub fn delete_movie_button(&self, ctx: &Context<Self>, movie: YewMovieDisplay) -> Html {
-        if let Some(data) = self.group_data.clone() {
-            if data.system_state == SystemState::AddingMovies
-                && self.username == movie.added_by
-                && data.ready_status.get(&self.username) != Some(&true)
-            {
-                html! {
-                <button
-                    class="delete entry" title = {movie.movie_title.clone()}
-                    onclick={&ctx.link().callback(move|_| SystemMsg::DeleteEntry(movie.clone()))}>
-                    { "delete entry" }
-                </button>  }
-            } else if data.system_state == SystemState::SystemStarted && data.turn == self.username
-            {
-                html! {
-                <button
-                    class="delete entry" title = {movie.movie_title.clone()}
-                    onclick={&ctx.link().callback(move|_| SystemMsg::DeleteEntryChangeTurn(movie.clone()))}>
-                    { "delete entry" }
-                </button>  }
-            } else if data.system_state == SystemState::Finished {
-                html! {}
-            } else {
-                html! {}
-            }
+        if self.group_data.system_state == SystemState::AddingMovies
+            && self.username == movie.added_by
+            && self.group_data.ready_status.get(&self.username) != Some(&true)
+        {
+            html! {
+            <button
+                class="delete entry" title = {movie.movie_title.clone()}
+                onclick={&ctx.link().callback(move|_| SystemMsg::DeleteEntry(movie.clone()))}>
+                { "delete entry" }
+            </button>  }
+        } else if self.group_data.system_state == SystemState::SystemStarted
+            && self.group_data.turn == self.username
+        {
+            html! {
+            <button
+                class="delete entry" title = {movie.movie_title.clone()}
+                onclick={&ctx.link().callback(move|_| SystemMsg::DeleteEntryChangeTurn(movie.clone()))}>
+                { "delete entry" }
+            </button>  }
+        } else if self.group_data.system_state == SystemState::Finished {
+            html! {}
         } else {
             html! {}
         }

@@ -19,9 +19,9 @@ use warp::reply::json;
 use warp::Filter;
 
 use crate::new_db_stuff::{
-    create_group_data, create_user_data, db_add_group_to_user, db_add_user_to_group,
-    db_get_all_group_names, db_get_group_movies, db_get_user, db_get_user_groups, db_insert_group,
-    db_insert_user, db_save_group_movies, db_user_leave_group1, db_verify_group_member,
+    create_group_data, create_user_data, db_add_group_to_user, db_add_user_to_group, db_get_user,
+    db_insert_group, db_insert_user, db_save_group_movies, db_user_leave_group1,
+    db_verify_group_member,
 };
 
 pub fn get_group_data(
@@ -35,8 +35,8 @@ pub fn get_group_data(
             |group_id: String, username: String, db: SqlitePool| async move {
                 log::info!("group_id: {:?}", &group_id);
                 match db_verify_group_member(group_id, username, &db).await {
-                    Ok(group_data) => {
-                        let json_resp = serde_json::to_string(&group_data)
+                    Ok(group_struct) => {
+                        let json_resp = serde_json::to_string(&group_struct)
                             .map_err(|_| custom(WarpRejections::SerializationError(err_info!())))?;
                         Ok(json_resp)
                     }
@@ -99,24 +99,24 @@ pub fn leave_group1(
 //)
 //}
 
-pub fn get_group_movies(
-    state: &State,
-) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
-    warp::path("get_group_movies")
-        .and(warp::body::json())
-        .and(with_db(state.db.clone()))
-        .and_then(|group_form: GroupForm, db: SqlitePool| async move {
-            match db_get_group_movies(&db, &group_form).await {
-                Ok(movies) => {
-                    //let resp = MovieDisplayResponse { movies };
-                    let json_resp = serde_json::to_string(&movies)
-                        .map_err(|_| custom(WarpRejections::SerializationError(err_info!())))?;
-                    Ok(json_resp)
-                }
-                Err(e) => Err(e),
-            }
-        })
-}
+//pub fn get_group_movies(
+//state: &State,
+//) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+//warp::path("get_group_movies")
+//.and(warp::body::json())
+//.and(with_db(state.db.clone()))
+//.and_then(|group_form: GroupForm, db: SqlitePool| async move {
+//match db_get_group_movies(&db, &group_form).await {
+//Ok(movies) => {
+////let resp = MovieDisplayResponse { movies };
+//let json_resp = serde_json::to_string(&movies)
+//.map_err(|_| custom(WarpRejections::SerializationError(err_info!())))?;
+//Ok(json_resp)
+//}
+//Err(e) => Err(e),
+//}
+//})
+//}
 
 pub fn update_group_data(
     state: &State,
@@ -153,20 +153,19 @@ pub fn save_group_movies(
         })
 }
 
-pub fn get_groups(
+pub fn get_all_groups(
     state: &State,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
-    warp::path("get_groups")
+    warp::path("get_all_groups")
         .and(with_auth())
         .and(with_db(state.db.clone()))
         .and_then(|username: String, db: SqlitePool| async move {
-            match db_get_user_groups(&db, &username).await {
-                Ok(groups) => {
+            match db_get_user(&db, &username).await {
+                Ok(user_struct) => {
+                    let groups = user_struct.user_data.groups;
                     log::info!("okay, got the groups: {:?}", &groups);
-                    let group_names = db_get_all_group_names(&db, &username).await?;
-                    let groups_struct = UserGroupsJson {
-                        groups: group_names,
-                    };
+                    //let group_names = db_get_all_group_names(&db, &username).await?;
+                    let groups_struct = UserGroupsJson { groups };
                     let json_resp = serde_json::to_string(&groups_struct)
                         .map_err(|_| custom(WarpRejections::SerializationError(err_info!())))?;
                     Ok(json_resp)
@@ -306,10 +305,14 @@ pub fn login(
         .and(warp::body::json())
         .and(with_db(state.db.clone()))
         .and_then(|user: UserInfo, db: SqlitePool| async move {
-            let user_info = db_get_user(&db, &user.username).await?;
-            let token_response = generate_tokens(user_info.0.clone(), Token::Refresh)?;
-            log::info!("user_info: {:?}", &user_info);
-            match verify_pass(user.password, user_info.1.salt, user_info.1.hashed_password)? {
+            let user_struct = db_get_user(&db, &user.username).await?;
+            let token_response = generate_tokens(user_struct.username.clone(), Token::Refresh)?;
+            //log::info!("user_info: {:?}", &user_struct);
+            match verify_pass(
+                user.password,
+                user_struct.user_data.salt,
+                user_struct.user_data.hashed_password,
+            )? {
                 true => Ok(json(&token_response)),
                 false => Err(custom(WarpRejections::AuthError(err_info!()))),
             }

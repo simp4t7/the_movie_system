@@ -1,5 +1,5 @@
-use crate::utils::post_route_with_auth;
-use crate::{CREATE_GROUP_URL, GET_ALL_GROUPS_URL, LEAVE_GROUP_URL};
+use crate::auth_requests::post_route_with_auth;
+use crate::{CREATE_GROUP_URL, GET_ALL_GROUPS_URL};
 use anyhow::Result;
 use gloo_storage::{LocalStorage, Storage};
 use shared_stuff::groups_stuff::{GroupForm, GroupInfo, UserGroupsJson};
@@ -7,40 +7,14 @@ use std::collections::HashSet;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
-pub async fn request_leave_group(username: String, group_name: String) -> Result<()> {
-    let json_body = serde_json::to_string(&GroupForm {
-        username,
-        group_name,
-    })?;
-    let resp = post_route_with_auth(&LEAVE_GROUP_URL, json_body.clone()).await?;
-    log::info!("leave group resp: {:?}", &resp);
-    Ok(())
-}
-
-//pub async fn request_add_user(
-//username: String,
-//new_member: String,
-//group_name: String,
-//) -> Result<()> {
-//let json_body = serde_json::to_string(&AddUser {
-//username,
-//new_member,
-//group_name,
-//})?;
-//let resp = post_route_with_auth(&ADD_USER_URL, json_body.clone()).await?;
-//log::info!("add user resp: {:?}", &resp);
-//Ok(())
-//}
-
 pub async fn request_get_all_groups() -> Result<HashSet<GroupInfo>> {
-    //let json_body = serde_json::to_string(&Add { username })?;
     let json_body = String::from("");
     let resp = post_route_with_auth(&GET_ALL_GROUPS_URL, json_body.clone()).await?;
     let groups: UserGroupsJson = resp.json().await?;
     Ok(groups.groups)
 }
 
-pub async fn request_new_group(username: String, group_name: String) -> Result<()> {
+pub async fn request_create_group(username: String, group_name: String) -> Result<()> {
     let json_body = serde_json::to_string(&GroupForm {
         username,
         group_name,
@@ -123,7 +97,7 @@ impl Component for Groups {
                 log::info!("making a group, username is: {:?}", &username);
                 let group_name = self.create_group_name.clone();
                 ctx.link().send_future(async move {
-                    let resp = request_new_group(username, group_name).await;
+                    let resp = request_create_group(username, group_name).await;
                     log::info!("{:?}", &resp);
                     GroupsMsg::GetAllGroups
                 })
