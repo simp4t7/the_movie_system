@@ -1,7 +1,7 @@
 pub mod all_groups;
 pub mod all_groups_html;
-pub mod groups;
-pub mod groups_html;
+pub mod group;
+pub mod group_html;
 pub mod home;
 pub mod home_html;
 pub mod login;

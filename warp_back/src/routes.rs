@@ -81,42 +81,6 @@ pub fn leave_group(
         )
 }
 
-//pub fn add_user_to_group(
-//state: &State,
-//) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
-//warp::path("add_user")
-//.and(warp::body::json())
-//.and(with_auth())
-//.and(with_db(state.db.clone()))
-//.and_then(
-//|user: AddUser, _username: String, db: SqlitePool| async move {
-//match db_add_user_to_group(&db, &user).await {
-//Ok(_) => Ok(warp::reply()),
-//Err(e) => Err(e),
-//}
-//},
-//)
-//}
-
-//pub fn get_group_movies(
-//state: &State,
-//) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
-//warp::path("get_group_movies")
-//.and(warp::body::json())
-//.and(with_db(state.db.clone()))
-//.and_then(|group_form: GroupForm, db: SqlitePool| async move {
-//match db_get_group_movies(&db, &group_form).await {
-//Ok(movies) => {
-////let resp = MovieDisplayResponse { movies };
-//let json_resp = serde_json::to_string(&movies)
-//.map_err(|_| custom(WarpRejections::SerializationError(err_info!())))?;
-//Ok(json_resp)
-//}
-//Err(e) => Err(e),
-//}
-//})
-//}
-
 pub fn update_group_data(
     state: &State,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
@@ -133,25 +97,6 @@ pub fn update_group_data(
             }
         })
 }
-
-//pub fn save_group_movies(
-//state: &State,
-//) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
-//warp::path("save_group_movies")
-//.and(warp::body::json())
-//.and(with_db(state.db.clone()))
-//.and_then(|group_struct: DBGroupStruct, db: SqlitePool| async move {
-//log::info!("save_group_movies -> group_struct: {:?}", &group_struct);
-//match db_save_group_movies(&db, &group_struct).await {
-//Ok(_) => Ok(warp::reply()),
-//Err(e) => {
-//log::info!("error is: {:?}", &e);
-//Err(e)
-//}
-//}
-//})
-//}
-
 pub fn get_all_groups(
     state: &State,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {

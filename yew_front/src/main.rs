@@ -19,7 +19,7 @@ pub mod shared_requests;
 pub mod utils;
 
 use pages::all_groups::AllGroups;
-use pages::groups::Groups;
+use pages::group::Group;
 use pages::home::Home;
 use pages::login::Login;
 use pages::register::Register;
@@ -58,11 +58,11 @@ pub enum Route {
     #[at("register")]
     Register,
     #[at("groups")]
-    Groups,
+    AllGroups,
     #[at("/user/:username")]
     User { username: String },
     #[at("/group/:group_id")]
-    AllGroups { group_id: String },
+    Group { group_id: String },
     #[at("/system/:group_id")]
     System { group_id: String },
     #[at("/404")]
@@ -159,9 +159,7 @@ pub fn nav_bar() -> Html {
             <ul class="nav_bar">
             <li><a href="/">{"Home"}</a></li>
             <li><a href="/groups">{"Group"}</a></li>
-            <li><a href="/add_movies">{"Add Movies"}</a></li>
             <li><a href="/register">{"Register"}</a></li>
-            <li><a href="/the_system">{"The System"}</a></li>
             <li style="float:right"><a href="/about">{"About"}</a></li>
             <li style="float:right"><a href="/login">{user.unwrap()}</a></li>
             </ul>
@@ -174,7 +172,6 @@ pub fn nav_bar() -> Html {
             <ul class="nav_bar">
             <li><a href="/">{"Home"}</a></li>
             <li><a href="/groups">{"Groups"}</a></li>
-            <li><a href="/add_movies">{"Add Movies"}</a></li>
             <li><a href="/register">{"Register"}</a></li>
             <li style="float:right"><a href="/about">{"About"}</a></li>
             <li style="float:right"><a href="/login">{"Login"}</a></li>
@@ -190,10 +187,10 @@ fn switch(routes: &Route) -> Html {
     match routes {
         Route::Home => html!{<Home />},
         Route::Login => html!{<Login />},
-        Route::Groups => html!{<Groups />},
+        Route::AllGroups => html!{<AllGroups />},
         Route::Register => html!{<Register />},
-        Route::User { username: _ }=> html!{<Groups />},
-        Route::AllGroups { group_id } => html!{<AllGroups id={group_id.clone()}/>},
+        Route::User { username: _ }=> html!{<AllGroups />},
+        Route::Group { group_id } => html!{<Group id={group_id.clone()}/>},
         Route::System { group_id } => html!{<System id={group_id.clone()}/>},
         //TODO! something for bad urls?
         Route::NotFound => html!{},

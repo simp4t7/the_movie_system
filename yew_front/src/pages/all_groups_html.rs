@@ -1,80 +1,57 @@
 use crate::pages::all_groups::{AllGroups, AllGroupsMsg};
 use crate::CORS_ORIGIN;
-use shared_stuff::db_structs::GroupData;
 use yew::prelude::*;
 
 impl AllGroups {
-    pub fn view_group_id(&self, ctx: &Context<Self>) -> Html {
-        html! {
-            <h3>{format!("group id is: {}", &ctx.props().id )}</h3>
-        }
-    }
-
-    pub fn user_customized_view(&self, ctx: &Context<Self>) -> Html {
-        match &self.group_data {
-            Some(group_data) => {
-                html! {
-                    <div>
-                    { self.view_group_data(ctx, &group_data) }
-                    { self.view_add_user_to_group(ctx) }
-                    { self.view_leave_group(ctx) }
-                    </div>
-                }
-            }
-            None => {
-                html! {
-                    <p>{format!("This group doesn't exist or you don't have the access to it.")}</p>
-                }
-            }
-        }
-    }
-
-    fn view_group_data(&self, _ctx: &Context<Self>, group_data: &GroupData) -> Html {
-        let system_url = format!("{}/system/{}", CORS_ORIGIN.to_string(), self.group_id);
-        html! {
-            <div>
-                <p>{format!("group data is:")}</p>
-                <li>{format!("Name: {}", group_data.group_name)}</li>
-                <li>{format!("Members: {:?}", group_data.members)}</li>
-                <li>{format!("Date created: {:?}", group_data.date_created)}</li>
-                <li>{format!("Movies watched: {:?}", group_data.movies_watched)}</li>
-                <li>
-                    {"system url: "}
-                    <a href= {system_url.clone()}>{system_url}</a>
-                </li>
-            </div>
-        }
-    }
-
-    fn view_add_user_to_group(&self, ctx: &Context<Self>) -> Html {
+    pub fn create_group(&self, ctx: &Context<Self>) -> Html {
         html! {
         <div>
-            <h1> {"Add User"} </h1>
+            <h1> {"Create Group"} </h1>
             <input
-                class="add_user"
-                placeholder="username"
+                class="add_group"
+                placeholder="group name"
                 maxlength=50
-                oninput={ctx.link().callback(AllGroupsMsg::SetAddUser)}
+                oninput={ctx.link().callback(AllGroupsMsg::CreateGroupName)}
             />
             <button
                 class="create_group_button"
-                onclick={&ctx.link().callback(|_| AllGroupsMsg::AddUser)}>
-                { "Add User" }
+                onclick={ctx.link().callback(|_| AllGroupsMsg::CreateGroup)}>
+                { "Create Group" }
             </button>
         </div>
         }
     }
-
-    pub fn view_leave_group(&self, ctx: &Context<Self>) -> Html {
-        html! {
-        <div>
-            <h1> {"Leave Group"} </h1>
-            <button
-                class="create_group_button"
-                onclick={ctx.link().callback(|_| AllGroupsMsg::Leave)}>
-                { "Leave Group" }
-            </button>
-        </div>
+    pub fn display_current_groups(&self, _ctx: &Context<Self>) -> Html {
+        let current_groups = self.current_groups.clone();
+        // let current_groups = self.current_groups.clone();
+        if !current_groups.is_empty() {
+            // let callback = ctx.link().callback(GroupsMsg::SetCurrentGroup);
+            current_groups
+                .iter()
+                .map(|group| {
+                    let group_url = format!("{}/group/{}", CORS_ORIGIN.to_string(), &group.uuid);
+                    let system_url = format!("{}/system/{}", CORS_ORIGIN.to_string(), &group.uuid);
+                    html! {
+                        <div>
+                            <li>
+                                {group}
+                            </li>
+                            <p>
+                                {"group url: "}
+                                <a href= {group_url.clone()}>{group_url}</a>
+                            </p>
+                            <p>
+                                {"system url: "}
+                                <a href= {system_url.clone()}>{system_url}</a>
+                            </p>
+                        </div>
+                    }
+                })
+                .collect::<Html>()
+        } else {
+            html! {
+                <p> {"Join some groups dude"} </p>
+            }
         }
     }
 }
