@@ -18,6 +18,7 @@ async fn main() -> Result<()> {
     info!("such information");
     warn!("o_O");
     error!("boom");
+    log::info!("checking new compile times...");
 
     let state = State::init().await?;
 

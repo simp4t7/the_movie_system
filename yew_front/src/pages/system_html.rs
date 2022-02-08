@@ -118,12 +118,12 @@ impl System {
         html! {
             <div>
             <button
-                class="ready_status"
+                class="button is-primary"
                 onclick={&ctx.link().callback(|_|SystemMsg::SetReady)}>
                 { "I'm ready!" }
             </button>
             <button
-                class="ready_status"
+                class="button is-primary"
                 onclick={&ctx.link().callback(|_|SystemMsg::UnsetReady)}>
                 { "Nah, not ready" }
             </button>

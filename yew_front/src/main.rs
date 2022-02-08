@@ -10,7 +10,7 @@ use yew::functional::*;
 
 use yew_router::prelude::*;
 
-use yew::{html, Component, Context, Html};
+use yew::{html, Component, Context, Html, Properties};
 
 pub mod auth_requests;
 pub mod error;
@@ -85,9 +85,11 @@ pub struct AuthStatus {
 #[derive(Clone, PartialEq)]
 pub struct App {}
 
+#[derive(PartialEq, Clone)]
 pub enum AppMsg {
     AuthCallback,
     UpdateAuth(AuthStatus),
+    Logout,
 }
 
 impl Component for App {
@@ -102,6 +104,11 @@ impl Component for App {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
+            AppMsg::Logout => {
+                let storage = LocalStorage::raw();
+                storage.clear().expect("problem clearing data");
+                log::info!("stored some data");
+            }
             AppMsg::AuthCallback => ctx.link().send_future(async move {
                 log::info!("inside auth callback");
                 let request_claims = request_auth_flow().await;
@@ -136,11 +143,11 @@ impl Component for App {
     fn changed(&mut self, _ctx: &Context<Self>) -> bool {
         false
     }
-    fn view(&self, _ctx: &Context<Self>) -> Html {
+    fn view(&self, ctx: &Context<Self>) -> Html {
         html! {
             <BrowserRouter>
             <main>
-            <NavBar/>
+            {self.new_nav_bar(ctx)}
             <Switch<Route> render={Switch::render(switch)} />
             </main>
             </BrowserRouter>
@@ -149,39 +156,62 @@ impl Component for App {
     }
 }
 
-#[function_component(NavBar)]
-pub fn nav_bar() -> Html {
-    let storage = LocalStorage::raw();
-    match storage.get("username") {
-        Ok(user) if user.is_some() => {
-            html! {
-            <div class="nav_bar">
-            <ul class="nav_bar">
-            <li><a href="/">{"Home"}</a></li>
-            <li><a href="/groups">{"Group"}</a></li>
-            <li><a href="/register">{"Register"}</a></li>
-            <li style="float:right"><a href="/about">{"About"}</a></li>
-            <li style="float:right"><a href="/login">{user.unwrap()}</a></li>
-            </ul>
-            </div>
-            }
-        }
-        _ => {
-            html! {
-            <div class="nav_bar">
-            <ul class="nav_bar">
-            <li><a href="/">{"Home"}</a></li>
-            <li><a href="/groups">{"Groups"}</a></li>
-            <li><a href="/register">{"Register"}</a></li>
-            <li style="float:right"><a href="/about">{"About"}</a></li>
-            <li style="float:right"><a href="/login">{"Login"}</a></li>
-            </ul>
-            </div>
-            }
+impl App {
+    pub fn new_nav_bar(&self, ctx: &Context<Self>) -> Html {
+        html! {
+            <nav class="navbar" role="navigation" aria-label="main navigation">
+                <div class="navbar-brand">
+                    <a role="button"
+                       class="navbar-burger"
+                       aria-label="menu"
+                       aria-expanded="false"
+                       data-target="navbarBasicExample">
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                    </a>
+                </div>
+                <div id="navbarBasicExample" class="navbar-menu">
+                <div class="navbar-start">
+                    <a class="navbar-item" href="/">{"Home"}</a>
+                    <a class="navbar-item" href="/groups">{"Groups"}</a>
+                <div class="navbar-item has-dropdown is-hoverable">
+                    <a class="navbar-link">{"More"}</a>
+                <div class="navbar-dropdown">
+                    <a class="navbar-item">{"Stuff"}</a>
+                    <a class="navbar-item">{"More Stuff"}</a>
+                    <a class="navbar-item">{"Yeah, more"}</a>
+                    <hr class="navbar-divider"/>
+                    <a class="navbar-item">{"Report an issue"}</a>
+                </div>
+                </div>
+                </div>
+                <div class="navbar-end">
+                <div class="navbar-item">
+                {
+                match LocalStorage::raw().get("username").expect("storage issue") {
+                    Some(user) => html!{
+                    <div class="buttons">
+                        <a class="button is-primary" href="/user"><strong>{user}</strong></a>
+                        <a class="button is-light"
+                    onclick={ctx.link().callback(|_| AppMsg::Logout)}
+                        >{"Logout"}</a>
+                    </div>
+                    },
+                    None => html! {
+                    <div class="buttons">
+                        <a class="button is-primary" href="/register"><strong>{"Register"}</strong></a>
+                        <a class="button is-light" href="/login">{"Login"}</a>
+                    </div>
+                    }
+                } }
+                </div>
+                </div>
+                </div>
+            </nav>
         }
     }
 }
-
 fn switch(routes: &Route) -> Html {
     html! {
     match routes {
