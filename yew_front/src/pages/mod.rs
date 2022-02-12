@@ -10,3 +10,5 @@ pub mod register;
 pub mod register_html;
 pub mod system;
 pub mod system_html;
+pub mod user;
+pub mod user_html;

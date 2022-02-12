@@ -24,6 +24,7 @@ use pages::home::Home;
 use pages::login::Login;
 use pages::register::Register;
 use pages::system::System;
+use pages::user::User;
 
 lazy_static! {
     pub static ref ROOT_URL: &'static str = {
@@ -219,7 +220,7 @@ fn switch(routes: &Route) -> Html {
         Route::Login => html!{<Login />},
         Route::AllGroups => html!{<AllGroups />},
         Route::Register => html!{<Register />},
-        Route::User { username: _ }=> html!{<AllGroups />},
+        Route::User { username }=> html!{<User username={username.clone()} />},
         Route::Group { group_id } => html!{<Group id={group_id.clone()}/>},
         Route::System { group_id } => html!{<System id={group_id.clone()}/>},
         //TODO! something for bad urls?

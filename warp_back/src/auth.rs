@@ -24,16 +24,6 @@ pub fn with_auth() -> impl Filter<Extract = (String,), Error = Rejection> + Clon
         .and_then(authorize)
 }
 
-/*
-pub fn with_group_auth() -> impl Filter<Extract = (GroupData,), Error = Rejection> + Clone {
-    headers_cloned()
-        .map(move |headers: HeaderMap<HeaderValue>| headers)
-        .and_then(authorize);
-    let group_data = GroupData::new_empty();
-    Ok(group_data)
-}
-*/
-
 async fn authorize(headers: HeaderMap<HeaderValue>) -> Result<String> {
     match jwt_from_header(&headers) {
         Ok(jwt) => {
@@ -46,7 +36,6 @@ async fn authorize(headers: HeaderMap<HeaderValue>) -> Result<String> {
 
             Ok(decoded.claims.username)
         }
-        // Err(e) => return Err(custom(WarpRejections::AuthRejection(AuthError::AccessError))),
         Err(e) => Err(e),
     }
 }
@@ -58,12 +47,6 @@ fn jwt_from_header(headers: &HeaderMap<HeaderValue>) -> Result<String> {
         None => Err(custom(WarpRejections::AuthError(err_info!()))),
     }
 }
-
-//pub async fn auth(token: String) -> Result<String> {
-//let claims = verify_token(token)?;
-//log::info!("auth claims: {:?}", claims);
-//Ok(claims.username)
-//}
 
 pub fn generate_tokens(username: String, token_type: Token) -> Result<TokenResponse> {
     let now = sqlx::types::chrono::Utc::now().timestamp();
@@ -136,8 +119,6 @@ pub async fn hasher(password: &str) -> Result<(String, String)> {
     Ok((password_hash, salt.as_salt().to_string()))
 }
 
-// take the input password string, compute a hashed password with the salt (mapped with the
-// username in the db), and then then compare the computed hashed with the db's hashed.
 pub fn verify_pass(password: String, salt: String, hashed_pw: String) -> Result<bool> {
     let argon2 = Argon2::default();
     let password_hash = argon2
