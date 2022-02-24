@@ -160,19 +160,19 @@ impl Component for App {
 impl App {
     pub fn new_nav_bar(&self, ctx: &Context<Self>) -> Html {
         html! {
-            <nav class="navbar" role="navigation" aria-label="main navigation">
+            <nav class="navbar is-primary is-fixed-top" role="navigation" aria-label="main navigation">
                 <div class="navbar-brand">
                     <a role="button"
                        class="navbar-burger"
                        aria-label="menu"
                        aria-expanded="false"
-                       data-target="navbarBasicExample">
+                       data-target="navbar-main">
                     <span aria-hidden="true"></span>
                     <span aria-hidden="true"></span>
                     <span aria-hidden="true"></span>
                     </a>
                 </div>
-                <div id="navbarBasicExample" class="navbar-menu">
+                <div id="navbar-main" class="navbar-menu">
                 <div class="navbar-start">
                     <a class="navbar-item" href="/">{"Home"}</a>
                     <a class="navbar-item" href="/groups">{"Groups"}</a>

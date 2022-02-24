@@ -31,7 +31,40 @@ impl Register {
         html! {
         <div>
             <div>
+                <div class="container field column is-3">
                 <h1> {"REGISTER"} </h1>
+                  <p class="control has-icons-left">
+                    <input class="input" type="email" placeholder="Email"/>
+                    <span class="icon is-small is-left">
+                    <i class="material-icons">{"email"}</i>
+                    </span>
+                    <span class="icon is-small is-right">
+                    <i class="fas fa-check"></i>
+                    </span>
+                    </p>
+                    </div>
+                <div class="container field column is-3">
+                  <p class="control has-icons-left">
+                    <input class="input" type="password" placeholder="Password"/>
+                    <span class="icon is-small is-left">
+                    <i class="material-icons">{"lock"}</i>
+                    </span>
+                    <span class="icon is-small is-right">
+                    <i class="fas fa-check"></i>
+                    </span>
+                    </p>
+                    </div>
+                <div class="container field column is-3">
+                  <p class="control has-icons-left">
+                    <input class="input" type="password" placeholder="Repeat Password"/>
+                    <span class="icon is-small is-left">
+                    <i class="material-icons">{"lock"}</i>
+                    </span>
+                    <span class="icon is-small is-right">
+                    <i class="fas fa-check"></i>
+                    </span>
+                    </p>
+                    </div>
                 <input
                     class="login_user_name"
                     placeholder="Username"
