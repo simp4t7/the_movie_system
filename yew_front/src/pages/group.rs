@@ -37,7 +37,7 @@ pub struct Group {
     pub group_id: String,
     pub group_data: Option<GroupData>,
     pub add_user: String,
-    pub add_user_success: String,
+    pub add_user_status: String,
 }
 pub enum GroupMsg {
     Noop,
@@ -59,7 +59,7 @@ impl Component for Group {
             group_id: ctx.props().id.clone(),
             group_data: None,
             add_user: String::from(""),
-            add_user_success: String::from("ok"),
+            add_user_status: String::from("ok"),
         }
     }
 
@@ -93,20 +93,9 @@ impl Component for Group {
 
             UpdateAddUserStatus(add_user_resp) => {
                 match add_user_resp {
-                    Ok(resp) => self.add_user_success = String::from("ok"),
-                    Err(e) => self.add_user_success = format!("{:?}", e),
+                    Ok(resp) => self.add_user_status = String::from("ok"),
+                    Err(e) => self.add_user_status = format!("{:?}", e),
                 }
-                /*
-                log::info!("add user resp : {:?}", &add_user_resp);
-                if let Ok(resp) = add_user_resp {
-                    log::info!("add user resp ok: {:?}", &resp);
-                    if resp.status() == 200 {
-                        self.add_user_success = String::from("ok");
-                    } else {
-                        self.add_user_success = resp.status_text();
-                    }
-                }
-                */
             }
 
             SetAddUser(text) => {

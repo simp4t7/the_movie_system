@@ -2,7 +2,7 @@ use crate::{ACCESS_URL, REFRESH_URL};
 use anyhow::{anyhow, Result};
 use gloo_storage::{LocalStorage, Storage};
 use reqwasm::http::{Request, RequestMode, Response};
-use shared_stuff::auth_structs::{Claims, TokenResponse};
+use shared_stuff::auth_structs::{Claims, TokenResponse, ErrorMessage};
 
 pub async fn get_route_with_auth(url: &str) -> Result<Response> {
     let storage = LocalStorage::raw();
@@ -132,7 +132,10 @@ pub async fn post_route_with_auth(url: &str, json_body: String) -> Result<Respon
                 let retry_resp = retry_request.send().await?;
                 Ok(retry_resp)
             }
-            e => Err(anyhow!("Error body: {:?}", resp.text().await?)),
+            e => {
+                let v: ErrorMessage = resp.json().await?;
+                Err(anyhow!("Error body: {:?}", v))
+            }
         }
     } else if let Some(token) = refresh_token {
         request_authorize_refresh(token).await?;

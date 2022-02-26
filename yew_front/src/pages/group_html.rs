@@ -61,7 +61,7 @@ impl Group {
                 onclick={&ctx.link().callback(|_| GroupMsg::AddUser)}>
                 { "Add User" }
             </button>
-            <h4> {format!("add user status: {:?}", self.add_user_success)} </h4>
+            <h4> {format!("add user status: {:?}", self.add_user_status)} </h4>
         </div>
         }
     }
