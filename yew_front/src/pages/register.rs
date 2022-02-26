@@ -131,16 +131,15 @@ impl Component for Register {
                 };
 
                 self.full_validation_check();
-                if self.validation.all_valid {
-                    ctx.link().send_future(async move {
-                        let resp = request_register(&REGISTER_URL, username).await;
-                        match resp {
-                            Ok(_a) => log::info!("success!"),
-                            Err(e) => log::info!("oh no, {:?}", &e),
-                        }
-                        RegisterMsg::Noop
-                    });
-                }
+                //if self.validation.all_valid {
+                ctx.link().send_future(async move {
+                    let resp = request_register(&REGISTER_URL, username).await;
+                    match resp {
+                        Ok(_a) => log::info!("success!"),
+                        Err(e) => log::info!("oh no, {:?}", &e),
+                    }
+                    RegisterMsg::Noop
+                });
                 //}
             }
         }

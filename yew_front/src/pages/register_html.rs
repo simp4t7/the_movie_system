@@ -71,7 +71,7 @@ impl Register {
                         Some(2) => html!{<progress class="progress is-warning" value="50" max="100"></progress>},
                         Some(3) => html!{<progress class="progress is-warning" value="75" max="100"></progress>},
                         Some(4) => html!{<progress class="progress is-primary" value="100" max="100"></progress>},
-                        _ => html!{<progress class="progress is-primary" max="100"></progress>},
+                        _ => html!{<progress class="progress is-primary" value="0" max="100"></progress>},
 
                     }
                 }
