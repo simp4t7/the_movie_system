@@ -3,6 +3,7 @@ use crate::shared_requests::request_get_group_data;
 use crate::{ADD_USER_URL, LEAVE_GROUP_URL};
 use anyhow::Result;
 use reqwasm::http::Response;
+use shared_stuff::auth_structs::ErrorMessage;
 // use gloo_storage::Result;
 use shared_stuff::db_structs::{DBGroupStruct, GroupData};
 use shared_stuff::group_structs::AddUser;
@@ -16,6 +17,22 @@ pub async fn request_add_new_user(group_id: String, add_user: String) -> Result<
     let resp = post_route_with_auth(&url, json_body).await;
     log::info!("request_add_new_user resp: {:?}", &resp);
     resp
+}
+
+pub async fn get_add_new_user_resp_status(group_id: String, add_user: String) -> Result<String> {
+    let resp_result = request_add_new_user(group_id, add_user).await;
+    match resp_result {
+        Ok(resp) => {
+            match resp.status() {
+                200 => Ok(String::from("ok")),
+                _ => {
+                    let resp_body: ErrorMessage = resp.json().await?;
+                    Ok(resp_body.message)
+                }
+            }
+        },
+        Err(e) => Ok(e.to_string()),
+    }
 }
 
 pub async fn request_leave_group(group_id: String) -> Result<()> {
@@ -44,7 +61,7 @@ pub enum GroupMsg {
     GetGroupData,
     UpdateGroupData(DBGroupStruct),
     SetAddUser(InputEvent),
-    UpdateAddUserStatus(Result<Response>),
+    UpdateAddUserStatus(String),
     AddUser,
     Leave,
     Error(String),
@@ -86,16 +103,17 @@ impl Component for Group {
             AddUser => {
                 let add_user = self.add_user.clone();
                 link_clone.send_future(async move {
-                    let resp = request_add_new_user(group_id, add_user).await;
-                    GroupMsg::UpdateAddUserStatus(resp)
+                    let add_user_result = get_add_new_user_resp_status(group_id, add_user).await;
+                    match add_user_result {
+                        Ok(text) => UpdateAddUserStatus(text),
+                        _ => UpdateAddUserStatus(String::from("bad request")),
+                    }
                 })
             }
 
-            UpdateAddUserStatus(add_user_resp) => {
-                match add_user_resp {
-                    Ok(resp) => self.add_user_status = String::from("ok"),
-                    Err(e) => self.add_user_status = format!("{:?}", e),
-                }
+
+            UpdateAddUserStatus(add_user_status_text) => {
+                self.add_user_status = add_user_status_text;
             }
 
             SetAddUser(text) => {
