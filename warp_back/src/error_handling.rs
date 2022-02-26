@@ -23,6 +23,7 @@ pub enum WarpRejections {
     SqlxError(String),
     GroupNotExist(String),
     UserNotInGroup(String),
+    UserNotExist(String),
     Other(String),
 }
 

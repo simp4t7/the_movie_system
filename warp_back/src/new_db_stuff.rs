@@ -131,7 +131,7 @@ pub async fn db_get_user(db: &SqlitePool, username: &str) -> Result<DBUserStruct
     )
     .fetch_one(&mut conn)
     .await
-    .map_err(|_| custom(WarpRejections::SqlxError(err_info!())))?;
+    .map_err(|_| custom(WarpRejections::UserNotExist(err_info!())))?;
 
     let user_struct = db_get_user_data(db_user)?;
 

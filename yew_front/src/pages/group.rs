@@ -2,6 +2,7 @@ use crate::auth_requests::post_route_with_auth;
 use crate::shared_requests::request_get_group_data;
 use crate::{ADD_USER_URL, LEAVE_GROUP_URL};
 use anyhow::Result;
+// use gloo_storage::Result;
 use shared_stuff::db_structs::{DBGroupStruct, GroupData};
 use shared_stuff::group_structs::AddUser;
 use web_sys::HtmlInputElement;
@@ -35,12 +36,14 @@ pub struct Group {
     pub group_id: String,
     pub group_data: Option<GroupData>,
     pub add_user: String,
+    pub add_user_success: bool,
 }
 pub enum GroupMsg {
     Noop,
     GetGroupData,
     UpdateGroupData(DBGroupStruct),
     SetAddUser(InputEvent),
+    UpdateAddUserStatus(Result<()>),
     AddUser,
     Leave,
     Error(String),
@@ -55,6 +58,7 @@ impl Component for Group {
             group_id: ctx.props().id.clone(),
             group_data: None,
             add_user: String::from(""),
+            add_user_success: true,
         }
     }
 
@@ -81,9 +85,17 @@ impl Component for Group {
             AddUser => {
                 let add_user = self.add_user.clone();
                 link_clone.send_future(async move {
-                    let _resp = request_add_new_user(group_id, add_user).await;
-                    GroupMsg::Noop
+                    let resp = request_add_new_user(group_id, add_user).await;
+                    GroupMsg::UpdateAddUserStatus(resp)
                 })
+            }
+
+            UpdateAddUserStatus(add_user_resp) => {
+                if add_user_resp.is_ok() {
+                    self.add_user_success = true;
+                } else {
+                    self.add_user_success = false;
+                }
             }
 
             SetAddUser(text) => {
