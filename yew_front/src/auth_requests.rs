@@ -132,7 +132,7 @@ pub async fn post_route_with_auth(url: &str, json_body: String) -> Result<Respon
                 let retry_resp = retry_request.send().await?;
                 Ok(retry_resp)
             }
-            e => Err(anyhow!("weird status code: {:?}", e)),
+            e => Err(anyhow!("Error body: {:?}", resp.text().await?)),
         }
     } else if let Some(token) = refresh_token {
         request_authorize_refresh(token).await?;

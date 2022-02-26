@@ -2,19 +2,20 @@ use crate::auth_requests::post_route_with_auth;
 use crate::shared_requests::request_get_group_data;
 use crate::{ADD_USER_URL, LEAVE_GROUP_URL};
 use anyhow::Result;
+use reqwasm::http::Response;
 // use gloo_storage::Result;
 use shared_stuff::db_structs::{DBGroupStruct, GroupData};
 use shared_stuff::group_structs::AddUser;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
-pub async fn request_add_new_user(group_id: String, add_user: String) -> Result<()> {
+pub async fn request_add_new_user(group_id: String, add_user: String) -> Result<Response> {
     let uri = ADD_USER_URL.to_string();
     let url = format!("{}/{}", uri, group_id);
     let json_body = serde_json::to_string(&AddUser { username: add_user })?;
-    let resp = post_route_with_auth(&url, json_body).await?;
+    let resp = post_route_with_auth(&url, json_body).await;
     log::info!("request_add_new_user resp: {:?}", &resp);
-    Ok(())
+    resp
 }
 
 pub async fn request_leave_group(group_id: String) -> Result<()> {
@@ -36,14 +37,14 @@ pub struct Group {
     pub group_id: String,
     pub group_data: Option<GroupData>,
     pub add_user: String,
-    pub add_user_success: bool,
+    pub add_user_success: String,
 }
 pub enum GroupMsg {
     Noop,
     GetGroupData,
     UpdateGroupData(DBGroupStruct),
     SetAddUser(InputEvent),
-    UpdateAddUserStatus(Result<()>),
+    UpdateAddUserStatus(Result<Response>),
     AddUser,
     Leave,
     Error(String),
@@ -58,7 +59,7 @@ impl Component for Group {
             group_id: ctx.props().id.clone(),
             group_data: None,
             add_user: String::from(""),
-            add_user_success: true,
+            add_user_success: String::from("ok"),
         }
     }
 
@@ -91,11 +92,21 @@ impl Component for Group {
             }
 
             UpdateAddUserStatus(add_user_resp) => {
-                if add_user_resp.is_ok() {
-                    self.add_user_success = true;
-                } else {
-                    self.add_user_success = false;
+                match add_user_resp {
+                    Ok(resp) => self.add_user_success = String::from("ok"),
+                    Err(e) => self.add_user_success = format!("{:?}", e),
                 }
+                /*
+                log::info!("add user resp : {:?}", &add_user_resp);
+                if let Ok(resp) = add_user_resp {
+                    log::info!("add user resp ok: {:?}", &resp);
+                    if resp.status() == 200 {
+                        self.add_user_success = String::from("ok");
+                    } else {
+                        self.add_user_success = resp.status_text();
+                    }
+                }
+                */
             }
 
             SetAddUser(text) => {
