@@ -2,7 +2,7 @@ use crate::{ACCESS_URL, REFRESH_URL};
 use anyhow::{anyhow, Result};
 use gloo_storage::{LocalStorage, Storage};
 use reqwasm::http::{Request, RequestMode, Response};
-use shared_stuff::auth_structs::{Claims, TokenResponse};
+use shared_stuff::auth_structs::{Claims, TokenResponse, ErrorMessage};
 
 pub async fn get_route_with_auth(url: &str) -> Result<Response> {
     let storage = LocalStorage::raw();
@@ -16,7 +16,6 @@ pub async fn get_route_with_auth(url: &str) -> Result<Response> {
         let request = make_get_request(url, &token);
         let resp = request.send().await?;
         match resp.status() {
-            200 => Ok(resp),
             401 => {
                 log::info!("access tokem 401");
                 request_authorize_refresh(refresh_token.unwrap()).await?;
@@ -25,7 +24,8 @@ pub async fn get_route_with_auth(url: &str) -> Result<Response> {
                 let retry_resp = retry_request.send().await?;
                 Ok(retry_resp)
             }
-            e => Err(anyhow!("weird status code: {:?}", e)),
+            _ => Ok(resp),
+            // e => Err(anyhow!("weird status code: {:?}", e)),
         }
     } else if let Some(token) = refresh_token {
         request_authorize_refresh(token).await?;
@@ -123,7 +123,6 @@ pub async fn post_route_with_auth(url: &str, json_body: String) -> Result<Respon
         let request = make_post_request(url, &json_body, &token);
         let resp = request.send().await?;
         match resp.status() {
-            200 => Ok(resp),
             401 => {
                 log::info!("access tokem 401");
                 request_authorize_refresh(refresh_token.unwrap()).await?;
@@ -132,7 +131,13 @@ pub async fn post_route_with_auth(url: &str, json_body: String) -> Result<Respon
                 let retry_resp = retry_request.send().await?;
                 Ok(retry_resp)
             }
-            e => Err(anyhow!("Error body: {:?}", resp.text().await?)),
+            _ => Ok(resp),
+            /*
+            _ => {
+                let v: ErrorMessage = resp.json().await?;
+                Err(anyhow!("Error body: {:?}", v))
+            }
+            */
         }
     } else if let Some(token) = refresh_token {
         request_authorize_refresh(token).await?;
@@ -141,7 +146,7 @@ pub async fn post_route_with_auth(url: &str, json_body: String) -> Result<Respon
         let retry_resp = retry_request.send().await?;
         Ok(retry_resp)
     } else {
-        Err(anyhow!("bad error uh oh"))
+        Err(anyhow!("bad request. doesn't pass post_route_with_auth"))
     }
 }
 
