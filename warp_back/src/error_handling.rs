@@ -24,6 +24,7 @@ pub enum WarpRejections {
     GroupNotExist(String),
     UserNotInGroup(String),
     UserNotExist(String),
+    UserNotAuthorized(String),
     Other(String),
 }
 

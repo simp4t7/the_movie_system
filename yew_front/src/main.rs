@@ -48,6 +48,7 @@ lazy_static! {
     pub static ref ADD_USER_URL: String = format!("{}/add_user", *ROOT_URL);
     pub static ref GET_ALL_GROUPS_URL: String = format!("{}/get_all_groups", *ROOT_URL);
     pub static ref GET_GROUP_DATA_URL: String = format!("{}/get_group_data", *ROOT_URL);
+    pub static ref GET_USER_PROFILE: String = format!("{}/get_user_profile", *ROOT_URL);
 }
 
 #[derive(Debug, Clone, PartialEq, Routable)]

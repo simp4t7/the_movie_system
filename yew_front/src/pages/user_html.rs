@@ -11,15 +11,17 @@ impl User {
                 <h3> {
                     format!("hello, you: {:?}", ctx.props().username.clone())
                 } </h3>
+
             </div>
         }
         
     }
 
     pub fn user_customized_view(&self, ctx: &Context<Self>) -> Html {
-        if self.authorized {
+        if self.user_profile.is_some() {
             html! {
                 <div>
+                { self.display_user_info(ctx) }
                 { self.create_group(ctx) }
                 { self.display_all_groups(ctx) }
                 </div>
@@ -28,6 +30,15 @@ impl User {
             html! {
                 <p>{format!("Not your page.")}</p>
             }
+        }
+    }
+
+    pub fn display_user_info(&self, ctx: &Context<Self>) -> Html {
+        html! {
+            <div>
+                <h1> {"User Info"} </h1>
+                <p>{format!("{:?}", self.user_profile)}</p>
+            </div>
         }
     }
 

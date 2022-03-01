@@ -1,16 +1,25 @@
-use crate::auth_requests::post_route_with_auth;
-use crate::{CREATE_GROUP_URL, GET_ALL_GROUPS_URL};
+use crate::auth_requests::{post_route_with_auth, get_route_with_auth};
+use crate::{CREATE_GROUP_URL, GET_ALL_GROUPS_URL, GET_USER_PROFILE};
 use anyhow::Result;
 use gloo_storage::{LocalStorage, Storage};
-use shared_stuff::group_structs::{GroupForm, GroupInfo};
+use shared_stuff::group_structs::{GroupForm, GroupInfo, UserProfile};
 use std::collections::HashSet;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
-pub async fn request_get_all_groups(username: String) -> Result<HashSet<GroupInfo>> {
+pub async fn request_get_user_profile(username: String) -> Result<UserProfile> {
+    let url = format!("{}/{}", GET_USER_PROFILE.to_string(), username);
+    log::info!("get_user_profile request url: {:?}", &url);
+    let resp = get_route_with_auth(&url).await?;
+    log::info!("get_user_profile request resp: {:?}", &resp);
+    let user_profile: UserProfile = resp.json().await?;
+    log::info!("get_user_profile request resp user_profile: {:?}", &user_profile);
+    Ok(user_profile)
+}
+
+pub async fn request_get_all_groups() -> Result<HashSet<GroupInfo>> {
     let json_body = String::from("");
-    let url = format!("{}/{}", GET_ALL_GROUPS_URL.to_string(), username);
-    let resp = post_route_with_auth(&url, json_body.clone()).await?;
+    let resp = post_route_with_auth(&GET_ALL_GROUPS_URL, json_body.clone()).await?;
     let all_groups: HashSet<GroupInfo> = resp.json().await?;
     Ok(all_groups)
 }
@@ -28,9 +37,9 @@ pub async fn request_create_group(username: String, group_name: String) -> Resul
 #[derive(Debug, PartialEq, Clone)]
 pub struct User {
     pub username: String,
+    pub user_profile: Option<UserProfile>,
     pub create_group_name: String,
     pub all_groups: HashSet<GroupInfo>,
-    pub authorized: bool,
 }
 
 #[derive(Properties, Debug, PartialEq, Clone)]
@@ -40,24 +49,25 @@ pub struct Props {
 
 pub enum UserMsg {
     Noop,
+    GetUserProfile,
     CreateGroup,
     CreateGroupName(InputEvent),
     GetAllGroups,
     UpdateGroups(HashSet<GroupInfo>),
-    UpdateAuthorize(bool),
+    UpdateUserProfile(UserProfile),
 }
 
 impl Component for User {
     type Message = UserMsg;
     type Properties = Props;
     fn create(ctx: &Context<Self>) -> Self {
-        ctx.link().send_message(UserMsg::GetAllGroups);
+        ctx.link().send_message(UserMsg::GetUserProfile);
         let create_group_name = String::from("");
         Self {
             username: ctx.props().username.clone(),
+            user_profile: None,
             create_group_name,
             all_groups: HashSet::new(),
-            authorized: false,
         }
     }
 
@@ -67,17 +77,24 @@ impl Component for User {
         use UserMsg::*;
         match msg {
             Noop => {}
+            GetUserProfile => {
+                link_clone.send_future(async move {
+                    let user_profile_result = request_get_user_profile(username).await;
+                    match user_profile_result {
+                        Ok(user_profile) => UserMsg::UpdateUserProfile(user_profile),
+                        _ => UserMsg::Noop,
+                    }
+                })
+            }
             GetAllGroups => {
                 link_clone.send_future(async move {
-                    let groups_result = request_get_all_groups(username).await;
-                    if let Ok(groups) = groups_result {
-                        UserMsg::UpdateGroups(groups)
-                    } else {
-                        UserMsg::UpdateAuthorize(false)
+                    let groups_result = request_get_all_groups().await;
+                    match groups_result {
+                        Ok(groups) => UserMsg::UpdateGroups(groups),
+                        _ => UserMsg::Noop,
                     }
                 })
             },
-            UpdateAuthorize(b) => self.authorized = b,
             CreateGroupName(text) => {
                 if let Some(elem) = text.target_dyn_into::<HtmlInputElement>() {
                     log::info!("group_name value: {:?}", &elem.value());
@@ -96,7 +113,12 @@ impl Component for User {
             }
             UpdateGroups(groups) => {
                 self.all_groups = groups;
-                self.authorized = true;
+            }
+            UpdateUserProfile(user_profile) => {
+                self.user_profile = Some(user_profile);
+                ctx.link().send_future(async move {
+                    UserMsg::GetAllGroups
+                });
             }
         }
         true
