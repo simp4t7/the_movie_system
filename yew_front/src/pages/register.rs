@@ -8,8 +8,7 @@ use reqwasm::http::{Request, RequestMode};
 use shared_stuff::auth_structs::UserInfo;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
-use yew_router::history::BrowserHistory;
-use yew_router::history::History;
+use yew_router::history::{BrowserHistory, History};
 
 pub async fn request_register(url: &str, body: UserInfo) -> Result<()> {
     let userinfo = serde_json::to_string(&body)?;

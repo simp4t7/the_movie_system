@@ -8,7 +8,7 @@ pub struct Claims {
     pub token: Token,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct TokenResponse {
     pub access_token: String,
     pub refresh_token: Option<String>,
