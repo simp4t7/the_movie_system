@@ -1,6 +1,8 @@
 use crate::auth_requests::request_auth_flow;
 use crate::error::Error;
+use crate::Route::User;
 use reqwasm::http::{Request, RequestMode};
+use yew_router::history::{BrowserHistory, History};
 
 use crate::LOGIN_URL;
 use anyhow::Result;
@@ -109,6 +111,11 @@ impl Component for Login {
                 storage
                     .set("refresh_token", &token.refresh_token.unwrap())
                     .expect("problem setting token");
+                let history = BrowserHistory::new();
+                history.replace(User {
+                    username: self.username.clone(),
+                });
+
                 log::info!("stored some data");
             }
         }

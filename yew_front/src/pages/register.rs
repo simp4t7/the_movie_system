@@ -1,12 +1,15 @@
 use zxcvbn::zxcvbn;
 
 use crate::error::Error;
+use crate::Route::Login;
 use crate::REGISTER_URL;
 use anyhow::Result;
 use reqwasm::http::{Request, RequestMode};
 use shared_stuff::auth_structs::UserInfo;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
+use yew_router::history::BrowserHistory;
+use yew_router::history::History;
 
 pub async fn request_register(url: &str, body: UserInfo) -> Result<()> {
     let userinfo = serde_json::to_string(&body)?;
@@ -124,6 +127,7 @@ impl Component for Register {
                 }
                 self.validate_repeated_pass();
             }
+
             RegisterUser => {
                 let username = UserInfo {
                     username: self.username.clone(),
@@ -135,7 +139,11 @@ impl Component for Register {
                 ctx.link().send_future(async move {
                     let resp = request_register(&REGISTER_URL, username).await;
                     match resp {
-                        Ok(_a) => log::info!("success!"),
+                        Ok(_) => {
+                            let history = BrowserHistory::new();
+                            history.replace(Login);
+                            log::info!("success!");
+                        }
                         Err(e) => log::info!("oh no, {:?}", &e),
                     }
                     RegisterMsg::Noop
