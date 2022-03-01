@@ -7,9 +7,10 @@ use std::collections::HashSet;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
-pub async fn request_get_all_groups() -> Result<HashSet<GroupInfo>> {
+pub async fn request_get_all_groups(username: String) -> Result<HashSet<GroupInfo>> {
     let json_body = String::from("");
-    let resp = post_route_with_auth(&GET_ALL_GROUPS_URL, json_body.clone()).await?;
+    let url = format!("{}/{}", GET_ALL_GROUPS_URL.to_string(), username);
+    let resp = post_route_with_auth(&url, json_body.clone()).await?;
     let all_groups: HashSet<GroupInfo> = resp.json().await?;
     Ok(all_groups)
 }
@@ -29,6 +30,7 @@ pub struct User {
     pub username: String,
     pub create_group_name: String,
     pub all_groups: HashSet<GroupInfo>,
+    pub authorized: bool,
 }
 
 #[derive(Properties, Debug, PartialEq, Clone)]
@@ -42,6 +44,7 @@ pub enum UserMsg {
     CreateGroupName(InputEvent),
     GetAllGroups,
     UpdateGroups(HashSet<GroupInfo>),
+    UpdateAuthorize(bool),
 }
 
 impl Component for User {
@@ -54,20 +57,27 @@ impl Component for User {
             username: ctx.props().username.clone(),
             create_group_name,
             all_groups: HashSet::new(),
+            authorized: false,
         }
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         let link_clone = ctx.link().clone();
+        let username = self.username.clone();
         use UserMsg::*;
         match msg {
             Noop => {}
-            GetAllGroups => link_clone.send_future(async move {
-                let groups = request_get_all_groups()
-                    .await
-                    .expect("problem getting groups");
-                UserMsg::UpdateGroups(groups)
-            }),
+            GetAllGroups => {
+                link_clone.send_future(async move {
+                    let groups_result = request_get_all_groups(username).await;
+                    if let Ok(groups) = groups_result {
+                        UserMsg::UpdateGroups(groups)
+                    } else {
+                        UserMsg::UpdateAuthorize(false)
+                    }
+                })
+            },
+            UpdateAuthorize(b) => self.authorized = b,
             CreateGroupName(text) => {
                 if let Some(elem) = text.target_dyn_into::<HtmlInputElement>() {
                     log::info!("group_name value: {:?}", &elem.value());
@@ -86,6 +96,7 @@ impl Component for User {
             }
             UpdateGroups(groups) => {
                 self.all_groups = groups;
+                self.authorized = true;
             }
         }
         true
@@ -99,9 +110,7 @@ impl Component for User {
         html! {
         <div>
         { self.user_info(ctx) }
-        { self.create_group(ctx) }
-         <h1> {"Current Groups"} </h1>
-        { self.display_all_groups(ctx) }
+        { self.user_customized_view(ctx) }
         </div> }
     }
 }
