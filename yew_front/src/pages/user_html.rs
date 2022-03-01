@@ -15,6 +15,22 @@ impl User {
         }
         
     }
+
+    pub fn user_customized_view(&self, ctx: &Context<Self>) -> Html {
+        if self.authorized {
+            html! {
+                <div>
+                { self.create_group(ctx) }
+                { self.display_all_groups(ctx) }
+                </div>
+            }
+        } else {
+            html! {
+                <p>{format!("Not your page.")}</p>
+            }
+        }
+    }
+
     pub fn create_group(&self, ctx: &Context<Self>) -> Html {
         html! {
         <div>
@@ -45,6 +61,7 @@ impl User {
                     let system_url = format!("{}/system/{}", CORS_ORIGIN.to_string(), &group.uuid);
                     html! {
                         <div>
+                            <h1> {"Current Groups"} </h1>
                             <li>
                                 {group}
                             </li>

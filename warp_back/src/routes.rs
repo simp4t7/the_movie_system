@@ -101,9 +101,13 @@ pub fn get_all_groups(
     state: &State,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path("get_all_groups")
+        .and(warp::path::param())
         .and(with_auth())
         .and(with_db(state.db.clone()))
-        .and_then(|username: String, db: SqlitePool| async move {
+        .and_then(|param_username: String, username: String, db: SqlitePool| async move {
+            if !param_username.eq(&username) {
+                return Err(custom(WarpRejections::SqlxError(err_info!())));
+            }
             match db_get_user(&db, &username).await {
                 Ok(user_struct) => {
                     let json_resp = serde_json::to_string(&user_struct.user_data.groups)
