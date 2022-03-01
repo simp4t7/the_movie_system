@@ -1,4 +1,5 @@
 use crate::{Deserialize, Serialize};
+use std::collections::HashSet;
 
 use std::fmt;
 
@@ -23,4 +24,12 @@ impl fmt::Display for GroupInfo {
         // Use `self.number` to refer to each positional data point.
         write!(f, "(GroupInfo: uuid: {}, name: {})", self.uuid, self.name)
     }
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
+pub struct UserProfile {
+    pub username: String,
+    pub groups: HashSet<GroupInfo>,
+    pub date_created: i64,
+    pub date_modified: i64,
 }

@@ -1,13 +1,12 @@
 use crate::auth::{verify_pass, verify_token, with_auth};
 use crate::err_info;
 use crate::error_handling::WarpRejections;
-use crate::new_db_stuff::db_update_group;
 use crate::State;
 use http::status::StatusCode;
 use imdb_autocomplete::autocomplete_func;
 use shared_stuff::auth_structs::{ErrorMessage, Token, UserInfo};
 use shared_stuff::db_structs::DBGroupStruct;
-use shared_stuff::group_structs::{AddUser, GroupForm, GroupInfo};
+use shared_stuff::group_structs::{AddUser, GroupForm, GroupInfo, UserProfile};
 use shared_stuff::imdb_structs::ImdbQuery;
 use sqlx::types::uuid::Uuid;
 use sqlx::SqlitePool;
@@ -20,8 +19,40 @@ use warp::Filter;
 
 use crate::new_db_stuff::{
     create_group_data, create_user_data, db_add_user_to_group, db_get_user, db_insert_group,
-    db_insert_user, db_update_user, db_user_leave_group, db_verify_group_member,
+    db_insert_user, db_update_user, db_user_leave_group, db_verify_group_member, db_update_group,
 };
+
+pub fn get_user_profile(
+    state: &State,
+) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+    warp::path("get_user_profile")
+        .and(warp::path::param())
+        .and(with_auth())
+        .and(with_db(state.db.clone()))
+        .and_then(
+            |param_username: String, token_username: String, db: SqlitePool| async move {
+                if !param_username.eq(&token_username) {
+                    log::info!("user not authorized");
+                    return Err(custom(WarpRejections::UserNotAuthorized(err_info!())));
+                }
+                match db_get_user(&db, &token_username).await {
+                    Ok(user_struct) => {
+                        let user_profile: UserProfile = UserProfile {
+                            username: user_struct.username,
+                            groups: user_struct.user_data.groups,
+                            date_created: user_struct.user_data.date_created,
+                            date_modified: user_struct.user_data.date_modified,
+                        };
+                        log::info!("user_profile: {:?}", &user_profile);
+                        let json_resp = serde_json::to_string(&user_profile)
+                            .map_err(|_| custom(WarpRejections::SerializationError(err_info!())))?;
+                        Ok(json_resp)
+                    }
+                    Err(e) => Err(e),
+                }
+            },
+        )
+}
 
 pub fn get_group_data(
     state: &State,
@@ -101,13 +132,9 @@ pub fn get_all_groups(
     state: &State,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path("get_all_groups")
-        .and(warp::path::param())
         .and(with_auth())
         .and(with_db(state.db.clone()))
-        .and_then(|param_username: String, username: String, db: SqlitePool| async move {
-            if !param_username.eq(&username) {
-                return Err(custom(WarpRejections::SqlxError(err_info!())));
-            }
+        .and_then(|username: String, db: SqlitePool| async move {
             match db_get_user(&db, &username).await {
                 Ok(user_struct) => {
                     let json_resp = serde_json::to_string(&user_struct.user_data.groups)
