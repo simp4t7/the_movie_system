@@ -54,10 +54,10 @@ impl System {
                 .map(|movie| {
                     let movie_clone = movie.clone();
                         html! {
-                        <div class="search_results_div"
-                            onclick={&ctx.link().callback(move |_| SystemMsg::AddMovie(movie_clone.clone()))}>
-                        <img class="search_results_image"
-                            src={image_processing(&movie.movie_images)}/>
+                        <div>
+                        <a class="panel-block"
+                        onclick={&ctx.link().callback(move |_| SystemMsg::AddMovie(movie_clone.clone()))}>
+                        <img src={image_processing(&movie.movie_images)}/>
                         <ul id = {movie.movie_id.clone()}>
                         <li class="search_results_info">
                         {&movie.movie_title}
@@ -69,6 +69,8 @@ impl System {
                         {&movie.movie_stars}
                         </li>
                         </ul>
+                        //</div>
+                        </a>
                         </div>
                     } 
                 })
@@ -79,21 +81,20 @@ impl System {
         //if let Some(data) = self.group_data.clone() {
         match self.group_data.system_state {
             SystemState::AddingMovies => html! {
-                        <div class="movie_search_div">
-                            <input
-                            class="movie_search"
-                            placeholder="movie search"
+                        <div class="container column is-4 is-centered">
+                        <div>
+                            <p class="control has-icons-left">
+                            <input class="input" type="text" placeholder="Movie Search"
                             maxlength=50
-                            oninput={
-
-                                ctx.link().callback(SystemMsg::QueryAutocomplete)
-                            }
-                            />
-                        <div class="search_results">
-                        <ul class = "ul_search">
-                        {self.search_results(ctx)}
-                        </ul>
+                            oninput={ctx.link().callback(SystemMsg::QueryAutocomplete)}/>
+                            <span class="icon is-small is-left">
+                            <i class="material-icons">{"search"}</i>
+                            </span>
+                            </p>
                         </div>
+                            <ul>
+                            {self.search_results(ctx)}
+                            </ul>
                         </div>
             },
 
