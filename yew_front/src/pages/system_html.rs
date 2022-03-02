@@ -54,24 +54,52 @@ impl System {
                 .map(|movie| {
                     let movie_clone = movie.clone();
                         html! {
-                        <div>
-                        <a class="panel-block"
+                        <a class="panel-block px-0"
                         onclick={&ctx.link().callback(move |_| SystemMsg::AddMovie(movie_clone.clone()))}>
+                        <div class="is-flex column is-2 p-0 movie_search_image">
                         <img src={image_processing(&movie.movie_images)}/>
-                        <ul id = {movie.movie_id.clone()}>
-                        <li class="search_results_info">
+                        </div>
+                        <div class="column is-10 is-flex is-flex-direction-column p-0" id = {movie.movie_id.clone()}>
+                        <li class="content mb-1 ml-3 is-size-5 is-size-6-mobile ellipsis is-ellipsis-1">
                         {&movie.movie_title}
                         </li>
-                        <li class="search_results_info">
+                        <li class="content mb-1 ml-3 is-size-6 is-size-7-mobile">
                         {&movie.movie_year}
                         </li>
-                        <li class="search_results_info">
+                        <li class="content mb-1 ml-3 is-size-6 is-size-7-mobile">
                         {&movie.movie_stars}
                         </li>
-                        </ul>
-                        //</div>
-                        </a>
+                        <div class="columns is-mobile">
+                        <div class="column ml-3">
+                        <button
+                            class="button is-primary is-small is-fullwidth"
+                            onclick={&ctx.link().callback(|_|SystemMsg::SetReady)}>
+                            { "Add to System" }
+                        </button>
                         </div>
+                        <div class="column mr-3">
+                        <button
+                            class="button is-primary is-small is-fullwidth"
+                            onclick={&ctx.link().callback(|_|SystemMsg::SetReady)}>
+                            { "Visit IMDB" }
+                        </button>
+                        </div>
+                        </div>
+
+                        //<div class="column is-12 is-flex is-flex-direction-row p-0">
+                        //<button
+                            //class="button is-primary is-small column is-5 ml-3 p-0"
+                            //onclick={&ctx.link().callback(|_|SystemMsg::SetReady)}>
+                            //{ "Add to System" }
+                        //</button>
+                        //<button
+                            //class="button is-primary is-small column is-5 ml-3 p-0"
+                            //onclick={&ctx.link().callback(|_|SystemMsg::SetReady)}>
+                            //{ "Visit IMDB" }
+                        //</button>
+                        //</div>
+                        </div>
+                        </a>
                     } 
                 })
                 .collect::<Html>()
@@ -205,6 +233,6 @@ pub fn image_processing(image: &ImageData) -> String {
     let mut image_url = image.url.to_owned();
     assert!(&image_url[image_url.len() - 4..] == ".jpg");
     image_url.truncate(image_url.len() - 4);
-    image_url.push_str("._V1_QL75_UY74_CR30,0,50,74_.jpg");
+    image_url.push_str("QL75_UX80_CR0,5,80,120_.jpg");
     image_url
 }
