@@ -53,13 +53,14 @@ impl System {
                 // Still not handling the no images nicely?
                 .map(|movie| {
                     let movie_clone = movie.clone();
+                    let imdb_link = format!("https://imdb.com/title/{}", &movie.movie_id);
+                    
                         html! {
-                        <a class="panel-block px-0"
-                        onclick={&ctx.link().callback(move |_| SystemMsg::AddMovie(movie_clone.clone()))}>
-                        <div class="is-flex column is-2 p-0 movie_search_image">
-                        <img src={image_processing(&movie.movie_images)}/>
+                        <a class="panel-block px-0">
+                        <div class="column p-0 is-narrow">
+                        <img style="width: 80px;" src={image_processing(&movie.movie_images)}/>
                         </div>
-                        <div class="column is-10 is-flex is-flex-direction-column p-0" id = {movie.movie_id.clone()}>
+                        <div class="column is-flex-direction-column p-0" id = {movie.movie_id.clone()}>
                         <li class="content mb-1 ml-3 is-size-5 is-size-6-mobile ellipsis is-ellipsis-1">
                         {&movie.movie_title}
                         </li>
@@ -73,16 +74,18 @@ impl System {
                         <div class="column ml-3">
                         <button
                             class="button is-primary is-small is-fullwidth"
-                            onclick={&ctx.link().callback(|_|SystemMsg::SetReady)}>
+                        onclick={&ctx.link().callback(move |_| SystemMsg::AddMovie(movie_clone.clone()))}>
                             { "Add to System" }
                         </button>
                         </div>
                         <div class="column mr-3">
-                        <button
+                        <a
                             class="button is-primary is-small is-fullwidth"
-                            onclick={&ctx.link().callback(|_|SystemMsg::SetReady)}>
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            href={imdb_link}>
                             { "Visit IMDB" }
-                        </button>
+                        </a>
                         </div>
                         </div>
 

@@ -36,7 +36,7 @@ fn serialize_raw_json(input: String) -> Result<Vec<MovieDisplay>, Box<dyn std::e
                     //Some(image_data) => serde_json::from_value(image_data).unwrap(),
                     //None => None,
                     //};
-                    let movie_id = Uuid::new_v4().to_string();
+                    let movie_id = movie.id.expect("no id");
 
                     //if movie_images.is_some() && movie.y.is_some() {
                     result_vec.push(MovieDisplay {
