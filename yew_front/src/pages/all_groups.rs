@@ -2,7 +2,7 @@ use crate::auth_requests::post_route_with_auth;
 use crate::{CREATE_GROUP_URL, GET_ALL_GROUPS_URL};
 use anyhow::Result;
 use gloo_storage::{LocalStorage, Storage};
-use shared_stuff::group_structs::{GroupForm, GroupInfo};
+use shared_stuff::group_structs::{GroupForm, GroupInfo, GroupUser};
 use std::collections::HashSet;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;

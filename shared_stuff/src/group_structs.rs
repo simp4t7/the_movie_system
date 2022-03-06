@@ -1,13 +1,22 @@
 use crate::{Deserialize, Serialize};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use std::fmt;
+
+pub type GroupUser = HashMap<String, GroupUserData>;
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct GroupForm {
     pub username: String,
     pub group_name: String,
 }
+
+#[derive(Clone, Serialize, Deserialize, Debug, Default, PartialEq)]
+pub struct GroupUserData {
+    pub ready_status: bool,
+    pub turn: bool,
+}
+
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct AddUser {
     pub username: String,

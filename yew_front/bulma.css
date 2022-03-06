@@ -11851,11 +11851,6 @@ a.has-text-danger-dark:hover, a.has-text-danger-dark:focus {
 .ellipsis {
     display: block;
     display: -webkit-box;
-          [>   max-width: 400px; <]
-          [>   height: 109.2px; <]
-          [> Fallback for non-webkit <]
-    [>margin: 0 auto;<]
-            [>   font-size: 26px; <]
     line-height: 1.4;
     -webkit-box-orient: vertical;
     overflow: hidden;
@@ -11867,9 +11862,8 @@ a.has-text-danger-dark:hover, a.has-text-danger-dark:focus {
     -webkit-line-clamp: 1;
 }
 
-.movie_search_image {
-    max-width: 80px;
-}
+.material-icons.md-48 { font-size: 2em;  }
+
 
 /*# sourceMappingURL=bulma.css.map */
 

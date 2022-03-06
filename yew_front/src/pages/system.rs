@@ -66,25 +66,32 @@ impl Component for System {
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         let link_clone = ctx.link().clone();
         let id = self.group_id.clone();
+        let storage = LocalStorage::raw();
+        let username = storage
+            .get("username")
+            .expect("storage error")
+            .expect("ummm");
         self.current_movies = self.group_data.current_movies.clone();
         use SystemMsg::*;
         match msg {
             Noop => {}
             SetReady => {
-                self.group_data
-                    .ready_status
-                    .insert(self.username.clone(), true);
+                if let Some(user_status) = self.group_data.members.get_mut(&username) {
+                    user_status.ready_status = true;
+                } else {
+                    log::info!("some problem here");
+                };
                 if self
                     .group_data
                     .members
-                    .iter()
-                    .all(|member| self.group_data.ready_status.get(member) == Some(&true))
+                    .values()
+                    .all(|user_status| user_status.ready_status == true)
                 {
                     self.group_data.system_state = SystemState::SystemStarted;
                     self.group_data.system_order = self
                         .group_data
                         .members
-                        .iter()
+                        .keys()
                         .cloned()
                         .collect::<VecDeque<String>>();
                     let current_turn = self
@@ -104,9 +111,11 @@ impl Component for System {
                 })
             }
             UnsetReady => {
-                self.group_data
-                    .ready_status
-                    .insert(self.username.clone(), false);
+                if let Some(user_status) = self.group_data.members.get_mut(&username) {
+                    user_status.ready_status = false;
+                } else {
+                    log::info!("some problem here");
+                };
                 let cloned_data = self.group_data.clone();
                 let cloned_id = self.group_id.clone();
                 link_clone.send_future(async move {
@@ -232,7 +241,9 @@ impl Component for System {
             { self.ready_status_buttons(ctx) }
             { self.view_group_id(ctx) }
             { self.user_customized_view(ctx) }
-            { self.search_bar(ctx) }
+            { self.full_search_html(ctx) }
+            //{ self.display_current_members(ctx) }
+            //{ self.search_bar(ctx) }
             { self.add_stuff(ctx) }
             </div>
         }

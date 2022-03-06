@@ -1,8 +1,7 @@
-use crate::auth_requests::{post_route_with_auth, get_route_with_auth};
+use crate::auth_requests::{get_route_with_auth, post_route_with_auth};
 use crate::{CREATE_GROUP_URL, GET_ALL_GROUPS_URL, GET_USER_PROFILE};
 use anyhow::Result;
-use gloo_storage::{LocalStorage, Storage};
-use shared_stuff::group_structs::{GroupForm, GroupInfo, UserProfile};
+use shared_stuff::group_structs::{GroupForm, GroupInfo, GroupUser, UserProfile};
 use std::collections::HashSet;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
@@ -13,7 +12,10 @@ pub async fn request_get_user_profile(username: String) -> Result<UserProfile> {
     let resp = get_route_with_auth(&url).await?;
     log::info!("get_user_profile request resp: {:?}", &resp);
     let user_profile: UserProfile = resp.json().await?;
-    log::info!("get_user_profile request resp user_profile: {:?}", &user_profile);
+    log::info!(
+        "get_user_profile request resp user_profile: {:?}",
+        &user_profile
+    );
     Ok(user_profile)
 }
 
@@ -77,24 +79,20 @@ impl Component for User {
         use UserMsg::*;
         match msg {
             Noop => {}
-            GetUserProfile => {
-                link_clone.send_future(async move {
-                    let user_profile_result = request_get_user_profile(username).await;
-                    match user_profile_result {
-                        Ok(user_profile) => UserMsg::UpdateUserProfile(user_profile),
-                        _ => UserMsg::Noop,
-                    }
-                })
-            }
-            GetAllGroups => {
-                link_clone.send_future(async move {
-                    let groups_result = request_get_all_groups().await;
-                    match groups_result {
-                        Ok(groups) => UserMsg::UpdateGroups(groups),
-                        _ => UserMsg::Noop,
-                    }
-                })
-            },
+            GetUserProfile => link_clone.send_future(async move {
+                let user_profile_result = request_get_user_profile(username).await;
+                match user_profile_result {
+                    Ok(user_profile) => UserMsg::UpdateUserProfile(user_profile),
+                    _ => UserMsg::Noop,
+                }
+            }),
+            GetAllGroups => link_clone.send_future(async move {
+                let groups_result = request_get_all_groups().await;
+                match groups_result {
+                    Ok(groups) => UserMsg::UpdateGroups(groups),
+                    _ => UserMsg::Noop,
+                }
+            }),
             CreateGroupName(text) => {
                 if let Some(elem) = text.target_dyn_into::<HtmlInputElement>() {
                     log::info!("group_name value: {:?}", &elem.value());
@@ -116,9 +114,7 @@ impl Component for User {
             }
             UpdateUserProfile(user_profile) => {
                 self.user_profile = Some(user_profile);
-                ctx.link().send_future(async move {
-                    UserMsg::GetAllGroups
-                });
+                ctx.link().send_future(async move { UserMsg::GetAllGroups });
             }
         }
         true

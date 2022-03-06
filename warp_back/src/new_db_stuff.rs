@@ -4,7 +4,7 @@ use crate::err_info;
 use crate::error_handling::{Result, WarpRejections};
 use shared_stuff::auth_structs::UserInfo;
 use shared_stuff::db_structs::{DBGroup, DBGroupStruct, DBUser, DBUserStruct, GroupData, UserData};
-use shared_stuff::group_structs::{GroupForm, GroupInfo};
+use shared_stuff::group_structs::{GroupForm, GroupInfo, GroupUserData};
 use shared_stuff::shared_structs::SystemState;
 use sqlx::pool::PoolConnection;
 use sqlx::types::uuid::Uuid;
@@ -21,7 +21,7 @@ pub async fn db_verify_group_member(
 ) -> Result<DBGroupStruct> {
     let group_struct = db_get_group(db, &group_id).await?;
     let members = &group_struct.group_data.members;
-    if members.contains(&username) {
+    if members.get(&username).is_some() {
         Ok(group_struct)
     } else {
         Err(custom(WarpRejections::UserNotInGroup(err_info!())))
@@ -33,10 +33,11 @@ pub async fn db_add_user_to_group(group_id: &str, new_member: &str, db: &SqliteP
 
     // Needs to fail if the user doesn't exist. This handles it, but the order matters.
     let mut user_struct = db_get_user(db, &new_member).await?;
+    let group_user_data = GroupUserData::default();
     group_struct
         .group_data
         .members
-        .insert(new_member.to_string());
+        .insert(new_member.to_string(), group_user_data);
 
     db_update_group(db, &group_struct).await?;
     let group_info = GroupInfo {
@@ -48,7 +49,7 @@ pub async fn db_add_user_to_group(group_id: &str, new_member: &str, db: &SqliteP
     Ok(())
 }
 
-pub async fn db_user_leave_group(db: &SqlitePool, username: String, group_id: &str) -> Result<()> {
+pub async fn db_user_leave_group(db: &SqlitePool, username: &str, group_id: &str) -> Result<()> {
     let mut group_struct = db_get_group(db, group_id).await?;
     let mut user_struct = db_get_user(db, &username).await?;
     let group_name = &group_struct.group_data.group_name;
@@ -60,7 +61,10 @@ pub async fn db_user_leave_group(db: &SqlitePool, username: String, group_id: &s
 
     // These return bools, so can match on them if you want to handle errors removing.
     user_struct.user_data.groups.remove(&remove_group);
-    group_struct.group_data.members.remove(&username);
+    group_struct
+        .group_data
+        .members
+        .remove(&username.to_string());
     db_update_user(db, user_struct).await?;
 
     match group_struct.group_data.members.is_empty() {
@@ -92,7 +96,8 @@ pub async fn create_user_data(user_info: UserInfo) -> Result<DBUserStruct> {
 }
 
 pub fn create_group_data(input: &GroupForm) -> GroupData {
-    let members = HashSet::from([input.username.clone()]);
+    let mut members = HashMap::new();
+    members.insert(input.username.clone(), GroupUserData::default());
     let now = sqlx::types::chrono::Utc::now().timestamp();
     let turn = String::from("");
     GroupData {
@@ -101,7 +106,6 @@ pub fn create_group_data(input: &GroupForm) -> GroupData {
         system_order: VecDeque::new(),
         movies_watched: HashSet::new(),
         current_movies: HashSet::new(),
-        ready_status: HashMap::new(),
         system_state: SystemState::AddingMovies,
         turn,
         date_created: now,

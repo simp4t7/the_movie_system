@@ -1,4 +1,4 @@
-use crate::group_structs::GroupInfo;
+use crate::group_structs::{GroupInfo, GroupUser};
 use crate::shared_structs::{SystemState, YewMovieDisplay};
 use crate::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -40,11 +40,10 @@ pub struct DBGroupStruct {
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct GroupData {
     pub group_name: String,
-    pub members: HashSet<String>,
+    pub members: GroupUser,
     pub system_order: VecDeque<String>,
     pub movies_watched: HashSet<String>,
     pub current_movies: HashSet<YewMovieDisplay>,
-    pub ready_status: HashMap<String, bool>,
     pub system_state: SystemState,
     pub turn: String,
     pub date_created: i64,
@@ -55,11 +54,10 @@ impl GroupData {
     pub fn new_empty() -> GroupData {
         GroupData {
             group_name: String::from(""),
-            members: HashSet::new(),
+            members: HashMap::new(),
             system_order: VecDeque::new(),
             movies_watched: HashSet::new(),
             current_movies: HashSet::new(),
-            ready_status: HashMap::new(),
             system_state: SystemState::AddingMovies,
             turn: String::from(""),
             date_created: 0,

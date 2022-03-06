@@ -1,6 +1,7 @@
 use crate::pages::system::{System, SystemMsg};
 use shared_stuff::db_structs::GroupData;
 use shared_stuff::shared_structs::{SystemState, YewMovieDisplay};
+use std::collections::VecDeque;
 
 use shared_stuff::imdb_structs::ImageData;
 use yew::prelude::*;
@@ -38,7 +39,6 @@ impl System {
                 <li>{format!("Date created: {:?}", group_data.date_created)}</li>
                 <li>{format!("Movies watched: {:?}", group_data.movies_watched)}</li>
                 <li>{format!("system status: {:?}", group_data.system_state)}</li>
-                <li>{format!("ready status: {:?}", group_data.ready_status)}</li>
                 <li>{format!("current turn: {:?}", group_data.turn)}</li>
             </div>
         }
@@ -89,18 +89,6 @@ impl System {
                         </div>
                         </div>
 
-                        //<div class="column is-12 is-flex is-flex-direction-row p-0">
-                        //<button
-                            //class="button is-primary is-small column is-5 ml-3 p-0"
-                            //onclick={&ctx.link().callback(|_|SystemMsg::SetReady)}>
-                            //{ "Add to System" }
-                        //</button>
-                        //<button
-                            //class="button is-primary is-small column is-5 ml-3 p-0"
-                            //onclick={&ctx.link().callback(|_|SystemMsg::SetReady)}>
-                            //{ "Visit IMDB" }
-                        //</button>
-                        //</div>
                         </div>
                         </a>
                     } 
@@ -108,11 +96,76 @@ impl System {
                 .collect::<Html>()
         }
     }
+    pub fn display_current_members(&self, ctx: &Context<Self>) -> Html {
+        html! {
+            <div class="columns">
+            {self.current_members(ctx)}
+            </div>
+        }
+    }
+    pub fn current_members(&self, ctx: &Context<Self>) -> Html {
+        let mut colors = VecDeque::from([
+            "is-link",
+            "is-success",
+            "is-warning",
+            "is-danger",
+            "is-link is-light",
+            "is-success is-light",
+            "is-warning is-light",
+            "is-danger is-light",
+        ]);
+        self.group_data
+            .members
+            .keys()
+            .map(|member| {
+                let color = colors.pop_front().expect("no more colors?");
+                html! {
+                    <div class="column is-2 is-flex is-flex-direction-rows">
+                    <div class="column p-0">
+                    <button class={format!("button is-fullwidth p-0 {}", color)}>
+                    {member}
+                    </button>
+                    </div>
+                    {
+
+                        match self.group_data.members.get(&member.clone()).expect("umm").ready_status {
+                        true => html!{
+                            <div class="button" style="border-style: none;">
+                            <span class="icon">
+                            <i class="material-icons md-48">{"check_circle_outline"}</i>
+                            </span>
+                            </div>
+                        },
+                        false => html! {
+                            <div class="button" style="border-style: none;">
+                            <span class="icon">
+                            <i class="material-icons md-48">{"block"}</i>
+                            </span>
+                            </div>
+                        },
+                    }     }
+                    </div>
+                }
+            })
+            .collect::<Html>()
+    }
+    pub fn full_search_html(&self, ctx: &Context<Self>) -> Html {
+        html! {
+            <div>
+            <div class="column is-12 is-flex-direction-rows">
+            {self.display_current_members(ctx)}
+            </div>
+            <div class="column is-4">
+            {self.search_bar(ctx)}
+            </div>
+            </div>
+        }
+    }
     pub fn search_bar(&self, ctx: &Context<Self>) -> Html {
         //if let Some(data) = self.group_data.clone() {
         match self.group_data.system_state {
             SystemState::AddingMovies => html! {
-                        <div class="container column is-4 is-centered">
+                        <div>
                         <div>
                             <p class="control has-icons-left">
                             <input class="input" type="text" placeholder="Movie Search"
@@ -167,7 +220,13 @@ impl System {
     pub fn delete_movie_button(&self, ctx: &Context<Self>, movie: YewMovieDisplay) -> Html {
         if self.group_data.system_state == SystemState::AddingMovies
             && self.username == movie.added_by
-            && self.group_data.ready_status.get(&self.username) != Some(&true)
+            && self
+                .group_data
+                .members
+                .get(&self.username)
+                .expect("hashmap problem")
+                .ready_status
+                != true
         {
             html! {
             <button

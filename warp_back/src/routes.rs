@@ -19,7 +19,7 @@ use warp::Filter;
 
 use crate::new_db_stuff::{
     create_group_data, create_user_data, db_add_user_to_group, db_get_user, db_insert_group,
-    db_insert_user, db_update_user, db_user_leave_group, db_verify_group_member, db_update_group,
+    db_insert_user, db_update_group, db_update_user, db_user_leave_group, db_verify_group_member,
 };
 
 pub fn get_user_profile(
@@ -86,8 +86,8 @@ pub fn add_user_to_group(
         .and(with_db(state.db.clone()))
         .and_then(
             |group_id: String, add_user: AddUser, _username: String, db: SqlitePool| async move {
-                let add_username = add_user.username;
-                match db_add_user_to_group(&group_id, &add_username, &db).await {
+                //let add_username = add_user.username;
+                match db_add_user_to_group(&group_id, &add_user.username, &db).await {
                     Ok(_) => Ok(warp::reply()),
                     Err(e) => Err(e),
                 }
@@ -104,7 +104,7 @@ pub fn leave_group(
         .and(with_db(state.db.clone()))
         .and_then(
             |group_id: String, username: String, db: SqlitePool| async move {
-                match db_user_leave_group(&db, username, &group_id).await {
+                match db_user_leave_group(&db, &username, &group_id).await {
                     Ok(_) => Ok(warp::reply()),
                     Err(e) => Err(e),
                 }
