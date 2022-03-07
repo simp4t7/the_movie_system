@@ -199,6 +199,28 @@ impl System {
         }
     }
 
+    pub fn system_status_bar(&self, ctx: &Context<Self>) -> Html {
+        html! {
+        <div class="container column is-9 is-flex is-flex-direction-horizontal">
+            <span class="icon my-auto has-text-success step-progress-icon" style="left: 1em;">
+            <i class="material-icons md-48">{"check_circle"}</i>
+            </span>
+            <progress class="progress my-auto" value="100" max="100"></progress>
+            <span class="icon my-auto has-text-success step-progress-icon" style="right: 1em;">
+            <i class="material-icons md-48">{"check_circle"}</i>
+            </span>
+            <progress class="progress my-auto" style="position:relative; right: 2em;" value="100" max="100"></progress>
+            <span class="icon my-auto has-text-success step-progress-icon" style="right: 3em;">
+            <i class="material-icons md-48">{"check_circle"}</i>
+            </span>
+            <progress class="progress my-auto" style="position:relative; right: 4em;" value="100" max="100"></progress>
+            <span class="icon my-auto has-text-success step-progress-icon" style="right: 5em;">
+            <i class="material-icons md-48">{"check_circle"}</i>
+            </span>
+        </div>
+        }
+    }
+
     pub fn ready_status_buttons(&self, ctx: &Context<Self>) -> Html {
         html! {
             <div>

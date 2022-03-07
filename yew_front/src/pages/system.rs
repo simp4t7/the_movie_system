@@ -241,6 +241,7 @@ impl Component for System {
             { self.ready_status_buttons(ctx) }
             { self.view_group_id(ctx) }
             { self.user_customized_view(ctx) }
+            { self.system_status_bar(ctx) }
             { self.full_search_html(ctx) }
             //{ self.display_current_members(ctx) }
             //{ self.search_bar(ctx) }

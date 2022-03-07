@@ -194,7 +194,7 @@ impl App {
                 match LocalStorage::raw().get("username").expect("storage issue") {
                     Some(user) => html!{
                     <div class="buttons">
-                        <a class="button is-primary" href="/user"><strong>{user}</strong></a>
+                        <a class="button is-primary" href={format!("/user/{}", user)}><strong>{user}</strong></a>
                         <a class="button is-light"
                     onclick={ctx.link().callback(|_| AppMsg::Logout)}
                         >{"Logout"}</a>

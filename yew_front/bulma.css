@@ -11864,6 +11864,13 @@ a.has-text-danger-dark:hover, a.has-text-danger-dark:focus {
 
 .material-icons.md-48 { font-size: 2em;  }
 
+.step-progress-icon {
+    border-radius: 50%;
+    background: white;
+    position:relative;
+    z-index:2;
+}
+
 
 /*# sourceMappingURL=bulma.css.map */
 
