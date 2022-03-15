@@ -1,14 +1,10 @@
 use scopeguard::defer;
-use shared_stuff::UserInfo;
+use shared_stuff::auth_structs::UserInfo;
 use sqlx::migrate::MigrateDatabase;
 use sqlx::Sqlite;
-use validator::validate_email;
-use validator::Validate;
 
-use shared_stuff::db_structs::UserData;
 use warp_back::error_handling::Result;
-use warp_back::error_handling::WarpRejections;
-use warp_back::new_db_stuff::{create_group_data, create_user_data};
+use warp_back::new_db_stuff::create_user_data;
 use warp_back::new_db_stuff::{db_get_user, db_insert_user};
 use warp_back::test_stuff::{delete_db, get_db_url, setup_new_db};
 
@@ -16,7 +12,7 @@ use ctor::ctor;
 #[ctor]
 fn load_logger() {
     dotenv::dotenv().ok();
-    pretty_env_logger::init();
+    pretty_env_logger::try_init();
 }
 
 // Currently 2 options: each test creates and tearsdown its own DB and runs concurrently.
@@ -52,10 +48,10 @@ async fn insert_new_user() -> Result<()> {
     };
     let user_data = create_user_data(new_user.clone()).await?;
     log::info!("user_data: {:?}", &user_data);
-    db_insert_user(&new_db, &new_user.username, user_data).await?;
+    db_insert_user(&new_db, user_data).await?;
     log::info!("inserted");
     let check_user_data = db_get_user(&new_db, &new_user.username).await?;
-    assert!(check_user_data.0 == "Indiana".to_string());
+    assert!(check_user_data.username == "Indiana".to_string());
 
     Ok(())
 }

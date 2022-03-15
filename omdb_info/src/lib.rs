@@ -38,6 +38,7 @@ async fn query_builder(id: &str) -> Result<OmdbStruct> {
 }
 
 mod tests {
+    use crate::*;
 
     #[tokio::test]
     async fn first_test() -> Result<()> {

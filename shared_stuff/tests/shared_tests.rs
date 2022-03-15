@@ -1,4 +1,4 @@
-use shared_stuff::*;
+use shared_stuff::imdb_structs::ImdbQuery;
 
 #[test]
 fn check_query() {

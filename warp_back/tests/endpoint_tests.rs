@@ -1,5 +1,6 @@
-use shared_stuff::MovieInfo;
-use shared_stuff::{ErrorMessage, ImdbQuery, LoginLookup, UserInfo};
+use shared_stuff::auth_structs::{ErrorMessage, UserInfo};
+use shared_stuff::imdb_structs::ImdbQuery;
+use shared_stuff::shared_structs::MovieDisplay;
 use warp::Filter;
 use warp_back::error_handling::handle_rejection;
 use warp_back::error_handling::Result;
@@ -12,7 +13,7 @@ use ctor::ctor;
 #[ctor]
 fn load_logger() {
     dotenv::dotenv().ok();
-    pretty_env_logger::init();
+    pretty_env_logger::try_init();
 }
 
 //#[tokio::test]

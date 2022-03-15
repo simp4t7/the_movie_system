@@ -2,12 +2,12 @@ use ctor::ctor;
 use imdb_autocomplete::autocomplete_func;
 use imdb_autocomplete::test_functions::check_client_connection;
 use imdb_autocomplete::test_functions::status_and_headers;
-use shared_stuff::MovieDisplay;
+use shared_stuff::shared_structs::MovieDisplay;
 
 #[ctor]
 fn load_logger() {
     dotenv::dotenv().ok();
-    pretty_env_logger::init();
+    pretty_env_logger::try_init();
 }
 
 // GET A GOOD LIST OF QUERIES TO TEST

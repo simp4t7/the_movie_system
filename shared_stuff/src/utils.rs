@@ -5,5 +5,5 @@ use ctor::ctor;
 #[ctor]
 fn load_logger() {
     dotenv::dotenv().ok();
-    pretty_env_logger::init();
+    pretty_env_logger::try_init();
 }
