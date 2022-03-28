@@ -1,0 +1,43 @@
+
+cargo run --bin icu4x-datagen -- --uprops-root ../icu4x_tutorial/icuexportdata_uprops_full/small --cldr-tag 40.0.0 --all-keys --lo
+cales he --out ../icu4x_tutorial/icu4x_tutorial/data
+
+
+icu_provider_fs = {version = "0.5", features=["deserialize_json"]}
+
+
+{
+    "aliasing": "NoAliases",
+    "syntax": "Json"
+}
+
+
+use icu::datetime::mock::parse_gregorian_from_str;
+use icu::datetime::{options::length, DateTimeFormat};
+use icu::locid::macros::langid;
+use icu::locid::Locale;
+use icu_provider_fs::FsDataProvider;
+
+fn main() {
+
+
+    let provider = FsDataProvider::try_new("/home/t/stuff/icu4x_tutorial/icu4x_tutorial/data")
+        .expect("Failed to initialize Data Provider.");
+
+    let loc: Locale = langid!("he").into();
+
+    let options = length::Bag {
+        date: Some(length::Date::Long),
+        time: Some(length::Time::Medium),
+        ..Default::default()
+    }
+    .into();
+
+    let dtf = DateTimeFormat::try_new(loc, &provider, &options)
+        .expect("Failed to initialize DateTimeFormat");
+
+    let date = parse_gregorian_from_str("2020-09-12T12:35:00").expect("Failed to parse date.");
+    let formatted_date = dtf.format(&date);
+
+    println!("📅: {}", formatted_date);
+}

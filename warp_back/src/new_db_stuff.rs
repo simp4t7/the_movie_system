@@ -33,7 +33,15 @@ pub async fn db_add_user_to_group(group_id: &str, new_member: &str, db: &SqliteP
 
     // Needs to fail if the user doesn't exist. This handles it, but the order matters.
     let mut user_struct = db_get_user(db, &new_member).await?;
-    let group_user_data = GroupUserData::default();
+    let group_user_data = GroupUserData {
+        ready_status: false,
+        turn: false,
+        color: group_struct
+            .group_data
+            .color_vec
+            .pop_front()
+            .expect("no more colors?"),
+    };
     group_struct
         .group_data
         .members
@@ -100,9 +108,27 @@ pub fn create_group_data(input: &GroupForm) -> GroupData {
     members.insert(input.username.clone(), GroupUserData::default());
     let now = sqlx::types::chrono::Utc::now().timestamp();
     let turn = String::from("");
+    let mut color_vec = VecDeque::from([
+        "is-link".into(),
+        "is-success".into(),
+        "is-warning".into(),
+        "is-danger".into(),
+        "is-link is-light".into(),
+        "is-success is-light".into(),
+        "is-warning is-light".into(),
+        "is-danger is-light".into(),
+    ]);
+    let first_color = color_vec.pop_front().expect("no colors?");
+    let group_user_data = GroupUserData {
+        color: first_color,
+        turn: false,
+        ready_status: false,
+    };
+    members.insert(input.username.clone(), group_user_data);
     GroupData {
         group_name: input.group_name.clone(),
         members,
+        color_vec,
         system_order: VecDeque::new(),
         movies_watched: HashSet::new(),
         current_movies: HashSet::new(),

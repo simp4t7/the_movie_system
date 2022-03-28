@@ -88,7 +88,6 @@ impl System {
                         </a>
                         </div>
                         </div>
-
                         </div>
                         </a>
                     } 
@@ -104,21 +103,11 @@ impl System {
         }
     }
     pub fn current_members(&self, ctx: &Context<Self>) -> Html {
-        let mut colors = VecDeque::from([
-            "is-link",
-            "is-success",
-            "is-warning",
-            "is-danger",
-            "is-link is-light",
-            "is-success is-light",
-            "is-warning is-light",
-            "is-danger is-light",
-        ]);
         self.group_data
             .members
             .keys()
             .map(|member| {
-                let color = colors.pop_front().expect("no more colors?");
+                let color = &self.group_data.members.get(member).expect("no member?").color;
                 html! {
                     <div class="column is-2 is-flex is-flex-direction-rows">
                     <div class="column p-0">
@@ -152,11 +141,16 @@ impl System {
     pub fn full_search_html(&self, ctx: &Context<Self>) -> Html {
         html! {
             <div>
+            <div class="container">
             <div class="column is-12 is-flex-direction-rows">
             {self.display_current_members(ctx)}
             </div>
-            <div class="column is-4">
+            </div>
+            <div class="container">
+            <div class="column is-8 mx-auto">
             {self.search_bar(ctx)}
+            </div>
+            {self.add_stuff(ctx)}
             </div>
             </div>
         }
@@ -176,8 +170,10 @@ impl System {
                             </span>
                             </p>
                         </div>
-                            <ul>
+                            <ul style="position:absolute; background-color:blue;">
+                            <div class="container" style="position:relative; width:100%;">
                             {self.search_results(ctx)}
+                            </div>
                             </ul>
                         </div>
             },
@@ -282,16 +278,44 @@ impl System {
                 .map(|movie| {
                     let _formatted = format!("{} {}", &movie.movie_title, &movie.movie_year);
                     html! {
-                            <div class="temp_movies">
-                            <img class="search_results_image"
-                                src={image_processing(&movie.movie_images)}/>
-                            <ul>
-                            <li> {&movie.movie_title} </li>
-                            <li> {&movie.movie_year} </li>
-                            <li> {format!("added by: {}", &movie.added_by)} </li>
-                            </ul>
-                            {   self.delete_movie_button(ctx, movie) }
-                            </div>
+                        
+                        <a class="panel-block px-0">
+                        <div class="container">
+                        <div class="column p-0 is-narrow">
+                        <img style="width: 80px;" src={image_processing(&movie.movie_images)}/>
+                        </div>
+                        <div class="column is-flex-direction-column p-0" id = {movie.movie_id.clone()}>
+                        <li class="content mb-1 ml-3 is-size-5 is-size-6-mobile ellipsis is-ellipsis-1">
+                        {&movie.movie_title}
+                        </li>
+                        <li class="content mb-1 ml-3 is-size-6 is-size-7-mobile">
+                        {&movie.movie_year}
+                        </li>
+                        <li class="content mb-1 ml-3 is-size-6 is-size-7-mobile">
+                        {&movie.movie_stars}
+                        </li>
+
+                        {   self.delete_movie_button(ctx, movie) }
+                        </div>
+                        <div class="columns is-mobile">
+                        <div class="column ml-3">
+                        </div>
+                        </div>
+                        </div>
+                        </a>
+
+
+
+                            //<div class="temp_movies">
+                            //<img class="search_results_image"
+                                //src={image_processing(&movie.movie_images)}/>
+                            //<ul>
+                            //<li> {&movie.movie_title} </li>
+                            //<li> {&movie.movie_year} </li>
+                            //<li> {format!("added by: {}", &movie.added_by)} </li>
+                            //</ul>
+                            //{   self.delete_movie_button(ctx, movie) }
+                            //</div>
 
                     }
                 })

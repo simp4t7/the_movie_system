@@ -15,6 +15,7 @@ pub struct GroupForm {
 pub struct GroupUserData {
     pub ready_status: bool,
     pub turn: bool,
+    pub color: String,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]

@@ -180,7 +180,7 @@ impl Component for System {
                 self.group_data
                     .current_movies
                     .insert(movie.clone().into_yew_display(self.username.clone()));
-                log::info!("current_movies: {:?}", &self.current_movies);
+                link_clone.send_message(SaveMovies);
             }
             QueryAutocomplete(text) => {
                 if text.current_target().is_some() {
@@ -241,11 +241,11 @@ impl Component for System {
             { self.ready_status_buttons(ctx) }
             { self.view_group_id(ctx) }
             { self.user_customized_view(ctx) }
-            { self.system_status_bar(ctx) }
+            //{ self.system_status_bar(ctx) }
             { self.full_search_html(ctx) }
             //{ self.display_current_members(ctx) }
             //{ self.search_bar(ctx) }
-            { self.add_stuff(ctx) }
+            //{ self.add_stuff(ctx) }
             </div>
         }
     }
