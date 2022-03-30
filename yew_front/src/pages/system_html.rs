@@ -147,16 +147,25 @@ impl System {
             </div>
             </div>
             <div class="container">
-            <div class="column is-8 mx-auto">
+            <div class="column is-6 mx-auto">
+            <div class = "column is-6" style="position:absolute; background-color:white; z-index:99;">
             {self.search_bar(ctx)}
+            </div>
             </div>
             {self.add_stuff(ctx)}
             </div>
             </div>
         }
     }
+
+    pub fn get_width(id: &str) -> i32 {
+        let window = web_sys::window().expect("no window?");
+        let document = window.document().expect("no document?");
+        let element = document.get_element_by_id(id).expect("no element?");
+        element.client_width()
+    }
+
     pub fn search_bar(&self, ctx: &Context<Self>) -> Html {
-        //if let Some(data) = self.group_data.clone() {
         match self.group_data.system_state {
             SystemState::AddingMovies => html! {
                         <div>
@@ -170,11 +179,9 @@ impl System {
                             </span>
                             </p>
                         </div>
-                            <ul style="position:absolute; background-color:blue;">
-                            <div class="container" style="position:relative; width:100%;">
+                            <div>
                             {self.search_results(ctx)}
                             </div>
-                            </ul>
                         </div>
             },
 
@@ -186,7 +193,7 @@ impl System {
     pub fn add_stuff(&self, ctx: &Context<Self>) -> Html {
         html! {
             <div>
-                <ul>
+                <ul class="mt-5">
                 {self.added_movies(ctx)}
                 </ul>
                 {self.save_movies(ctx)}
@@ -279,8 +286,9 @@ impl System {
                     let _formatted = format!("{} {}", &movie.movie_title, &movie.movie_year);
                     html! {
                         
-                        <a class="panel-block px-0">
-                        <div class="container">
+                        <div class="tile">
+                        <article class={format!("tile notification px-0 {}", &self.group_data.members.get(&movie.added_by).expect("no member?").color)}>
+                        //<div class="container">
                         <div class="column p-0 is-narrow">
                         <img style="width: 80px;" src={image_processing(&movie.movie_images)}/>
                         </div>
@@ -294,6 +302,9 @@ impl System {
                         <li class="content mb-1 ml-3 is-size-6 is-size-7-mobile">
                         {&movie.movie_stars}
                         </li>
+                        <li class="content mb-1 ml-3 is-size-6 is-size-7-mobile">
+                        {&movie.added_by}
+                        </li>
 
                         {   self.delete_movie_button(ctx, movie) }
                         </div>
@@ -301,8 +312,9 @@ impl System {
                         <div class="column ml-3">
                         </div>
                         </div>
+                        //</div>
+                        </article>
                         </div>
-                        </a>
 
 
 
