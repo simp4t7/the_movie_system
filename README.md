@@ -1,4 +1,4 @@
-# About the project
+# About the project:
 
 The Movie System is a personal project using **Rust** and **WebAssembly** to help choose what movie to watch. This project is under active development, but still quite a ways from being functional.
 

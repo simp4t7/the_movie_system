@@ -1,9 +1,11 @@
+DROP TABLE IF EXISTS users;
 CREATE TABLE users
 (
     username TEXT NOT NULL UNIQUE,
     data TEXT NOT NULL
 );
 
+DROP TABLE IF EXISTS groups;
 CREATE TABLE groups
 (
     id TEXT NOT NULL UNIQUE,
